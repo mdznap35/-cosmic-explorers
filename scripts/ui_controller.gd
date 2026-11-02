@@ -516,7 +516,10 @@ func show_planet(planet_id: String, discovered: Array = []) -> void:
 func _start_guided_expedition() -> void:
 	if _guide_stages.is_empty() or _guide_panel == null:
 		return
-	_guide_index = 0
+	_guide_index = SaveService.get_guided_expedition_stage()
+	if _guide_index >= _guide_stages.size():
+		_guide_index = 0
+		SaveService.set_guided_expedition_stage(0)
 	_guide_active = true
 	_guide_waiting_next = false
 	_guide_completed = false
@@ -567,6 +570,7 @@ func _on_guided_expedition_advance() -> void:
 		return
 	if _guide_index + 1 < _guide_stages.size():
 		_guide_index += 1
+		SaveService.set_guided_expedition_stage(_guide_index)
 		_render_guided_expedition_stage()
 		return
 
