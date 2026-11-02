@@ -52,6 +52,15 @@ func _run_guided_expedition_test() -> void:
 	root.add_child(interface)
 	await process_frame
 
+	SaveService.set_guided_expedition_stage(4)
+	interface._start_guided_expedition()
+	if interface._guide_index != 4:
+		errors.append("The guided expedition must resume from its saved planet stage.")
+	interface._close_guided_expedition()
+	interface._start_guided_expedition()
+	if interface._guide_index != 4:
+		errors.append("Closing and reopening the route must preserve its current stage.")
+	SaveService.set_guided_expedition_stage(0)
 	interface._start_guided_expedition()
 	if not interface._guide_active or not interface._guide_panel.visible:
 		errors.append("Starting the guided expedition must open its active panel.")
@@ -79,6 +88,8 @@ func _run_guided_expedition_test() -> void:
 		errors.append("Completing all eight planets must close the active route and show its completion state.")
 	if SaveService.get_guided_expedition_count() != previous_count + 1:
 		errors.append("Completing the route must persist exactly one guided-expedition completion.")
+	if SaveService.get_guided_expedition_stage() != 0:
+		errors.append("Completing the route must reset the saved stage for the next replay.")
 	if not interface._guide_fact_label.visible or not interface._guide_fact_label.text.contains("تم حفظ إنجازك"):
 		errors.append("The completion panel must confirm that progress was saved locally.")
 
