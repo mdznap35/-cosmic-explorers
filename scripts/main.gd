@@ -26,7 +26,7 @@ func _ready() -> void:
 	add_child(overlay)
 
 	var interface = UIController.new()
-	interface.configure(PlanetCatalog.get_all(), _discovered)
+	interface.configure(PlanetCatalog.get_all(), _discovered, PlanetCatalog.get_sun())
 	interface.planet_selected.connect(_on_planet_selected)
 	interface.zoom_requested.connect(_on_zoom_requested)
 	interface.reset_requested.connect(_on_reset_requested)
@@ -37,10 +37,11 @@ func _ready() -> void:
 
 
 func _on_planet_selected(planet_id: String) -> void:
-	var planet := PlanetCatalog.get_planet(planet_id)
+	var planet: Dictionary = PlanetCatalog.get_sun() if planet_id == "sun" else PlanetCatalog.get_planet(planet_id)
 	if planet.is_empty():
 		return
-	_discovered = SaveService.mark_discovered(planet_id)
+	if planet_id != "sun":
+		_discovered = SaveService.mark_discovered(planet_id)
 	_ui.show_planet(planet_id, _discovered)
 	_solar_view.focus_on_planet(planet_id)
 

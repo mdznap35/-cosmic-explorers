@@ -3,6 +3,7 @@ extends Node3D
 signal planet_tapped(planet_id: String)
 
 const PlanetBody = preload("res://scripts/planet_body.gd")
+const PlanetCatalog = preload("res://scripts/planet_catalog.gd")
 const OrbitMath = preload("res://scripts/orbit_math.gd")
 
 var _catalog: Array = []
@@ -11,8 +12,16 @@ var _orbit_pivots: Dictionary = {}
 var _planet_radii: Dictionary = {}
 var _camera: Camera3D
 var _focused_id := ""
+
+var _camera_distance := 37.2
+var _camera_yaw := 0.0
+var _camera_pitch := 0.63
 var _camera_tween: Tween
-var _camera_start := Vector3(0.0, 22.0, 30.0)
+
+var _screen_touch_active := false
+var _screen_touch_moved := false
+var _mouse_drag_active := false
+var _mouse_drag_moved := false
 
 
 func configure(planets: Array) -> void:
@@ -26,6 +35,7 @@ func _ready() -> void:
 	_create_stars()
 	_create_sun()
 	_create_planets()
+	_update_camera_transform()
 
 
 func _process(delta: float) -> void:
@@ -38,20 +48,34 @@ func _process(delta: float) -> void:
 				float(planet.get("orbit_speed", 0.1)),
 				delta
 			)
-
-	if _focused_id != "" and _planet_nodes.has(_focused_id):
-		var target: Node3D = _planet_nodes[_focused_id]
-		_camera.look_at(target.global_position, Vector3.UP)
-	elif _camera != null:
-		_camera.look_at(Vector3.ZERO, Vector3.UP)
+	_update_camera_transform()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventScreenTouch and event.pressed:
-		_try_pick(event.position)
-	elif event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			_try_pick(event.position)
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			_screen_touch_active = true
+			_screen_touch_moved = false
+		else:
+			if _screen_touch_active and not _screen_touch_moved:
+				_try_pick(event.position)
+			_screen_touch_active = false
+	elif event is InputEventScreenDrag and _screen_touch_active:
+		if event.relative.length_squared() > 1.0:
+			_screen_touch_moved = true
+			_rotate_camera(event.relative)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_mouse_drag_active = true
+			_mouse_drag_moved = false
+		else:
+			if _mouse_drag_active and not _mouse_drag_moved:
+				_try_pick(event.position)
+			_mouse_drag_active = false
+	elif event is InputEventMouseMotion and _mouse_drag_active:
+		if event.relative.length_squared() > 4.0:
+			_mouse_drag_moved = true
+			_rotate_camera(event.relative)
 
 
 func _create_environment() -> void:
@@ -81,10 +105,8 @@ func _create_camera() -> void:
 	_camera.fov = 43.0
 	_camera.near = 0.1
 	_camera.far = 180.0
-	_camera.position = _camera_start
 	_camera.current = true
 	add_child(_camera)
-	_camera.look_at(Vector3.ZERO, Vector3.UP)
 
 
 func _create_lighting() -> void:
@@ -150,14 +172,10 @@ func _create_stars() -> void:
 func _create_sun() -> void:
 	var sun := PlanetBody.new()
 	sun.name = "Sun"
-	sun.configure({
-		"id": "sun",
-		"radius": 1.18,
-		"color": Color(1.0, 0.53, 0.13),
-		"accent": Color(1.0, 0.78, 0.32),
-		"spin_speed": 0.035
-	})
+	sun.configure(PlanetCatalog.get_sun())
 	add_child(sun)
+	_planet_nodes["sun"] = sun
+	_planet_radii["sun"] = float(PlanetCatalog.get_sun().get("radius", 1.18))
 
 
 func _create_planets() -> void:
@@ -203,12 +221,35 @@ func _create_orbit_line(distance: float, planet_id: String) -> void:
 	var line := MeshInstance3D.new()
 	line.name = "OrbitLine_" + planet_id
 	line.mesh = immediate
+	line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(line)
+
+
+func _camera_target_position() -> Vector3:
+	if _focused_id != "" and _planet_nodes.has(_focused_id):
+		var target: Node3D = _planet_nodes[_focused_id]
+		return target.global_position
+	return Vector3.ZERO
+
+
+func _update_camera_transform() -> void:
+	if _camera == null:
+		return
+	var target := _camera_target_position()
+	var horizontal_distance := cos(_camera_pitch) * _camera_distance
+	var offset := Vector3(
+		sin(_camera_yaw) * horizontal_distance,
+		sin(_camera_pitch) * _camera_distance,
+		cos(_camera_yaw) * horizontal_distance
+	)
+	_camera.global_position = target + offset
+	_camera.look_at(target, Vector3.UP)
 
 
 func _try_pick(screen_position: Vector2) -> void:
 	if _camera == null or not is_inside_tree():
 		return
+
 	var ray_origin := _camera.project_ray_origin(screen_position)
 	var ray_direction := _camera.project_ray_normal(screen_position)
 	var query := PhysicsRayQueryParameters3D.create(
@@ -228,42 +269,39 @@ func _try_pick(screen_position: Vector2) -> void:
 func focus_on_planet(planet_id: String) -> void:
 	if not _planet_nodes.has(planet_id):
 		return
+
 	_focused_id = planet_id
-	var body: Node3D = _planet_nodes[planet_id]
 	var radius := float(_planet_radii.get(planet_id, 0.4))
-	var desired_position := body.global_position + Vector3(
-		0.0,
-		maxf(radius * 2.8, 1.25),
-		maxf(radius * 6.0, 2.9)
-	)
-	_kill_camera_tween()
-	_camera_tween = create_tween()
-	_camera_tween.set_trans(Tween.TRANS_CUBIC)
-	_camera_tween.set_ease(Tween.EASE_OUT)
-	_camera_tween.tween_property(_camera, "global_position", desired_position, 0.72)
+	var desired_distance := clampf(radius * 7.6, 5.0, 11.0)
+	_tween_camera(desired_distance, 0.28, 0.0)
 
 
 func reset_camera() -> void:
 	_focused_id = ""
+	_tween_camera(37.2, 0.63, 0.0)
+
+
+func zoom_by(amount: float) -> void:
+	_kill_camera_tween()
+	_camera_distance = OrbitMath.clamp_camera_distance(_camera_distance * (1.0 - amount))
+	_update_camera_transform()
+
+
+func _rotate_camera(relative: Vector2) -> void:
+	_kill_camera_tween()
+	_camera_yaw = fposmod(_camera_yaw - relative.x * 0.006, TAU)
+	_camera_pitch = clampf(_camera_pitch + relative.y * 0.006, -0.32, 1.28)
+	_update_camera_transform()
+
+
+func _tween_camera(distance: float, pitch: float, yaw: float) -> void:
 	_kill_camera_tween()
 	_camera_tween = create_tween()
 	_camera_tween.set_trans(Tween.TRANS_CUBIC)
 	_camera_tween.set_ease(Tween.EASE_OUT)
-	_camera_tween.tween_property(_camera, "position", _camera_start, 0.78)
-
-
-func zoom_by(amount: float) -> void:
-	if _camera == null:
-		return
-	var target := Vector3.ZERO
-	if _focused_id != "" and _planet_nodes.has(_focused_id):
-		target = (_planet_nodes[_focused_id] as Node3D).global_position
-	var offset := _camera.global_position - target
-	var current_distance := offset.length()
-	if current_distance < 0.01:
-		return
-	var next_distance := OrbitMath.clamp_camera_distance(current_distance * (1.0 - amount))
-	_camera.global_position = target + offset.normalized() * next_distance
+	_camera_tween.tween_property(self, "_camera_distance", distance, 0.72)
+	_camera_tween.parallel().tween_property(self, "_camera_pitch", pitch, 0.72)
+	_camera_tween.parallel().tween_property(self, "_camera_yaw", yaw, 0.72)
 
 
 func _kill_camera_tween() -> void:

@@ -1,6 +1,27 @@
 extends RefCounted
 
 # Content is separate from scene code so new worlds and languages can be added safely.
+const SUN = {
+	"id": "sun",
+	"name": "الشمس",
+	"english": "THE SUN",
+	"distance": 0.0,
+	"radius": 1.18,
+	"orbit_speed": 0.0,
+	"spin_speed": 0.035,
+	"period_days": 0,
+	"color": Color(1.0, 0.43, 0.10),
+	"accent": Color(1.0, 0.82, 0.35),
+	"headline": "النجم الذي يضيء عالمنا",
+	"description": "الشمس نجم قريب منا، تمنح الأرض الضوء والدفء، وتدور الكواكب حولها.",
+	"facts": [
+		"الشمس نجم وليست كوكباً.",
+		"يصل ضوء الشمس إلى الأرض في نحو ٨ دقائق و٢٠ ثانية.",
+		"تساعد جاذبية الشمس على إبقاء الكواكب في مداراتها."
+	]
+}
+
+
 const PLANETS = [
 	{
 		"id": "mercury",
@@ -166,3 +187,7 @@ static func get_planet(planet_id: String) -> Dictionary:
 
 static func get_all() -> Array:
 	return PLANETS.duplicate(true)
+
+
+static func get_sun() -> Dictionary:
+	return SUN.duplicate(true)
