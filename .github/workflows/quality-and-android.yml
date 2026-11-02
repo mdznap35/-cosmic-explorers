@@ -32,20 +32,49 @@ jobs:
       - name: Confirm pinned engine version
         shell: bash
         run: |
-          godot --version
-          godot --version | grep -F "4.7.2.stable"
+          set -euo pipefail
+          godot --version | tee "$RUNNER_TEMP/godot-version.txt"
+          grep -F "4.7.2.stable" "$RUNNER_TEMP/godot-version.txt"
 
       - name: Import and parse all project resources
-        run: godot --headless --editor --path . --quit
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --editor --path . --quit 2>&1 | tee "$RUNNER_TEMP/godot-import.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/godot-import.log"; then
+            echo "Godot reported a resource or script error during project import." >&2
+            exit 1
+          fi
 
       - name: Validate catalog and orbital math
-        run: godot --headless --path . --script res://tests/validate_catalog.gd
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_catalog.gd 2>&1 | tee "$RUNNER_TEMP/catalog-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/catalog-test.log"; then
+            echo "Planet catalog or orbital math validation failed." >&2
+            exit 1
+          fi
 
       - name: Validate mission questions and source provenance
-        run: godot --headless --path . --script res://tests/validate_missions.gd
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_missions.gd 2>&1 | tee "$RUNNER_TEMP/mission-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/mission-test.log"; then
+            echo "Mission content validation failed." >&2
+            exit 1
+          fi
 
       - name: Run main-scene smoke test
-        run: godot --headless --path . --quit-after 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --quit-after 5 2>&1 | tee "$RUNNER_TEMP/main-smoke.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/main-smoke.log"; then
+            echo "The main scene reported a runtime or script error." >&2
+            exit 1
+          fi
 
       - name: Set up Java 17
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
@@ -61,6 +90,7 @@ jobs:
       - name: Install Android platform and build tools
         shell: bash
         run: |
+          set -euo pipefail
           SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
           test -n "$SDK_ROOT"
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
@@ -77,11 +107,21 @@ jobs:
       - name: Create temporary debug signing key
         shell: bash
         run: |
-          keytool -genkeypair -v -keystore "$RUNNER_TEMP/cosmic-debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          set -euo pipefail
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/cosmic-debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Configure Godot Android export paths
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/.config/godot"
           cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
           [gd_resource type="EditorSettings" format=3]
@@ -101,8 +141,13 @@ jobs:
       - name: Export debug APK
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/CosmicExplorers-Android-debug.apk
+          godot --headless --path . --export-debug "Android" build/CosmicExplorers-Android-debug.apk 2>&1 | tee "$RUNNER_TEMP/android-export.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/android-export.log"; then
+            echo "Godot reported an error during Android export." >&2
+            exit 1
+          fi
           test -s build/CosmicExplorers-Android-debug.apk
           unzip -t build/CosmicExplorers-Android-debug.apk
           AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
