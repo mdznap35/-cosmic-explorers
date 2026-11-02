@@ -6,6 +6,7 @@ signal reset_requested
 signal motion_requested(enabled: bool)
 
 const MissionOverlay = preload("res://scripts/mission_overlay.gd")
+const GuidedExpeditionCatalog = preload("res://scripts/guided_expedition_catalog.gd")
 
 const PANEL := Color(0.025, 0.055, 0.12, 0.96)
 const PANEL_LIGHT := Color(0.045, 0.092, 0.17, 0.98)
@@ -35,6 +36,16 @@ var _motion_button: Button
 var _accent_strip: ColorRect
 var _mission_overlay: Control
 var _welcome_overlay: Control
+var _guide_stages: Array = []
+var _guide_panel: PanelContainer
+var _guide_stage_label: Label
+var _guide_clue_label: Label
+var _guide_feedback_label: Label
+var _guide_advance_button: Button
+var _guide_index := 0
+var _guide_active := false
+var _guide_waiting_next := false
+var _guide_completed := false
 var _motion_enabled := true
 
 
@@ -48,6 +59,7 @@ func _ready() -> void:
 	theme = preload("res://themes/arabic_theme.tres")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	_guide_stages = GuidedExpeditionCatalog.get_stages()
 	_build_exploration_ui()
 	_mission_overlay = MissionOverlay.new()
 	add_child(_mission_overlay)
@@ -60,6 +72,7 @@ func _build_exploration_ui() -> void:
 	_build_information_station()
 	_build_world_navigation()
 	_build_scene_hint()
+	_build_guided_expedition_panel()
 
 
 func _build_header() -> void:
@@ -125,6 +138,11 @@ func _build_header() -> void:
 	mission_button.tooltip_text = "ابدأ تحدياً تعليمياً قصيراً"
 	mission_button.pressed.connect(_open_mission)
 	row.add_child(mission_button)
+
+	var guided_button := _new_button("رحلة البحث", false, Vector2(132, 48))
+	guided_button.tooltip_text = "ابدأ رحلة تفاعلية للعثور على الكواكب الثمانية"
+	guided_button.pressed.connect(_start_guided_expedition)
+	row.add_child(guided_button)
 
 	_motion_button = _new_button("إيقاف الحركة", false, Vector2(124, 48))
 	_motion_button.tooltip_text = "إيقاف أو تشغيل حركة الكواكب"
@@ -289,6 +307,54 @@ func _build_scene_hint() -> void:
 	hint_row.add_child(hint_text)
 
 
+func _build_guided_expedition_panel() -> void:
+	_guide_panel = _new_panel(0.018, 0.274, 0.36, 0.50)
+	_guide_panel.name = "GuidedExpeditionPanel"
+	_guide_panel.visible = false
+	_guide_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var content := VBoxContainer.new()
+	content.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	content.add_theme_constant_override("separation", 8)
+	_guide_panel.add_child(content)
+
+	var heading_row := HBoxContainer.new()
+	heading_row.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	heading_row.add_theme_constant_override("separation", 8)
+	content.add_child(heading_row)
+
+	_guide_stage_label = _new_label("رحلة البحث", 14, CYAN, true)
+	_guide_stage_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading_row.add_child(_guide_stage_label)
+
+	var close_button := _new_button("×", false, Vector2(42, 40))
+	close_button.tooltip_text = "إغلاق رحلة البحث"
+	close_button.pressed.connect(_close_guided_expedition)
+	heading_row.add_child(close_button)
+
+	_guide_clue_label = _new_label("", 17, TEXT_MAIN, true)
+	_guide_clue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_guide_clue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(_guide_clue_label)
+
+	var instruction := _new_label("المس الكوكب في المشهد، أو اختر اسمه من الشريط.", 11, TEXT_MUTED)
+	instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(instruction)
+
+	_guide_feedback_label = _new_label("", 12, GOLD, true)
+	_guide_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_guide_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_guide_feedback_label.custom_minimum_size = Vector2(0, 38)
+	content.add_child(_guide_feedback_label)
+
+	_guide_advance_button = _new_button("المحطة التالية", true, Vector2(0, 46))
+	_guide_advance_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_guide_advance_button.visible = false
+	_guide_advance_button.pressed.connect(_on_guided_expedition_advance)
+	content.add_child(_guide_advance_button)
+
+
 func _build_welcome_overlay() -> void:
 	_welcome_overlay = Control.new()
 	_welcome_overlay.name = "WelcomeExperience"
@@ -435,6 +501,73 @@ func show_planet(planet_id: String, discovered: Array = []) -> void:
 	_details_button.text = "اكتشف المزيد"
 	_update_navigation_styles()
 	_update_progress()
+	_handle_guided_expedition_selection(planet_id)
+
+
+func _start_guided_expedition() -> void:
+	if _guide_stages.is_empty() or _guide_panel == null:
+		return
+	_guide_index = 0
+	_guide_active = true
+	_guide_waiting_next = false
+	_guide_completed = false
+	_guide_panel.visible = true
+	_render_guided_expedition_stage()
+
+
+func _render_guided_expedition_stage() -> void:
+	if _guide_index < 0 or _guide_index >= _guide_stages.size():
+		return
+	var stage: Dictionary = _guide_stages[_guide_index]
+	_guide_stage_label.text = "المحطة %s من ٨" % _arabic_number(_guide_index + 1)
+	_guide_clue_label.text = str(stage.get("clue", ""))
+	_guide_feedback_label.text = "ابحث عن الكوكب، ثم المسه."
+	_guide_advance_button.text = "المحطة التالية"
+	_guide_advance_button.visible = false
+	_guide_waiting_next = false
+
+
+func _handle_guided_expedition_selection(planet_id: String) -> void:
+	if not _guide_active or _guide_waiting_next or _guide_index >= _guide_stages.size():
+		return
+	var stage: Dictionary = _guide_stages[_guide_index]
+	var target_id := str(stage.get("planet_id", ""))
+	if planet_id == target_id:
+		var body := _body_data(target_id)
+		_guide_waiting_next = true
+		_guide_feedback_label.text = "وجدته! هذا هو %s. أحسنت!" % str(body.get("name", "الكوكب"))
+		_guide_advance_button.text = "المحطة التالية" if _guide_index + 1 < _guide_stages.size() else "إنهاء الرحلة"
+		_guide_advance_button.visible = true
+	else:
+		_guide_feedback_label.text = "هذا عالم آخر وجميل أيضاً! جرّب البحث عن الهدف من جديد."
+
+
+func _on_guided_expedition_advance() -> void:
+	if _guide_completed:
+		_start_guided_expedition()
+		return
+	if not _guide_active or not _guide_waiting_next:
+		return
+	if _guide_index + 1 < _guide_stages.size():
+		_guide_index += 1
+		_render_guided_expedition_stage()
+		return
+
+	_guide_active = false
+	_guide_waiting_next = false
+	_guide_completed = true
+	SaveService.record_guided_expedition_completed()
+	_guide_stage_label.text = "اكتملت رحلة البحث!"
+	_guide_clue_label.text = "لقد وجدت الكواكب الثمانية. صرت مستكشفاً رائعاً!"
+	_guide_feedback_label.text = "يمكنك إعادة الرحلة متى أحببت."
+	_guide_advance_button.text = "أعد الرحلة"
+	_guide_advance_button.visible = true
+
+
+func _close_guided_expedition() -> void:
+	_guide_active = false
+	_guide_waiting_next = false
+	_guide_panel.visible = false
 
 
 func _body_data(planet_id: String) -> Dictionary:
