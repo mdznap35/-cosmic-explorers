@@ -3,7 +3,6 @@ extends Control
 signal planet_selected(planet_id: String)
 signal zoom_requested(amount: float)
 signal reset_requested
-signal mission_requested
 signal motion_requested(enabled: bool)
 
 const MissionOverlay = preload("res://scripts/mission_overlay.gd")
