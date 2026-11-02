@@ -47,11 +47,20 @@ func _build_ui() -> void:
 	header_row.add_theme_constant_override("separation", 12)
 	header.add_child(header_row)
 
+	var companion := TextureRect.new()
+	companion.name = "SpaceCompanion"
+	companion.texture = preload("res://assets/branding/space_companion.svg")
+	companion.custom_minimum_size = Vector2(62, 62)
+	companion.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	companion.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	companion.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header_row.add_child(companion)
+
 	var brand := VBoxContainer.new()
 	brand.add_theme_constant_override("separation", 0)
 	header_row.add_child(brand)
 	brand.add_child(_new_label("مستكشفو الكون", 25, TEXT_MAIN, true))
-	brand.add_child(_new_label("رحلة صغيرة... واكتشافات لا تنتهي", 12, TEXT_MUTED))
+	brand.add_child(_new_label("رفيقك في رحلة الاكتشاف", 12, TEXT_MUTED))
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
