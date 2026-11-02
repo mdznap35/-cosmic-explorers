@@ -12,6 +12,7 @@ var _orbit_pivots: Dictionary = {}
 var _planet_radii: Dictionary = {}
 var _camera: Camera3D
 var _focused_id := ""
+var _motion_enabled := true
 
 var _camera_distance := 37.2
 var _camera_yaw := 0.0
@@ -40,16 +41,23 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	for planet in _catalog:
-		var planet_id := str(planet["id"])
-		var pivot: Node3D = _orbit_pivots.get(planet_id)
-		if pivot != null:
-			pivot.rotation.y = OrbitMath.advance_angle(
-				pivot.rotation.y,
-				float(planet.get("orbit_speed", 0.1)),
-				delta
-			)
+	if _motion_enabled:
+		for planet in _catalog:
+			var planet_id := str(planet["id"])
+			var pivot: Node3D = _orbit_pivots.get(planet_id)
+			if pivot != null:
+				pivot.rotation.y = OrbitMath.advance_angle(
+					pivot.rotation.y,
+					float(planet.get("orbit_speed", 0.1)),
+					delta
+				)
 	_update_camera_transform()
+
+
+func set_motion_enabled(enabled: bool) -> void:
+	_motion_enabled = enabled
+	for body in _planet_nodes.values():
+		body.set_motion_enabled(enabled)
 
 
 func _unhandled_input(event: InputEvent) -> void:

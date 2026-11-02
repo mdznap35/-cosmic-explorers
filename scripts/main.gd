@@ -30,6 +30,7 @@ func _ready() -> void:
 	interface.planet_selected.connect(_on_planet_selected)
 	interface.zoom_requested.connect(_on_zoom_requested)
 	interface.reset_requested.connect(_on_reset_requested)
+	interface.motion_requested.connect(_on_motion_requested)
 	_ui = interface
 	overlay.add_child(_ui)
 
@@ -52,6 +53,10 @@ func _on_zoom_requested(amount: float) -> void:
 
 func _on_reset_requested() -> void:
 	_solar_view.reset_camera()
+
+
+func _on_motion_requested(enabled: bool) -> void:
+	_solar_view.set_motion_enabled(enabled)
 
 
 func _notification(what: int) -> void:

@@ -6,14 +6,18 @@ A round-one milestone is accepted only when the evidence below is available.
 - [ ] Eight major planets appear in the system scene and have stable IDs.
 - [ ] Planet selection works through both 3D taps and the bottom navigation.
 - [ ] The info panel updates the selected planet and shows Arabic learning content.
-- [ ] Camera focus, zoom, and reset controls work.
-- [ ] Saturn's rings and Earth's moon are visible.
+- [ ] Camera focus, drag rotation, pinch zoom, zoom buttons, and reset controls work on device.
+- [ ] Saturn's rings, Earth's moon, procedural planet materials, and star field are visible.
+- [ ] Motion can be paused and resumed from the interface.
+- [ ] The nine-question explorer mission gives a learning explanation for every answer.
+- [ ] Best mission score and completed mission count persist locally.
 - [ ] Discovery progress persists after application restart.
 - [ ] The main exploration flow requires no network connection.
 
 ## Engineering
 - [ ] Godot 4.7.2 stable project import exits successfully.
 - [ ] Catalog and orbit-math validation test passes.
+- [ ] Mission-question structure and source-provenance test passes.
 - [ ] Main scene headless smoke test exits successfully.
 - [ ] Android export completes with no missing resources.
 - [ ] APK archive integrity check passes.
@@ -25,6 +29,7 @@ A round-one milestone is accepted only when the evidence below is available.
 - [ ] UI is readable in landscape on a phone-sized viewport.
 - [ ] Buttons have large hit areas and clear labels.
 - [ ] No child-facing external links, ads, chat, analytics, or account requirement.
+- [ ] Debug APK manifest does not request internet permission.
 - [ ] Audio and motion preferences are recorded for the next milestone.
 
 A green workflow is necessary, but does not replace installation and device testing.
