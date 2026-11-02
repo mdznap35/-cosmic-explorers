@@ -12,7 +12,7 @@ The interface uses a calm observatory identity: deep-space navy surfaces, restra
 4. Discovery station — selected body name, English identifier, body classification, one-sentence headline, concise description, one quick fact, and an expandable fact layer.
 5. Scene hint — a compact instruction for drag rotation and tap selection.
 
-## Design tokens
+## Interface design tokens
 
 - Space base: #030A1D to #07152B.
 - Main panels: deep navy with a cool blue-grey border.
@@ -23,6 +23,21 @@ The interface uses a calm observatory identity: deep-space navy surfaces, restra
 - Panels use restrained rounded corners and low-opacity shadows.
 - Buttons have explicit hover, pressed, focus, and disabled states.
 
+## Celestial material profiles
+
+The current rendering layer uses distinct procedural shader branches for:
+- Mercury: mineral ground and crater-like relief.
+- Venus: turbulent golden cloud bands.
+- Earth: blue ocean, irregular green land masses, and cloud detail.
+- Mars: rusty terrain and polar regions.
+- Jupiter: atmospheric stripes and a stylized Great Red Spot.
+- Saturn: layered atmospheric bands; its rings are separate geometry.
+- Uranus: quiet cyan-green atmospheric bands.
+- Neptune: deep-blue bands and a darker storm.
+- Sun: warm convection-like texture and a soft corona.
+
+These are visual interpretations, not mapped spacecraft images or measured surface data. Any later photographic or scanned texture pack must cite its original source, usage rights, and alterations in docs/ASSET_CREDITS.md.
+
 ## Child-first interaction rules
 
 - Keep the primary exploration action obvious.
@@ -32,10 +47,11 @@ The interface uses a calm observatory identity: deep-space navy surfaces, restra
 - Preserve a clear route back to the main scene.
 - Motion can be paused from the header.
 - The welcome layer is dismissible through explicit actions and does not require network access.
+- A single tap selects a body; dragging rotates the view rather than selecting a body.
 
-## Celestial visuals
+## Scientific visualization caveats
 
-The current planet materials remain procedural interpretations, not mapped spacecraft imagery or measured surface data. The scene compresses orbital distances and exaggerates body sizes to fit a phone display. Future photographic assets must cite original source, usage rights, and any alterations in docs/ASSET_CREDITS.md.
+The scene compresses orbital distances and exaggerates body sizes to fit a phone display. The orbital animation is illustrative and accelerated, not a live ephemeris or a scale-accurate model. The Sun is a star, not one of the eight planets, and is excluded from the eight-planet discovery count.
 
 ## Responsive and device acceptance
 

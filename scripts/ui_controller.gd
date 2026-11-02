@@ -332,7 +332,7 @@ func _build_welcome_overlay() -> void:
 	var brand_text := VBoxContainer.new()
 	brand_text.add_theme_constant_override("separation", 4)
 	brand_text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	brand_text.add_child(_new_label("أهلاً بك في مستكشفو الكون", 28, TEXT_MAIN, true))
+	brand_text.add_child(_new_label("مرحباً بك في رحلتك الفضائية", 28, TEXT_MAIN, true))
 	brand_text.add_child(_new_label("رحلة تفاعلية بين الشمس والكواكب، خطوةً خطوة", 15, TEXT_MUTED))
 	brand_row.add_child(brand_text)
 
