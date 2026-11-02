@@ -3,6 +3,10 @@ extends Control
 signal planet_selected(planet_id: String)
 signal zoom_requested(amount: float)
 signal reset_requested
+signal mission_requested
+signal motion_requested(enabled: bool)
+
+const MissionOverlay = preload("res://scripts/mission_overlay.gd")
 
 const NAVY := Color(0.025, 0.055, 0.12, 0.95)
 const NAVY_LIGHT := Color(0.045, 0.095, 0.19, 0.97)
@@ -24,6 +28,9 @@ var _description_label: Label
 var _facts_box: VBoxContainer
 var _progress_label: Label
 var _details_button: Button
+var _motion_button: Button
+var _mission_overlay
+var _motion_enabled := true
 
 
 func configure(planets: Array, discovered: Array, sun_data: Dictionary = {}) -> void:
@@ -37,6 +44,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_build_ui()
+	_mission_overlay = MissionOverlay.new()
+	add_child(_mission_overlay)
 	show_planet(_selected_id, _discovered)
 
 
@@ -86,8 +95,28 @@ func _build_ui() -> void:
 	reset.pressed.connect(func(): reset_requested.emit())
 	header_row.add_child(reset)
 
+	var mission := _new_button("مهمة المستكشف", true, Vector2(142, 48))
+	mission.pressed.connect(_open_mission)
+	header_row.add_child(mission)
+
+	_motion_button = _new_button("إيقاف الحركة", false, Vector2(126, 48))
+	_motion_button.pressed.connect(_toggle_motion)
+	header_row.add_child(_motion_button)
+
 	_build_info_panel()
 	_build_planet_navigation()
+
+
+func _open_mission() -> void:
+	if _mission_overlay != null:
+		_mission_overlay.start_mission()
+
+
+func _toggle_motion() -> void:
+	_motion_enabled = not _motion_enabled
+	if _motion_button != null:
+		_motion_button.text = "إيقاف الحركة" if _motion_enabled else "تشغيل الحركة"
+	motion_requested.emit(_motion_enabled)
 
 
 func _build_info_panel() -> void:
@@ -138,7 +167,7 @@ func _build_info_panel() -> void:
 	_details_button.pressed.connect(_toggle_details)
 	content.add_child(_details_button)
 
-	var hint := _new_label("المس كوكباً في المشهد أو اختره من القائمة", 11, TEXT_MUTED)
+	var hint := _new_label("الأحجام والمسافات مبسّطة للتوضيح. المس كوكباً لاستكشافه", 11, TEXT_MUTED)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(hint)
