@@ -268,7 +268,7 @@ func _refresh_facts(selected: Dictionary) -> void:
 func _update_navigation_styles() -> void:
 	for planet_id in _planet_buttons:
 		var button: Button = _planet_buttons[planet_id]
-		var is_selected := planet_id == _selected_id
+		var is_selected: bool = str(planet_id) == _selected_id
 		var bg := Color(0.10, 0.32, 0.47, 0.98) if is_selected else NAVY_LIGHT
 		var border := GOLD if is_selected else Color(0.19, 0.38, 0.56, 0.95)
 		button.add_theme_stylebox_override("normal", _button_style(bg, border))
@@ -345,5 +345,5 @@ func _new_label(label_text: String, font_size: int, color: Color, bold: bool = f
 	if bold:
 		label.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.08, 0.7))
 		label.add_theme_constant_override("outline_size", 1)
-	label.text_direction = TextServer.DIRECTION_AUTO
+	label.text_direction = Control.TEXT_DIRECTION_AUTO
 	return label
