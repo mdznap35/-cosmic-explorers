@@ -11,4 +11,4 @@ static func advance_angle(angle: float, angular_speed: float, delta: float) -> f
 
 
 static func clamp_camera_distance(distance: float) -> float:
-	return clampf(distance, 5.0, 70.0)
+	return clampf(distance, 1.2, 70.0)

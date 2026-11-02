@@ -61,8 +61,10 @@ func _initialize() -> void:
 	if absf(next_angle - 1.0) > 0.0001:
 		errors.append("OrbitMath.advance_angle failed the basic step check.")
 
-	if absf(OrbitMath.clamp_camera_distance(2.0) - 5.0) > 0.0001:
+	if absf(OrbitMath.clamp_camera_distance(0.2) - 1.2) > 0.0001:
 		errors.append("Camera distance lower bound failed.")
+	if absf(OrbitMath.clamp_camera_distance(2.0) - 2.0) > 0.0001:
+		errors.append("Camera distance should preserve valid close focus distances.")
 
 	if errors.is_empty():
 		print("PASS: 8-planet catalog, stable IDs, facts, period order, and orbit math.")

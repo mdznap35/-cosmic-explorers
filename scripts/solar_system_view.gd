@@ -18,7 +18,8 @@ var _camera_yaw := 0.0
 var _camera_pitch := 0.63
 var _camera_tween: Tween
 
-var _screen_touch_active := false
+var _touch_points: Dictionary = {}
+var _pinch_last_distance := 0.0
 var _screen_touch_moved := false
 var _mouse_drag_active := false
 var _mouse_drag_moved := false
@@ -54,14 +55,36 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			_screen_touch_active = true
-			_screen_touch_moved = false
+			_touch_points[event.index] = event.position
+			if _touch_points.size() == 1:
+				_screen_touch_moved = false
+			elif _touch_points.size() == 2:
+				_screen_touch_moved = true
+				_pinch_last_distance = _current_pinch_distance()
 		else:
-			if _screen_touch_active and not _screen_touch_moved:
+			if _touch_points.size() == 1 and not _screen_touch_moved:
 				_try_pick(event.position)
-			_screen_touch_active = false
-	elif event is InputEventScreenDrag and _screen_touch_active:
-		if event.relative.length_squared() > 1.0:
+			_touch_points.erase(event.index)
+			if _touch_points.size() < 2:
+				_pinch_last_distance = 0.0
+			if _touch_points.is_empty():
+				_screen_touch_moved = false
+			elif _touch_points.size() == 1:
+				# A finger left after a pinch must not become a planet-selection tap.
+				_screen_touch_moved = true
+	elif event is InputEventScreenDrag and _touch_points.has(event.index):
+		_touch_points[event.index] = event.position
+		if _touch_points.size() >= 2:
+			var current_distance := _current_pinch_distance()
+			if _pinch_last_distance > 0.0 and current_distance > 0.0:
+				_kill_camera_tween()
+				_camera_distance = OrbitMath.clamp_camera_distance(
+					_camera_distance * _pinch_last_distance / current_distance
+				)
+				_update_camera_transform()
+			_pinch_last_distance = current_distance
+			_screen_touch_moved = true
+		elif event.relative.length_squared() > 1.0:
 			_screen_touch_moved = true
 			_rotate_camera(event.relative)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -76,6 +99,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.relative.length_squared() > 4.0:
 			_mouse_drag_moved = true
 			_rotate_camera(event.relative)
+
+
+func _current_pinch_distance() -> float:
+	if _touch_points.size() < 2:
+		return 0.0
+	var points: Array = _touch_points.values()
+	return (points[0] as Vector2).distance_to(points[1] as Vector2)
 
 
 func _create_environment() -> void:
@@ -272,7 +302,7 @@ func focus_on_planet(planet_id: String) -> void:
 
 	_focused_id = planet_id
 	var radius := float(_planet_radii.get(planet_id, 0.4))
-	var desired_distance := clampf(radius * 7.6, 5.0, 11.0)
+	var desired_distance := clampf(radius * 6.2, 1.5, 7.0)
 	_tween_camera(desired_distance, 0.28, 0.0)
 
 
