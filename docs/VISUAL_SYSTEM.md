@@ -1,32 +1,42 @@
-# Round 1 visual system
+# Visual system — Cosmic Explorers
+
+## Art direction
+
+The interface uses a calm observatory identity: deep-space navy surfaces, restrained cyan guidance, warm gold for the primary learning action, and clear near-white Arabic typography. Decorative treatment must never compete with the selected celestial body or the learning objective.
+
+## Layout hierarchy
+
+1. Welcome experience — a short first screen that introduces the journey and offers two direct paths: free exploration or the explorer mission.
+2. Exploration header — product identity, local discovery progress, mission access, motion preference, scene reset, and zoom.
+3. World navigation — a horizontal, touch-friendly selector for the Sun and eight planets. Discovered planets receive a subtle completion mark; the selected body receives a gold focus treatment.
+4. Discovery station — selected body name, English identifier, body classification, one-sentence headline, concise description, one quick fact, and an expandable fact layer.
+5. Scene hint — a compact instruction for drag rotation and tap selection.
 
 ## Design tokens
 
-- Space background: deep navy with a quiet blue horizon.
-- Navigation: navy panels with cyan outlines.
-- Primary learning action: warm gold focus state.
-- Text: near-white primary text and muted blue-grey supporting text.
-- Body surfaces: procedural shader profiles, not externally hosted images.
+- Space base: #030A1D to #07152B.
+- Main panels: deep navy with a cool blue-grey border.
+- Secondary panels: slightly lighter navy for depth without harsh contrast.
+- Guidance accent: cyan.
+- Primary learning action and selected state: warm gold.
+- Main text: near-white; secondary text: muted blue-grey.
+- Panels use restrained rounded corners and low-opacity shadows.
+- Buttons have explicit hover, pressed, focus, and disabled states.
 
-## Procedural material profiles
+## Child-first interaction rules
 
-The first rendering layer uses distinct shader branches for:
-- Mercury: mineral ground and crater-like relief.
-- Venus: turbulent golden cloud bands.
-- Earth: blue ocean, irregular green land masses, and high cloud detail.
-- Mars: rusty terrain and polar regions.
-- Jupiter: atmospheric stripes and a stylized Great Red Spot.
-- Saturn: layered atmospheric bands; its rings are separate geometry.
-- Uranus: quiet cyan-green atmospheric bands.
-- Neptune: deep-blue bands and a darker storm.
-- Sun: warm convection-like texture and a soft corona.
+- Keep the primary exploration action obvious.
+- Use concise Arabic instructions and one main learning idea at a time.
+- Keep touch targets comfortably large.
+- Do not depend on color alone: selected/discovered states also change border, text, or marker.
+- Preserve a clear route back to the main scene.
+- Motion can be paused from the header.
+- The welcome layer is dismissible through explicit actions and does not require network access.
 
-These are visual interpretations, not mapped spacecraft images or measured surface data. Later photographic texture packs must cite their original source and license separately.
+## Celestial visuals
 
-## Interaction
+The current planet materials remain procedural interpretations, not mapped spacecraft imagery or measured surface data. The scene compresses orbital distances and exaggerates body sizes to fit a phone display. Future photographic assets must cite original source, usage rights, and any alterations in docs/ASSET_CREDITS.md.
 
-- Tap a planet or choose its name from the body strip.
-- Drag the scene to rotate the camera around the current focus.
-- Zoom buttons adjust camera distance.
-- A single tap selects; a drag rotates rather than selecting.
-- The Sun is a star entry, not one of the eight planets and is not included in the eight-planet discovery count.
+## Responsive and device acceptance
+
+The layout is authored against the 16:9 landscape design viewport and uses proportional panel anchors. This is a design baseline, not proof of device fit. Every release must be checked on the target Android phone for Arabic shaping, clipping, touch areas, safe areas, and frame pacing. Device acceptance remains open until a real-device test is recorded.
