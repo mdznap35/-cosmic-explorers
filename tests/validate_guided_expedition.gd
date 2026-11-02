@@ -2,6 +2,7 @@ extends SceneTree
 
 const GuidedExpeditionCatalog = preload("res://scripts/guided_expedition_catalog.gd")
 const PlanetCatalog = preload("res://scripts/planet_catalog.gd")
+const SaveService = preload("res://scripts/save_service.gd")
 
 
 func _initialize() -> void:
@@ -35,7 +36,13 @@ func _initialize() -> void:
 			errors.append(planet_id + " must retain its primary science source.")
 
 	if errors.is_empty():
-		print("PASS: eight guided discovery stages, catalog order, and NASA source linkage.")
+		var previous_count := SaveService.get_guided_expedition_count()
+		var recorded_count := SaveService.record_guided_expedition_completed()
+		if recorded_count != previous_count + 1:
+			errors.append("Guided expedition completion count must persist and increment by exactly one.")
+
+	if errors.is_empty():
+		print("PASS: eight guided stages, catalog order, NASA source linkage, and local progress persistence.")
 		quit(0)
 		return
 

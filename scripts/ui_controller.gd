@@ -6,6 +6,7 @@ signal reset_requested
 signal motion_requested(enabled: bool)
 
 const MissionOverlay = preload("res://scripts/mission_overlay.gd")
+const SaveService = preload("res://scripts/save_service.gd")
 const GuidedExpeditionCatalog = preload("res://scripts/guided_expedition_catalog.gd")
 
 const PANEL := Color(0.025, 0.055, 0.12, 0.96)
@@ -308,7 +309,7 @@ func _build_scene_hint() -> void:
 
 
 func _build_guided_expedition_panel() -> void:
-	_guide_panel = _new_panel(0.018, 0.274, 0.36, 0.50)
+	_guide_panel = _new_panel(0.018, 0.274, 0.36, 0.52)
 	_guide_panel.name = "GuidedExpeditionPanel"
 	_guide_panel.visible = false
 	_guide_panel.mouse_filter = Control.MOUSE_FILTER_STOP
