@@ -8,7 +8,7 @@ Add a calm, touch-first path through all eight major planets for a young child w
 
 - One short discovery clue is shown at a time.
 - The child can select a planet directly in the scene or use the named planet strip.
-- A correct discovery receives immediate positive feedback and unlocks the next stop.
+- A correct discovery receives immediate positive feedback, reveals a short fact from that planet's existing content record, and unlocks the next stop.
 - Choosing another world does not deduct points, fail the activity, or use a timer; the child can simply try again.
 - The route follows the planet catalog from the Sun outward.
 - The existing nine-question Explorer Challenge remains a separate activity.
@@ -19,7 +19,7 @@ The route has eight stages, one per major planet. Completion increments a local 
 
 ## Verification
 
-The new catalog test checks stage count, unique stable IDs, the expected catalog order, non-empty clues, and linkage to each planet's NASA source record. The Android workflow runs this test before the main-scene smoke test and export.
+The automated test now instantiates the real UI and runs all eight stages: wrong choices must not advance, correct choices reveal each planet's first catalog fact, the next-stage action advances, completion persists exactly once, replay does not count prematurely, and close leaves the panel inactive. The same test also checks unique IDs, catalog order, non-empty clues, and NASA source linkage.
 
 ## Acceptance limits
 

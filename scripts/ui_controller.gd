@@ -42,6 +42,7 @@ var _guide_panel: PanelContainer
 var _guide_stage_label: Label
 var _guide_clue_label: Label
 var _guide_feedback_label: Label
+var _guide_fact_label: Label
 var _guide_advance_button: Button
 var _guide_index := 0
 var _guide_active := false
@@ -309,14 +310,14 @@ func _build_scene_hint() -> void:
 
 
 func _build_guided_expedition_panel() -> void:
-	_guide_panel = _new_panel(0.018, 0.274, 0.36, 0.52)
+	_guide_panel = _new_panel(0.018, 0.274, 0.36, 0.63)
 	_guide_panel.name = "GuidedExpeditionPanel"
 	_guide_panel.visible = false
 	_guide_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var content := VBoxContainer.new()
 	content.layout_direction = Control.LAYOUT_DIRECTION_RTL
-	content.add_theme_constant_override("separation", 8)
+	content.add_theme_constant_override("separation", 6)
 	_guide_panel.add_child(content)
 
 	var heading_row := HBoxContainer.new()
@@ -346,8 +347,15 @@ func _build_guided_expedition_panel() -> void:
 	_guide_feedback_label = _new_label("", 12, GOLD, true)
 	_guide_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_guide_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_guide_feedback_label.custom_minimum_size = Vector2(0, 38)
+	_guide_feedback_label.custom_minimum_size = Vector2(0, 30)
 	content.add_child(_guide_feedback_label)
+
+	_guide_fact_label = _new_label("", 12, CYAN, true)
+	_guide_fact_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_guide_fact_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_guide_fact_label.custom_minimum_size = Vector2(0, 40)
+	_guide_fact_label.visible = false
+	content.add_child(_guide_fact_label)
 
 	_guide_advance_button = _new_button("المحطة التالية", true, Vector2(0, 46))
 	_guide_advance_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -523,6 +531,8 @@ func _render_guided_expedition_stage() -> void:
 	_guide_stage_label.text = "المحطة %s من ٨" % _arabic_number(_guide_index + 1)
 	_guide_clue_label.text = str(stage.get("clue", ""))
 	_guide_feedback_label.text = "ابحث عن الكوكب، ثم المسه."
+	_guide_fact_label.text = ""
+	_guide_fact_label.visible = false
 	_guide_advance_button.text = "المحطة التالية"
 	_guide_advance_button.visible = false
 	_guide_waiting_next = false
@@ -537,10 +547,16 @@ func _handle_guided_expedition_selection(planet_id: String) -> void:
 		var body := _body_data(target_id)
 		_guide_waiting_next = true
 		_guide_feedback_label.text = "وجدته! هذا هو %s. أحسنت!" % str(body.get("name", "الكوكب"))
+		var facts: Array = body.get("facts", [])
+		if not facts.is_empty():
+			_guide_fact_label.text = "حقيقة صغيرة: " + str(facts[0])
+			_guide_fact_label.visible = true
 		_guide_advance_button.text = "المحطة التالية" if _guide_index + 1 < _guide_stages.size() else "إنهاء الرحلة"
 		_guide_advance_button.visible = true
 	else:
 		_guide_feedback_label.text = "هذا عالم آخر وجميل أيضاً! جرّب البحث عن الهدف من جديد."
+		_guide_fact_label.text = ""
+		_guide_fact_label.visible = false
 
 
 func _on_guided_expedition_advance() -> void:
@@ -561,6 +577,8 @@ func _on_guided_expedition_advance() -> void:
 	_guide_stage_label.text = "اكتملت رحلة البحث!"
 	_guide_clue_label.text = "لقد وجدت الكواكب الثمانية. صرت مستكشفاً رائعاً!"
 	_guide_feedback_label.text = "يمكنك إعادة الرحلة متى أحببت."
+	_guide_fact_label.text = "تم حفظ إنجازك على هذا الجهاز."
+	_guide_fact_label.visible = true
 	_guide_advance_button.text = "أعد الرحلة"
 	_guide_advance_button.visible = true
 
