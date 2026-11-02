@@ -26,6 +26,8 @@ func _initialize() -> void:
 			errors.append(planet_id + " is missing its Arabic name.")
 		if str(planet.get("english", "")).is_empty():
 			errors.append(planet_id + " is missing its English identifier.")
+		if not str(planet.get("source_url", "")).begins_with("https://science.nasa.gov/"):
+			errors.append(planet_id + " must carry a traceable NASA source URL.")
 		if float(planet.get("distance", 0.0)) <= 0.0:
 			errors.append(planet_id + " has an invalid visual orbit distance.")
 		if float(planet.get("radius", 0.0)) <= 0.0:
@@ -39,6 +41,8 @@ func _initialize() -> void:
 	var sun := PlanetCatalog.get_sun()
 	if sun.is_empty() or str(sun.get("id", "")) != "sun":
 		errors.append("The Sun must be a separate star entry.")
+	if not str(sun.get("source_url", "")).begins_with("https://science.nasa.gov/"):
+		errors.append("The Sun must carry a traceable NASA source URL.")
 	if float(sun.get("distance", -1.0)) != 0.0:
 		errors.append("The Sun must be at the visual origin.")
 	if sun.get("facts", []).size() < 2:

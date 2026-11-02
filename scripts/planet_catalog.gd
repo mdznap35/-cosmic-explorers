@@ -2,6 +2,7 @@ extends RefCounted
 
 # Content is separate from scene code so new worlds and languages can be added safely.
 const SUN = {
+	"source_url": "https://science.nasa.gov/sun/facts/",
 	"id": "sun",
 	"name": "الشمس",
 	"english": "THE SUN",
@@ -24,6 +25,7 @@ const SUN = {
 
 const PLANETS = [
 	{
+		"source_url": "https://science.nasa.gov/mercury/facts/",
 		"id": "mercury",
 		"name": "عطارد",
 		"english": "MERCURY",
@@ -35,7 +37,7 @@ const PLANETS = [
 		"color": Color(0.58, 0.54, 0.49),
 		"accent": Color(0.83, 0.75, 0.63),
 		"headline": "أقرب كوكب إلى الشمس",
-		"description": "عطارد أصغر كواكب المجموعة الشمسية، ويقع قريباً جداً من الشمس. غلافه الخارجي رقيق للغاية.",
+		"description": "عطارد أصغر كواكب المجموعة الشمسية، ويقع قريباً جداً من الشمس. يحيط به غلاف غازي شديد الرقة، يختلف عن هواء الأرض.",
 		"facts": [
 			"سطحه مليء بالفوهات التي خلّفتها اصطدامات قديمة.",
 			"قد ترتفع حرارته كثيراً نهاراً وتنخفض بشدة ليلاً.",
@@ -43,6 +45,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/venus/venus-facts/",
 		"id": "venus",
 		"name": "الزهرة",
 		"english": "VENUS",
@@ -62,6 +65,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/earth/facts/",
 		"id": "earth",
 		"name": "الأرض",
 		"english": "EARTH",
@@ -81,6 +85,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/mars/facts/",
 		"id": "mars",
 		"name": "المريخ",
 		"english": "MARS",
@@ -100,6 +105,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/jupiter/jupiter-facts/",
 		"id": "jupiter",
 		"name": "المشتري",
 		"english": "JUPITER",
@@ -114,11 +120,12 @@ const PLANETS = [
 		"description": "المشتري عملاق غازي هائل. تظهر على غلافه سحب ملونة وعاصفة ضخمة تُعرف بالبقعة الحمراء العظيمة.",
 		"facts": [
 			"يمكن أن تتسع الأرض داخل المشتري مرات كثيرة.",
-			"البقعة الحمراء العظيمة عاصفة هائلة مستمرة منذ زمن طويل.",
+			"البقعة الحمراء العظيمة عاصفة ضخمة، وهي أكبر من كوكب الأرض.",
 			"له عائلة كبيرة من الأقمار، ومن أشهرها أوروبا وآيو وغانيميد."
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/saturn/facts/",
 		"id": "saturn",
 		"name": "زحل",
 		"english": "SATURN",
@@ -138,6 +145,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/uranus/facts/",
 		"id": "uranus",
 		"name": "أورانوس",
 		"english": "URANUS",
@@ -157,6 +165,7 @@ const PLANETS = [
 		]
 	},
 	{
+		"source_url": "https://science.nasa.gov/neptune/neptune-facts/",
 		"id": "neptune",
 		"name": "نبتون",
 		"english": "NEPTUNE",
