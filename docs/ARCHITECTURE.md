@@ -4,14 +4,14 @@
 
 - Main coordinator — connects the 3D scene, UI signals, content catalog, and local save service.
 - SolarSystemView — owns the world environment, camera, light, star field, orbital paths, planet placement, tap ray-casting, focus, and zoom.
-- PlanetBody — creates a planet mesh, material, tap collision shape, and optional planet-specific child objects such as Earth's moon or Saturn's rings.
+- PlanetBody — creates a planet mesh, specialized procedural surface material, tap collision shape, and layered body-specific visual objects such as Earth's cloud/atmosphere shells and Moon, Saturn's ring shader, and the Sun's corona shells.
 - PlanetCatalog — data-only definitions. New bodies and localizations should be data additions, not renderer rewrites.
 - UIController — builds the screen-space interface and emits intent signals; it does not own astronomy or save logic.
 - SaveService — persists only discovered planet IDs in a versioned JSON file under Godot's user data directory.
 
 ## Rendering decisions
 
-Godot 4.7.2 stable with the Compatibility renderer is the baseline. This favors broad GLES support and mobile reach over high-end post-processing. Geometry and procedural materials keep the first scene self-contained and offline.
+Godot 4.7.2 stable with the Compatibility renderer is the baseline. This favors broad GLES support and mobile reach over high-end post-processing. Geometry and procedural shaders keep the scene self-contained and offline. The second visual pass adds distinct surface profiles, a separate Earth cloud shell and atmospheric rim, a banded Saturn ring material, and layered solar corona.
 
 The current scene intentionally compresses orbital distances and exaggerates body sizes so all planets can be discovered on a phone display. Orbital animation is illustrative and accelerated; the scene is not an ephemeris and does not claim true scale.
 
@@ -29,7 +29,8 @@ The current scene intentionally compresses orbital distances and exaggerates bod
 - Batched star field through MultiMesh.
 - No real-time shadows in the first mobile scene.
 - No bloom or screen-space effects in the baseline.
-- Reuse materials and meshes where measurements justify it.
+- Reuse simple meshes where measurements justify it; keep specialized shader variants limited to the few distinct body profiles.
+- Keep shader animation clocks frozen when the user pauses motion.
 - Profile on the actual target phone before raising polygon counts or enabling additional effects.
 
 ## Android delivery

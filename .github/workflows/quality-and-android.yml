@@ -66,6 +66,16 @@ jobs:
             exit 1
           fi
 
+      - name: Validate planetary visual resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_visual_resources.gd 2>&1 | tee "$RUNNER_TEMP/visual-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/visual-test.log"; then
+            echo "Planetary visual resource validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |

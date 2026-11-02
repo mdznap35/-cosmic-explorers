@@ -56,3 +56,17 @@ The scene compresses orbital distances and exaggerates body sizes to fit a phone
 ## Responsive and device acceptance
 
 The layout is authored against the 16:9 landscape design viewport and uses proportional panel anchors. This is a design baseline, not proof of device fit. Every release must be checked on the target Android phone for Arabic shaping, clipping, touch areas, safe areas, and frame pacing. Device acceptance remains open until a real-device test is recorded.
+
+
+## Round 2 — layered planetary materials
+
+- Mercury and the Moon use procedural impact-basin and crater-rim fields.
+- Venus uses denser turbulent golden cloud bands.
+- Earth uses an independent cloud shell and a view-dependent additive atmospheric rim.
+- Mars uses layered mineral terrain, dark regions, fine texture, and polar frost.
+- Jupiter uses differentiated zonal belts and a stylized Great Red Spot.
+- Saturn uses softer atmospheric belts and a separate particle-density ring shader with broad and narrow divisions.
+- Uranus and Neptune retain distinct cool atmospheric profiles.
+- The Sun uses animated granular surface detail and two procedural corona shells.
+
+Animation time is advanced by the body controller only while motion is enabled, so the motion preference also pauses procedural shader animation. These are stylized procedural visuals, not measured map reconstructions.
