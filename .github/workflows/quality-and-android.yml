@@ -111,8 +111,34 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.1" \
             "cmdline-tools;latest" \
-            "cmake;3.10.2.4988404" \
-            "ndk;28.1.13356709"
+            "cmake;3.10.2.4988404"
+
+          # NDK archives are large; a partial/corrupt SDK Manager cache can otherwise
+          # make every retry fail with "Error on ZipFile unknown archive".
+          NDK_VERSION="28.1.13356709"
+          NDK_PACKAGE="ndk;$NDK_VERSION"
+          NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
+          NDK_INSTALLED=false
+          for attempt in 1 2 3; do
+            echo "Installing $NDK_PACKAGE (attempt $attempt/3)"
+            if sdkmanager --sdk_root="$SDK_ROOT" "$NDK_PACKAGE" \
+              && test -f "$NDK_DIR/source.properties"; then
+              NDK_INSTALLED=true
+              break
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::NDK installation failed; clearing partial SDK download cache before retry."
+              rm -rf "$SDK_ROOT/.downloadIntermediates" "$NDK_DIR"
+              sleep 6
+            fi
+          done
+
+          if [ "$NDK_INSTALLED" != true ]; then
+            echo "NDK $NDK_VERSION could not be installed after three clean attempts." >&2
+            exit 1
+          fi
+          grep -F "Pkg.Revision = $NDK_VERSION" "$NDK_DIR/source.properties"
 
       - name: Create temporary debug signing key
         shell: bash
