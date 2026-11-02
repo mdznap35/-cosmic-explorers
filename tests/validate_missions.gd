@@ -8,8 +8,8 @@ func _initialize() -> void:
 	var questions: Array = MissionCatalog.get_questions()
 	var ids: Dictionary = {}
 
-	if questions.size() < 8:
-		errors.append("The first mission must cover the Sun and all eight planets.")
+	if questions.size() != 9:
+		errors.append("The first mission must include exactly one question for the Sun and each of the eight planets.")
 
 	for question in questions:
 		var question_id := str(question.get("id", ""))
