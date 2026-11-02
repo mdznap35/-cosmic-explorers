@@ -31,6 +31,7 @@ func configure(planets: Array, discovered: Array) -> void:
 
 
 func _ready() -> void:
+	theme = preload("res://themes/arabic_theme.tres")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_build_ui()
