@@ -240,5 +240,5 @@ func _new_label(value: String, size: int, color: Color, bold: bool = false) -> L
 	if bold:
 		label.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.08, 0.7))
 		label.add_theme_constant_override("outline_size", 1)
-	label.text_direction = TextServer.DIRECTION_AUTO
+	label.text_direction = Control.TEXT_DIRECTION_AUTO
 	return label
