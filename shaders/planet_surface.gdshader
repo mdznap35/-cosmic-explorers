@@ -106,7 +106,7 @@ void fragment() {
 		color = mix(base_color.rgb * 0.48, accent_color.rgb, minerals * 0.54 + 0.16);
 		color = mix(color, base_color.rgb * 0.46, dark_regions * 0.42);
 		color *= 0.90 + ridges * 0.22;
-		float polar = smoothstep(0.055, 0.0, min(uv.y, 1.0 - uv.y));
+		float polar = 1.0 - smoothstep(0.0, 0.055, min(uv.y, 1.0 - uv.y));
 		color = mix(color, vec3(0.91, 0.84, 0.77), polar * 0.78);
 		rough = 0.97;
 	} else if (surface_type == 4) {
