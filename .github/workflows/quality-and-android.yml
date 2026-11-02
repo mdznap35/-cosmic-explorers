@@ -110,7 +110,6 @@ jobs:
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.1" \
-            "cmdline-tools;latest" \
             "cmake;3.10.2.4988404"
 
           # NDK archives are large; a partial/corrupt SDK Manager cache can otherwise
