@@ -1,5 +1,7 @@
 extends Node3D
 
+const PLANET_SHADER = preload("res://shaders/planet_surface.gdshader")
+
 var _data: Dictionary = {}
 var _surface: MeshInstance3D
 var _moon_pivot: Node3D
@@ -9,11 +11,15 @@ func configure(data: Dictionary) -> void:
 	_data = data.duplicate(true)
 	_build_surface()
 	_build_pick_area()
-	if str(_data.get("id", "")) == "earth":
+
+	var planet_id := str(_data.get("id", ""))
+	if planet_id == "earth":
 		_build_atmosphere()
 		_build_moon()
-	if str(_data.get("id", "")) == "saturn":
+	elif planet_id == "saturn":
 		_build_rings()
+	elif planet_id == "sun":
+		_build_sun_glow()
 
 
 func _process(delta: float) -> void:
@@ -28,13 +34,14 @@ func _build_surface() -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = radius
 	sphere.height = radius * 2.0
-	sphere.radial_segments = 32
-	sphere.rings = 20
+	sphere.radial_segments = 48
+	sphere.rings = 32
 
 	_surface = MeshInstance3D.new()
 	_surface.name = "PlanetSurface"
 	_surface.mesh = sphere
 	_surface.material_override = _make_surface_material()
+	_surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_surface)
 
 
@@ -42,43 +49,30 @@ func _make_surface_material() -> Material:
 	var base: Color = _data.get("color", Color.WHITE)
 	var accent: Color = _data.get("accent", base.lightened(0.18))
 	var planet_id := str(_data.get("id", ""))
+	var surface_types := {
+		"mercury": 0,
+		"venus": 1,
+		"earth": 2,
+		"mars": 3,
+		"jupiter": 4,
+		"saturn": 5,
+		"uranus": 6,
+		"neptune": 7,
+		"sun": 8
+	}
 
-	if planet_id == "jupiter" or planet_id == "saturn":
-		var shader := Shader.new()
-		shader.code = """
-shader_type spatial;
-render_mode cull_back;
-uniform vec4 base_color : source_color = vec4(0.65, 0.45, 0.3, 1.0);
-uniform vec4 band_color : source_color = vec4(0.9, 0.72, 0.55, 1.0);
-void fragment() {
-	float bands = sin(UV.y * 72.0 + sin(UV.x * 13.0) * 0.22);
-	float detail = sin(UV.y * 190.0 + UV.x * 9.0) * 0.06;
-	float mix_value = smoothstep(-0.28, 0.34, bands + detail) * 0.72;
-	ALBEDO = mix(base_color.rgb, band_color.rgb, mix_value);
-	ROUGHNESS = 0.94;
-}
-"""
-		var shader_material := ShaderMaterial.new()
-		shader_material.shader = shader
-		shader_material.set_shader_parameter("base_color", base)
-		shader_material.set_shader_parameter("band_color", accent)
-		return shader_material
-
-	var material := StandardMaterial3D.new()
-	material.albedo_color = base
-	material.roughness = 0.88
-	material.metallic = 0.0
-	if planet_id == "sun":
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.emission_enabled = true
-		material.emission = Color(1.0, 0.52, 0.16)
-		material.emission_energy_multiplier = 1.6
+	var material := ShaderMaterial.new()
+	material.shader = PLANET_SHADER
+	material.set_shader_parameter("surface_type", int(surface_types.get(planet_id, 0)))
+	material.set_shader_parameter("base_color", base)
+	material.set_shader_parameter("accent_color", accent)
+	material.set_shader_parameter("glow_strength", 1.45 if planet_id == "sun" else 0.0)
 	return material
 
 
 func _build_pick_area() -> void:
 	var hit_body := StaticBody3D.new()
-	hit_body.name = "PlanetTouchTarget"
+	hit_body.name = "CelestialTouchTarget"
 	hit_body.collision_layer = 1
 	hit_body.collision_mask = 0
 	hit_body.set_meta("planet_id", str(_data.get("id", "")))
@@ -96,20 +90,20 @@ func _build_atmosphere() -> void:
 	var sphere := SphereMesh.new()
 	sphere.radius = radius * 1.055
 	sphere.height = radius * 2.11
-	sphere.radial_segments = 32
-	sphere.rings = 20
+	sphere.radial_segments = 40
+	sphere.rings = 28
 
 	var atmosphere := StandardMaterial3D.new()
 	atmosphere.albedo_color = Color(0.22, 0.66, 1.0, 0.16)
 	atmosphere.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	atmosphere.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	atmosphere.cull_mode = BaseMaterial3D.CULL_FRONT
-	atmosphere.no_depth_test = false
 
 	var shell := MeshInstance3D.new()
 	shell.name = "EarthAtmosphere"
 	shell.mesh = sphere
 	shell.material_override = atmosphere
+	shell.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(shell)
 
 
@@ -121,8 +115,8 @@ func _build_moon() -> void:
 	var moon_mesh := SphereMesh.new()
 	moon_mesh.radius = 0.105
 	moon_mesh.height = 0.21
-	moon_mesh.radial_segments = 20
-	moon_mesh.rings = 12
+	moon_mesh.radial_segments = 24
+	moon_mesh.rings = 16
 
 	var moon_material := StandardMaterial3D.new()
 	moon_material.albedo_color = Color(0.72, 0.75, 0.79)
@@ -133,6 +127,7 @@ func _build_moon() -> void:
 	moon.mesh = moon_mesh
 	moon.material_override = moon_material
 	moon.position = Vector3(0.0, 0.0, 0.78)
+	moon.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_moon_pivot.add_child(moon)
 
 
@@ -140,7 +135,7 @@ func _build_rings() -> void:
 	var radius := float(_data.get("radius", 0.73))
 	var inner_radius := radius * 1.28
 	var outer_radius := radius * 2.05
-	var segments := 112
+	var segments := 128
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
@@ -178,7 +173,7 @@ func _build_rings() -> void:
 	ring_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
 	var ring_material := StandardMaterial3D.new()
-	ring_material.albedo_color = Color(0.82, 0.72, 0.54, 0.82)
+	ring_material.albedo_color = Color(0.82, 0.72, 0.54, 0.84)
 	ring_material.roughness = 0.95
 	ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring_material.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -188,4 +183,28 @@ func _build_rings() -> void:
 	rings.name = "SaturnRings"
 	rings.mesh = ring_mesh
 	rings.rotation_degrees = Vector3(26.0, 0.0, 9.0)
+	rings.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(rings)
+
+
+func _build_sun_glow() -> void:
+	var radius := float(_data.get("radius", 1.18))
+	var halo_mesh := SphereMesh.new()
+	halo_mesh.radius = radius * 1.18
+	halo_mesh.height = radius * 2.36
+	halo_mesh.radial_segments = 40
+	halo_mesh.rings = 24
+
+	var halo_material := StandardMaterial3D.new()
+	halo_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	halo_material.albedo_color = Color(1.0, 0.34, 0.06, 0.16)
+	halo_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	halo_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	halo_material.cull_mode = BaseMaterial3D.CULL_FRONT
+
+	var halo := MeshInstance3D.new()
+	halo.name = "SunCorona"
+	halo.mesh = halo_mesh
+	halo.material_override = halo_material
+	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(halo)
