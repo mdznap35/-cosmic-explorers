@@ -41,6 +41,9 @@ jobs:
       - name: Validate catalog and orbital math
         run: godot --headless --path . --script res://tests/validate_catalog.gd
 
+      - name: Validate mission questions and source provenance
+        run: godot --headless --path . --script res://tests/validate_missions.gd
+
       - name: Run main-scene smoke test
         run: godot --headless --path . --quit-after 5
 
@@ -63,7 +66,13 @@ jobs:
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           sdkmanager --sdk_root="$SDK_ROOT" --licenses < <(yes)
-          sdkmanager --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-35" "build-tools;35.0.1"
+          sdkmanager --sdk_root="$SDK_ROOT" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.1" \
+            "cmdline-tools;latest" \
+            "cmake;3.10.2.4988404" \
+            "ndk;28.1.13356709"
 
       - name: Create temporary debug signing key
         shell: bash
@@ -96,6 +105,14 @@ jobs:
           godot --headless --path . --export-debug "Android" build/CosmicExplorers-Android-debug.apk
           test -s build/CosmicExplorers-Android-debug.apk
           unzip -t build/CosmicExplorers-Android-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          "$AAPT" dump badging build/CosmicExplorers-Android-debug.apk | tee build/apk-badging.txt
+          grep -F "package: name='org.mdznap35.cosmicexplorers'" build/apk-badging.txt
+          "$AAPT" dump permissions build/CosmicExplorers-Android-debug.apk | tee build/apk-permissions.txt
+          if grep -q "android.permission.INTERNET" build/apk-permissions.txt; then
+            echo "Unexpected internet permission in the offline-first child app." >&2
+            exit 1
+          fi
           sha256sum build/CosmicExplorers-Android-debug.apk
 
       - name: Upload installable debug APK
