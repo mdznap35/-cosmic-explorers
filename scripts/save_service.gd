@@ -1,7 +1,7 @@
 extends RefCounted
 
 const SAVE_PATH := "user://cosmic_explorers_progress.json"
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 
 
 static func _default_state() -> Dictionary:
@@ -11,7 +11,8 @@ static func _default_state() -> Dictionary:
 		"missions_completed": 0,
 		"best_mission_score": 0,
 		"last_mission_score": 0,
-		"guided_expeditions_completed": 0
+		"guided_expeditions_completed": 0,
+		"guided_expedition_stage": 0
 	}
 
 
@@ -40,6 +41,7 @@ static func _load_state() -> Dictionary:
 	state["best_mission_score"] = maxi(0, int(parsed.get("best_mission_score", 0)))
 	state["last_mission_score"] = maxi(0, int(parsed.get("last_mission_score", 0)))
 	state["guided_expeditions_completed"] = maxi(0, int(parsed.get("guided_expeditions_completed", 0)))
+	state["guided_expedition_stage"] = clampi(int(parsed.get("guided_expedition_stage", 0)), 0, 8)
 	return state
 
 
@@ -96,8 +98,20 @@ static func get_guided_expedition_count() -> int:
 	return maxi(0, int(_load_state().get("guided_expeditions_completed", 0)))
 
 
+static func get_guided_expedition_stage() -> int:
+	return clampi(int(_load_state().get("guided_expedition_stage", 0)), 0, 8)
+
+
+static func set_guided_expedition_stage(stage_index: int) -> int:
+	var state := _load_state()
+	state["guided_expedition_stage"] = clampi(stage_index, 0, 8)
+	_write_state(state)
+	return int(state["guided_expedition_stage"])
+
+
 static func record_guided_expedition_completed() -> int:
 	var state := _load_state()
 	state["guided_expeditions_completed"] = maxi(0, int(state.get("guided_expeditions_completed", 0))) + 1
+	state["guided_expedition_stage"] = 0
 	_write_state(state)
 	return get_guided_expedition_count()
