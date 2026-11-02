@@ -5,8 +5,9 @@ const SolarSystemView = preload("res://scripts/solar_system_view.gd")
 const UIController = preload("res://scripts/ui_controller.gd")
 const SaveService = preload("res://scripts/save_service.gd")
 
-var _solar_view: Node3D
-var _ui: Control
+# Keep these untyped: their methods are supplied by the attached project scripts.
+var _solar_view
+var _ui
 var _discovered: Array[String] = []
 
 

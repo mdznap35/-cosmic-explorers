@@ -61,12 +61,12 @@ jobs:
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           sdkmanager --sdk_root="$SDK_ROOT" --licenses < <(yes)
-          sdkmanager --sdk_root="$SDK_ROOT"             "platform-tools"             "platforms;android-35"             "build-tools;35.0.1"
+          sdkmanager --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-35" "build-tools;35.0.1"
 
       - name: Create temporary debug signing key
         shell: bash
         run: |
-          keytool -genkeypair -v             -keystore "$RUNNER_TEMP/cosmic-debug.keystore"             -storepass android             -alias androiddebugkey             -keypass android             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/cosmic-debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Configure Godot Android export paths
         shell: bash
@@ -78,6 +78,8 @@ jobs:
           [resource]
           export/android/android_sdk_path = "$ANDROID_HOME"
           export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/adb = "$ANDROID_HOME/platform-tools/adb"
+          export/android/jarsigner = "$JAVA_HOME/bin/jarsigner"
           export/android/debug_keystore = "$RUNNER_TEMP/cosmic-debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
