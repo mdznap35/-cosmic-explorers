@@ -5,6 +5,7 @@ const PLANET_SHADER = preload("res://shaders/planet_surface.gdshader")
 var _data: Dictionary = {}
 var _surface: MeshInstance3D
 var _moon_pivot: Node3D
+var _motion_enabled := true
 
 
 func configure(data: Dictionary) -> void:
@@ -23,10 +24,16 @@ func configure(data: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
+	if not _motion_enabled:
+		return
 	if _surface != null:
 		_surface.rotate_y(float(_data.get("spin_speed", 0.1)) * delta)
 	if _moon_pivot != null:
 		_moon_pivot.rotate_y(delta * 0.72)
+
+
+func set_motion_enabled(enabled: bool) -> void:
+	_motion_enabled = enabled
 
 
 func _build_surface() -> void:
