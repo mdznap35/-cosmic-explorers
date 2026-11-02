@@ -23,6 +23,13 @@ func _initialize() -> void:
 		if not (shader_resource is Shader):
 			errors.append("Visual shader did not load as a Shader resource: " + shader_path)
 
+	# Guard against misspelled shader properties: headless loading is not a GPU compile.
+	var planet_shader_source := FileAccess.get_file_as_string("res://shaders/planet_surface.gdshader")
+	if planet_shader_source.contains("trough"):
+		errors.append("Planet surface shader contains an unexpected 'trough' identifier.")
+	if not planet_shader_source.contains("float rough = 0.88;") or not planet_shader_source.contains("ROUGHNESS = rough;"):
+		errors.append("Planet surface shader roughness declaration and output must stay connected.")
+
 	var earth := PlanetBody.new()
 	earth.configure(PlanetCatalog.get_planet("earth"))
 	if earth.find_child("EarthAtmosphere", true, false) == null:

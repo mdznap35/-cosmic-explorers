@@ -7,7 +7,7 @@
 - PlanetBody — creates a planet mesh, specialized procedural surface material, tap collision shape, and layered body-specific visual objects such as Earth's cloud/atmosphere shells and Moon, Saturn's ring shader, and the Sun's corona shells.
 - PlanetCatalog — data-only definitions. New bodies and localizations should be data additions, not renderer rewrites.
 - UIController — builds the screen-space interface and emits intent signals; it does not own astronomy or save logic.
-- SaveService — persists only discovered planet IDs in a versioned JSON file under Godot's user data directory.
+- SaveService — persists discovered planet IDs, quiz completion and scores, and guided-expedition completions in a versioned JSON file under Godot's local user data directory.
 
 ## Rendering decisions
 

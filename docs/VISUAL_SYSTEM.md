@@ -11,6 +11,7 @@ The interface uses a calm observatory identity: deep-space navy surfaces, restra
 3. World navigation — a horizontal, touch-friendly selector for the Sun and eight planets. Discovered planets receive a subtle completion mark; the selected body receives a gold focus treatment.
 4. Discovery station — selected body name, English identifier, body classification, one-sentence headline, concise description, one quick fact, and an expandable fact layer.
 5. Scene hint — a compact instruction for drag rotation and tap selection.
+6. Guided discovery — an optional, one-clue-at-a-time path through all eight planets, with positive feedback and no timer or penalty.
 
 ## Interface design tokens
 
