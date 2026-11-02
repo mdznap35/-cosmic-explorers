@@ -12,6 +12,7 @@ const TEXT_MAIN := Color(0.94, 0.97, 1.0)
 const TEXT_MUTED := Color(0.66, 0.75, 0.88)
 
 var _catalog: Array = []
+var _sun_data: Dictionary = {}
 var _discovered: Array = []
 var _selected_id := "earth"
 var _details_open := false
@@ -25,8 +26,9 @@ var _progress_label: Label
 var _details_button: Button
 
 
-func configure(planets: Array, discovered: Array) -> void:
+func configure(planets: Array, discovered: Array, sun_data: Dictionary = {}) -> void:
 	_catalog = planets.duplicate(true)
+	_sun_data = sun_data.duplicate(true)
 	_discovered = discovered.duplicate()
 
 
@@ -155,7 +157,12 @@ func _build_planet_navigation() -> void:
 	row.add_theme_constant_override("separation", 7)
 	scroll.add_child(row)
 
-	for planet in _catalog:
+	var all_bodies: Array = []
+	if not _sun_data.is_empty():
+		all_bodies.append(_sun_data)
+	all_bodies.append_array(_catalog)
+
+	for planet in all_bodies:
 		var planet_id := str(planet["id"])
 		var button := _new_button(str(planet["name"]), false, Vector2(86, 52))
 		button.tooltip_text = str(planet["english"])
@@ -167,10 +174,13 @@ func _build_planet_navigation() -> void:
 
 func show_planet(planet_id: String, discovered: Array = []) -> void:
 	var selected: Dictionary = {}
-	for planet in _catalog:
-		if str(planet.get("id", "")) == planet_id:
-			selected = planet
-			break
+	if planet_id == "sun":
+		selected = _sun_data.duplicate(true)
+	else:
+		for planet in _catalog:
+			if str(planet.get("id", "")) == planet_id:
+				selected = planet
+				break
 	if selected.is_empty():
 		return
 
@@ -191,10 +201,13 @@ func show_planet(planet_id: String, discovered: Array = []) -> void:
 func _toggle_details() -> void:
 	_details_open = not _details_open
 	var selected: Dictionary = {}
-	for planet in _catalog:
-		if str(planet.get("id", "")) == _selected_id:
-			selected = planet
-			break
+	if _selected_id == "sun":
+		selected = _sun_data.duplicate(true)
+	else:
+		for planet in _catalog:
+			if str(planet.get("id", "")) == _selected_id:
+				selected = planet
+				break
 	if selected.is_empty():
 		return
 	_refresh_facts(selected)

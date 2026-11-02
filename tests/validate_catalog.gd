@@ -36,6 +36,14 @@ func _initialize() -> void:
 		if not (planet.get("facts", []) is Array) or planet.get("facts", []).size() < 2:
 			errors.append(planet_id + " needs at least two learning facts.")
 
+	var sun := PlanetCatalog.get_sun()
+	if sun.is_empty() or str(sun.get("id", "")) != "sun":
+		errors.append("The Sun must be a separate star entry.")
+	if float(sun.get("distance", -1.0)) != 0.0:
+		errors.append("The Sun must be at the visual origin.")
+	if sun.get("facts", []).size() < 2:
+		errors.append("The Sun needs its own learning facts.")
+
 	var earth := PlanetCatalog.get_planet("earth")
 	if earth.is_empty():
 		errors.append("Earth must exist in the catalog.")
