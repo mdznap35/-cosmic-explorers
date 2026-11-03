@@ -93,6 +93,7 @@ func cancel_active_mission() -> bool:
 func record_event(event_id: String, amount: int = 1) -> Dictionary:
 	if not _initialized:
 		return _not_ready_result()
+	var completed_mission_id := _mission_director.get_active_mission_id()
 	var result: Dictionary = _mission_director.record_event(event_id, amount)
 	if not bool(result.get("accepted", false)):
 		result["persisted"] = false
@@ -100,23 +101,14 @@ func record_event(event_id: String, amount: int = 1) -> Dictionary:
 
 	var unlocked_reward_ids: Array[String] = []
 	if bool(result.get("mission_completed", false)) and bool(result.get("first_completion", false)):
-		var completed_mission_id := _mission_director.get_active_mission_id()
-		# MissionDirector clears the active ID on completion; use its result context,
-		# which is supplied by the captured current mission below.
-		completed_mission_id = str(result.get("mission_id", completed_mission_id))
-		if completed_mission_id.is_empty():
-			completed_mission_id = _find_completed_mission_for_rewards(result)
-		if not completed_mission_id.is_empty():
-			unlocked_reward_ids = _reward_service.unlock_for_mission(completed_mission_id)
+		unlocked_reward_ids = _reward_service.unlock_for_mission(completed_mission_id)
 
+	result["mission_id"] = completed_mission_id
 	result["unlocked_reward_ids"] = unlocked_reward_ids
 	var persisted := _persist_runtime()
 	result["persisted"] = persisted
 	if bool(result.get("mission_completed", false)):
-		mission_completed.emit(
-			str(result.get("mission_id", "")),
-			unlocked_reward_ids
-		)
+		mission_completed.emit(completed_mission_id, unlocked_reward_ids)
 	return result
 
 
@@ -170,12 +162,6 @@ func _on_objective_progressed(
 
 func _on_reward_unlocked(reward_id: String) -> void:
 	reward_unlocked.emit(reward_id)
-
-
-func _find_completed_mission_for_rewards(_result: Dictionary) -> String:
-	# Mission completion events are emitted synchronously by MissionDirector.
-	# The current mission ID is captured by record_event before progression changes it.
-	return ""
 
 
 func _not_ready_result() -> Dictionary:
