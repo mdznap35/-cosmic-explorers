@@ -6,6 +6,8 @@ uniform vec4 accent_color : source_color = vec4(0.8, 0.8, 0.8, 1.0);
 uniform int surface_type = 0;
 uniform float glow_strength = 0.0;
 uniform float animation_time = 0.0;
+uniform sampler2D albedo_texture : source_color, filter_linear_mipmap, repeat_enable;
+uniform bool use_albedo_texture = false;
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -162,6 +164,13 @@ void fragment() {
 		EMISSION = color * glow_strength;
 		rough = 0.55;
 		specular_level = 0.08;
+	}
+
+	if (use_albedo_texture) {
+		vec3 mapped_color = texture(albedo_texture, uv).rgb;
+		// Preserve a restrained amount of the authored procedural treatment over real maps.
+		float procedural_mix = surface_type == 8 ? 0.16 : 0.12;
+		color = mix(mapped_color, color, procedural_mix);
 	}
 
 	ALBEDO = color;

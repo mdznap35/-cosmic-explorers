@@ -23,6 +23,36 @@ jobs:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Check out pinned planetary texture source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Sanghel/solar-system-3d
+          ref: 47c8bbc6b63f4c6c2310911238c2c4b6bff6d20b
+          path: .asset-source/solar-system-3d
+          sparse-checkout: |
+            public/textures
+          sparse-checkout-cone-mode: false
+
+      - name: Stage licensed planetary maps for offline runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE=".asset-source/solar-system-3d/public/textures"
+          DEST="assets/planetary_textures"
+          mkdir -p "$DEST"
+          for body in sun mercury venus earth mars jupiter saturn uranus neptune; do
+            test -s "$SOURCE/$body.jpg"
+            cp "$SOURCE/$body.jpg" "$DEST/$body.jpg"
+          done
+          cp "$SOURCE/README.md" "$DEST/SOURCE_ATTRIBUTION.md"
+          (
+            cd "$DEST"
+            sha256sum sun.jpg mercury.jpg venus.jpg earth.jpg mars.jpg jupiter.jpg saturn.jpg uranus.jpg neptune.jpg > SHA256SUMS
+          )
+          test "$(find "$DEST" -maxdepth 1 -name '*.jpg' | wc -l)" -eq 9
+          cat "$DEST/SHA256SUMS"
+          rm -rf .asset-source
+
       - name: Install Godot 4.7.2 and matching export templates
         uses: SolarLabyrinth/Action-Setup-Godot@d9f6c080367bc8e35dd623433be29e9f59f53a87 # v3
         with:

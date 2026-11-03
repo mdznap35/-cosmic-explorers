@@ -5,6 +5,17 @@ const SATURN_RING_SHADER = preload("res://shaders/saturn_rings.gdshader")
 const EARTH_ATMOSPHERE_SHADER = preload("res://shaders/earth_atmosphere.gdshader")
 const EARTH_CLOUDS_SHADER = preload("res://shaders/earth_clouds.gdshader")
 const SUN_CORONA_SHADER = preload("res://shaders/sun_corona.gdshader")
+const BODY_TEXTURE_PATHS := {
+	"sun": "res://assets/planetary_textures/sun.jpg",
+	"mercury": "res://assets/planetary_textures/mercury.jpg",
+	"venus": "res://assets/planetary_textures/venus.jpg",
+	"earth": "res://assets/planetary_textures/earth.jpg",
+	"mars": "res://assets/planetary_textures/mars.jpg",
+	"jupiter": "res://assets/planetary_textures/jupiter.jpg",
+	"saturn": "res://assets/planetary_textures/saturn.jpg",
+	"uranus": "res://assets/planetary_textures/uranus.jpg",
+	"neptune": "res://assets/planetary_textures/neptune.jpg"
+}
 
 var _data: Dictionary = {}
 var _surface: MeshInstance3D
@@ -104,6 +115,16 @@ func _make_surface_material(body_data: Dictionary) -> ShaderMaterial:
 	material.set_shader_parameter("accent_color", accent)
 	material.set_shader_parameter("glow_strength", 1.35 if body_id == "sun" else 0.0)
 	material.set_shader_parameter("animation_time", _animation_clock)
+
+	# Prefer the pinned, licensed equirectangular map when the art pipeline staged it.
+	# Keep the procedural material as a safe fallback for local editor sessions.
+	var texture_path := str(BODY_TEXTURE_PATHS.get(body_id, ""))
+	var body_texture: Texture2D = null
+	if not texture_path.is_empty() and ResourceLoader.exists(texture_path):
+		body_texture = load(texture_path) as Texture2D
+	material.set_shader_parameter("use_albedo_texture", body_texture != null)
+	if body_texture != null:
+		material.set_shader_parameter("albedo_texture", body_texture)
 	return material
 
 

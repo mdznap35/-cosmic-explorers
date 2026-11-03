@@ -3,6 +3,18 @@ extends SceneTree
 const PlanetBody = preload("res://scripts/planet_body.gd")
 const PlanetCatalog = preload("res://scripts/planet_catalog.gd")
 
+const PLANET_TEXTURES := [
+	"res://assets/planetary_textures/sun.jpg",
+	"res://assets/planetary_textures/mercury.jpg",
+	"res://assets/planetary_textures/venus.jpg",
+	"res://assets/planetary_textures/earth.jpg",
+	"res://assets/planetary_textures/mars.jpg",
+	"res://assets/planetary_textures/jupiter.jpg",
+	"res://assets/planetary_textures/saturn.jpg",
+	"res://assets/planetary_textures/uranus.jpg",
+	"res://assets/planetary_textures/neptune.jpg"
+]
+
 const SHADERS := [
 	"res://shaders/planet_surface.gdshader",
 	"res://shaders/saturn_rings.gdshader",
@@ -14,6 +26,18 @@ const SHADERS := [
 
 func _initialize() -> void:
 	var errors: Array[String] = []
+
+	for texture_path in PLANET_TEXTURES:
+		if not ResourceLoader.exists(texture_path):
+			errors.append("Missing staged planetary texture: " + texture_path)
+			continue
+		var texture_resource: Resource = load(texture_path)
+		if not (texture_resource is Texture2D):
+			errors.append("Planetary map did not load as Texture2D: " + texture_path)
+
+	var surface_shader_source := FileAccess.get_file_as_string("res://shaders/planet_surface.gdshader")
+	if not surface_shader_source.contains("uniform sampler2D albedo_texture") or not surface_shader_source.contains("use_albedo_texture"):
+		errors.append("Planet surface shader must expose the real-map texture controls.")
 
 	for shader_path in SHADERS:
 		if not ResourceLoader.exists(shader_path):

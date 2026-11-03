@@ -59,6 +59,10 @@ The scene compresses orbital distances and exaggerates body sizes to fit a phone
 The layout is authored against the 16:9 landscape design viewport and uses proportional panel anchors. This is a design baseline, not proof of device fit. Every release must be checked on the target Android phone for Arabic shaping, clipping, touch areas, safe areas, and frame pacing. Device acceptance remains open until a real-device test is recorded.
 
 
+## Round 4 foundation — real planetary maps
+
+The visual pipeline now stages nine equirectangular planetary maps from a pinned, attribution-licensed source commit during CI. The maps are imported into the offline APK and sampled by the existing planet surface material; procedural shading remains a fallback and a restrained detail overlay. The runtime does not fetch assets from the network. The Moon remains on the procedural fallback until a separately verified map source is added.
+
 ## Round 2 — layered planetary materials
 
 - Mercury and the Moon use procedural impact-basin and crater-rim fields.
