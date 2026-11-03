@@ -93,7 +93,7 @@ func cancel_active_mission() -> bool:
 func record_event(event_id: String, amount: int = 1) -> Dictionary:
 	if not _initialized:
 		return _not_ready_result()
-	var completed_mission_id := _mission_director.get_active_mission_id()
+	var completed_mission_id: String = _mission_director.get_active_mission_id()
 	var result: Dictionary = _mission_director.record_event(event_id, amount)
 	if not bool(result.get("accepted", false)):
 		result["persisted"] = false
