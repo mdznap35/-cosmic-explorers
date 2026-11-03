@@ -66,12 +66,41 @@ func _run_sana_hub_tests() -> void:
 	if not resumed_hub.get_visited_station_ids().has("bridge"):
 		_errors.append("A new hub instance must restore visited stations.")
 
+	if not resumed_hub.interact_station("workshop"):
+		_errors.append("The workshop should launch the CubeSat builder.")
+	if resumed_hub.select_cubesat_part("science_camera"):
+		_errors.append("The CubeSat builder must reject an out-of-order component.")
+	if resumed_hub.get_cubesat_progress() != 0:
+		_errors.append("A rejected CubeSat component must not change progress.")
+
+	var cubesat_parts := [
+		"central_bus",
+		"solar_panels",
+		"communication_antenna",
+		"science_camera"
+	]
+	for part_id in cubesat_parts:
+		if not resumed_hub.select_cubesat_part(part_id):
+			_errors.append("The expected CubeSat component should be accepted: " + part_id)
+
+	if resumed_hub.get_cubesat_progress() != 4 or not resumed_hub.is_cubesat_built():
+		_errors.append("The CubeSat should be complete after all four components are installed.")
+
 	resumed_hub.queue_free()
+	await process_frame
+
+	var final_hub = HubScene.instantiate()
+	final_hub.enable_gameplay_bridge = false
+	root.add_child(final_hub)
+	await process_frame
+	if not final_hub.is_cubesat_built() or final_hub.get_cubesat_progress() != 4:
+		_errors.append("A fresh hub instance must restore the completed CubeSat.")
+	final_hub.queue_free()
 	await process_frame
 	_remove_test_save()
 
 	if _errors.is_empty():
-		print("PASS: Sana Hub scene, five stations, relay ordering, gentle retry, local persistence, and restore.")
+		print("PASS: Sana Hub scene, five stations, Relay routing, CubeSat assembly, gentle retry, local persistence, and restore.")
 		quit(0)
 		return
 
