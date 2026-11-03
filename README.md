@@ -121,3 +121,11 @@
 - Idempotent unlock ledger for non-repeatable rewards: scripts/reward_service.gd
 - Integration test for mission completion, replay, optional objectives, reward uniqueness, and state round-trip: tests/validate_mission_runtime.gd
 - GitHub Actions runs the mission runtime test before the main-scene smoke test.
+
+
+### Mission progression, rewards and local saves
+- Event-driven mission objectives and replay policy: `scripts/mission_director.gd`.
+- Idempotent local reward ledger: `scripts/reward_service.gd`.
+- Save schema v5 keeps legacy progress and adds mission/reward snapshots: `scripts/save_service.gd`.
+- Integration and migration checks run in GitHub Actions before the main-scene smoke test.
+- Current implementation is a tested systems foundation; the gameplay UI and 3D scenes are still pending.
