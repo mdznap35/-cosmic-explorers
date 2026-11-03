@@ -14,10 +14,13 @@ func _run_content_registry_tests() -> void:
 	if int(bundle.get("schema_version", 0)) != ContentRegistry.SCHEMA_VERSION:
 		errors.append("The content bundle schema version is incorrect.")
 	var chapter_entries: Variant = bundle.get("chapters", [])
+	var character_entries: Variant = bundle.get("characters", [])
 	var mission_entries: Variant = bundle.get("missions", [])
 	var science_entries: Variant = bundle.get("science_cards", [])
 	var dialogue_entries: Variant = bundle.get("dialogues", [])
 	var reward_entries: Variant = bundle.get("rewards", [])
+	if not (character_entries is Array) or character_entries.size() != 3:
+		errors.append("Expected three playable core character profiles.")
 	if not (chapter_entries is Array) or chapter_entries.size() != 3:
 		errors.append("Expected the prologue, Moon, and Mars chapters.")
 	if not (mission_entries is Array) or mission_entries.size() != 4:
@@ -47,6 +50,12 @@ func _run_content_registry_tests() -> void:
 	var broken_dialogue_errors: Array[String] = ContentRegistry.validate_bundle(broken_dialogue_bundle)
 	if not _contains_fragment(broken_dialogue_errors, "points to missing node"):
 		errors.append("The validator must reject broken dialogue links.")
+
+	var broken_character_bundle: Dictionary = bundle.duplicate(true)
+	broken_character_bundle["missions"][0]["primary_character_id"] = "character.unknown"
+	var broken_character_errors: Array[String] = ContentRegistry.validate_bundle(broken_character_bundle)
+	if not _contains_fragment(broken_character_errors, "unknown primary character"):
+		errors.append("The validator must reject missions assigned to unknown characters.")
 
 	if not errors.is_empty():
 		for error in errors:
