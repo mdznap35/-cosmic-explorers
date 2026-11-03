@@ -566,6 +566,13 @@ func _build_hud() -> void:
 	var subtitle := _new_label("تجوّل بين المحطات الخمس، واقترب من أي محطة لتتفاعل معها.", 15, Color(0.68, 0.82, 0.94))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(subtitle)
+	var return_button := _new_button(
+		"العودة إلى خريطة الكواكب",
+		Callable(self, "_return_to_solar_system"),
+		Vector2(0.0, 42.0)
+	)
+	return_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	header_content.add_child(return_button)
 
 	var status_panel := PanelContainer.new()
 	status_panel.anchor_left = 0.56
@@ -658,6 +665,10 @@ func _new_button(caption: String, callback: Callable, minimum_size: Vector2) -> 
 
 func _on_interaction_button_pressed() -> void:
 	interact_with_nearest_station()
+
+
+func _return_to_solar_system() -> void:
+	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
 
 func _update_nearby_station() -> void:
