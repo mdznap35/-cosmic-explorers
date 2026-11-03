@@ -87,6 +87,16 @@ func _run_save_migration_tests() -> void:
 	if not SaveService._write_state(original_state):
 		errors.append("The test must restore the save file that existed before it ran.")
 
+	if errors.is_empty():
+		print("PASS: save v1-v5 migration, legacy progress preservation, gameplay snapshot persistence, and disk round-trip.")
+		quit(0)
+		return
+
+	for error in errors:
+		push_error(error)
+	quit(1)
+
+
 func _deep_equal(left: Variant, right: Variant) -> bool:
 	if typeof(left) == TYPE_DICTIONARY and typeof(right) == TYPE_DICTIONARY:
 		if left.size() != right.size():
@@ -110,12 +120,3 @@ func _deep_equal(left: Variant, right: Variant) -> bool:
 		return is_equal_approx(float(left), float(right))
 
 	return left == right
-
-	if errors.is_empty():
-		print("PASS: save v1-v5 migration, legacy progress preservation, gameplay snapshot persistence, and disk round-trip.")
-		quit(0)
-		return
-
-	for error in errors:
-		push_error(error)
-	quit(1)
