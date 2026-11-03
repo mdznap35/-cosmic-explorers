@@ -41,6 +41,13 @@ const CUBESAT_LABELS := {
 	"communication_antenna": "هوائي الاتصال",
 	"science_camera": "كاميرا الملاحظة"
 }
+const LULU_STAR_POSITIONS := {
+	"star_bridge": Vector3(0.9, 0.92, -1.8),
+	"star_workshop": Vector3(-8.7, 0.92, 0.1),
+	"star_lab": Vector3(-4.8, 1.12, 0.4),
+	"star_observatory": Vector3(5.6, 0.92, -4.1),
+	"star_corridor": Vector3(8.7, 0.92, 3.8)
+}
 const STATION_DATA := {
 	"bridge": {
 		"title": "جسر القيادة",
@@ -85,8 +92,11 @@ var _relay_buttons: Array[Button] = []
 var _cubesat_progress_label: Label
 var _cubesat_feedback_label: Label
 var _cubesat_buttons: Array[Button] = []
+var _lulu_hunt_feedback_label: Label
 
 var _stations: Dictionary = {}
+var _secret_star_nodes: Dictionary = {}
+var _nearby_secret_star_id := ""
 var _touch_keys: Dictionary = {
 	"up": false,
 	"down": false,
@@ -98,6 +108,7 @@ var _modal_active := false
 var _relay_progress := 0
 var _relay_feedback := ""
 var _cubesat_display_added := false
+var _lulu_hunt_active := false
 var _state: Dictionary = {}
 
 var _interaction_router
@@ -208,6 +219,51 @@ func is_cubesat_built() -> bool:
 	return bool(_state.get("cubesat_built", false))
 
 
+func get_lulu_star_ids() -> PackedStringArray:
+	return PackedStringArray(LULU_STAR_POSITIONS.keys())
+
+
+func get_lulu_found_star_ids() -> PackedStringArray:
+	return PackedStringArray(_state.get("lulu_found_star_ids", []))
+
+
+func is_lulu_hunt_completed() -> bool:
+	return bool(_state.get("lulu_hunt_completed", false))
+
+
+func start_lulu_hunt() -> bool:
+	if is_lulu_hunt_completed():
+		_show_info_panel("أسرار لولو", "لقد عثرت على كل النجوم الخمس! عاد ضوؤها إلى خريطة السفينة.", "يمكنك العودة إلى الاستكشاف متى شئت.")
+		return true
+	_lulu_hunt_active = true
+	_show_lulu_hunt_panel()
+	return true
+
+
+func collect_lulu_star(star_id: String) -> bool:
+	if not _lulu_hunt_active or not LULU_STAR_POSITIONS.has(star_id):
+		return false
+	var found_ids: Array = _state.get("lulu_found_star_ids", [])
+	if found_ids.has(star_id):
+		return false
+	found_ids.append(star_id)
+	_state["lulu_found_star_ids"] = found_ids
+	if _secret_star_nodes.has(star_id):
+		var star: Node3D = _secret_star_nodes[star_id]
+		if is_instance_valid(star):
+			star.queue_free()
+		_secret_star_nodes.erase(star_id)
+	if found_ids.size() >= LULU_STAR_POSITIONS.size():
+		_state["lulu_hunt_completed"] = true
+		_lulu_hunt_active = false
+		if is_instance_valid(_lulu_hunt_feedback_label):
+			_lulu_hunt_feedback_label.text = "وجدت كل النجوم! أحسنت يا مستكشف!"
+	_save_state()
+	if is_instance_valid(_lulu_hunt_feedback_label) and not is_lulu_hunt_completed():
+		_refresh_lulu_hunt_panel()
+	return true
+
+
 func start_cubesat_activity() -> bool:
 	_show_cubesat_panel()
 	return true
@@ -271,6 +327,8 @@ func submit_relay_node(relay_id: String) -> bool:
 
 
 func interact_with_nearest_station() -> bool:
+	if _lulu_hunt_active and not _nearby_secret_star_id.is_empty():
+		return collect_lulu_star(_nearby_secret_star_id)
 	if _nearby_station_id.is_empty():
 		return false
 	return interact_station(_nearby_station_id)
@@ -293,6 +351,9 @@ func interact_station(station_id: String) -> bool:
 		return true
 	if station_id == "workshop":
 		start_cubesat_activity()
+		return true
+	if station_id == "lulu_nook":
+		start_lulu_hunt()
 		return true
 
 	var station: Dictionary = STATION_DATA[station_id]
@@ -378,6 +439,52 @@ func _build_world() -> void:
 	_create_station("laboratory", Vector3(-3.3, 0.0, -4.8), Color(0.38, 0.88, 0.74))
 	_create_station("observatory", Vector3(4.0, 0.0, -4.8), Color(0.63, 0.62, 1.0))
 	_create_station("lulu_nook", Vector3(8.0, 0.0, -2.5), Color(0.94, 0.72, 0.42))
+	_build_lulu_secret_stars()
+
+
+func _build_lulu_secret_stars() -> void:
+	_secret_star_nodes.clear()
+	var found_ids: Array = _state.get("lulu_found_star_ids", [])
+	for star_id in LULU_STAR_POSITIONS:
+		if found_ids.has(star_id):
+			continue
+		var star := Node3D.new()
+		star.name = str(star_id)
+		star.position = LULU_STAR_POSITIONS[star_id]
+		add_child(star)
+
+		var core := MeshInstance3D.new()
+		var core_mesh := SphereMesh.new()
+		core_mesh.radius = 0.15
+		core_mesh.height = 0.30
+		core.mesh = core_mesh
+		core.material_override = _make_material(Color(1.0, 0.84, 0.34), Color(0.92, 0.52, 0.10), 0.2)
+		star.add_child(core)
+
+		var vertical_ray := MeshInstance3D.new()
+		var vertical_mesh := BoxMesh.new()
+		vertical_mesh.size = Vector3(0.055, 0.48, 0.055)
+		vertical_ray.mesh = vertical_mesh
+		vertical_ray.material_override = _make_material(Color(1.0, 0.94, 0.67), Color(0.96, 0.70, 0.18), 0.25)
+		star.add_child(vertical_ray)
+
+		var horizontal_ray := MeshInstance3D.new()
+		var horizontal_mesh := BoxMesh.new()
+		horizontal_mesh.size = Vector3(0.48, 0.055, 0.055)
+		horizontal_ray.mesh = horizontal_mesh
+		horizontal_ray.material_override = vertical_ray.material_override
+		star.add_child(horizontal_ray)
+
+		var halo := MeshInstance3D.new()
+		var halo_mesh := TorusMesh.new()
+		halo_mesh.inner_radius = 0.22
+		halo_mesh.outer_radius = 0.26
+		halo.mesh = halo_mesh
+		halo.rotation_degrees.x = 90.0
+		halo.material_override = _make_material(Color(0.95, 0.70, 0.22), Color(0.90, 0.42, 0.08), 0.28)
+		star.add_child(halo)
+
+		_secret_star_nodes[star_id] = star
 
 
 func _add_star_field() -> void:
@@ -802,12 +909,29 @@ func _update_nearby_station() -> void:
 			closest_id = station_id
 
 	_nearby_station_id = closest_id
-	_interaction_button.disabled = closest_id.is_empty() or _modal_active
-	if closest_id.is_empty():
+	_nearby_secret_star_id = ""
+	var closest_star_distance := 1.45
+	if _lulu_hunt_active:
+		for star_id in _secret_star_nodes:
+			var star: Node3D = _secret_star_nodes[star_id]
+			if not is_instance_valid(star):
+				continue
+			var star_distance := _player.global_position.distance_to(star.global_position)
+			if star_distance < closest_star_distance:
+				closest_star_distance = star_distance
+				_nearby_secret_star_id = str(star_id)
+
+	_interaction_button.disabled = (_nearby_secret_star_id.is_empty() and closest_id.is_empty()) or _modal_active
+	if not _nearby_secret_star_id.is_empty():
+		_nearby_label.text = "وجدت نجمة مخفية! اضغط «اجمع النجمة»"
+		_interaction_button.text = "اجمع النجمة"
+	elif closest_id.is_empty():
 		_nearby_label.text = "اقترب من محطة لعرض التفاعل"
+		_interaction_button.text = "تفاعل"
 	else:
 		var station_data: Dictionary = STATION_DATA[closest_id]
 		_nearby_label.text = str(station_data.get("title", "")) + " — " + str(station_data.get("hint", ""))
+		_interaction_button.text = "تفاعل"
 
 
 func _show_info_panel(title_text: String, body_text: String, hint_text: String) -> void:
@@ -872,6 +996,32 @@ func _refresh_relay_panel() -> void:
 		_relay_progress_label.text = "اكتملت الرسالة"
 	for button in _relay_buttons:
 		button.disabled = finished
+
+
+func _show_lulu_hunt_panel() -> void:
+	_open_modal("أسرار لولو")
+	var intro := _new_label(
+		"لولو أخفى خمس نجوم صغيرة في السفينة! تجوّل وابحث عن لمعانها. اقترب من النجمة واضغط «اجمع النجمة».",
+		18,
+		Color(0.82, 0.90, 0.97)
+	)
+	intro.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(intro)
+
+	_lulu_hunt_feedback_label = _new_label("", 16, Color(1.0, 0.82, 0.42), true)
+	_lulu_hunt_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_lulu_hunt_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(_lulu_hunt_feedback_label)
+	_refresh_lulu_hunt_panel()
+	_add_close_button()
+
+
+func _refresh_lulu_hunt_panel() -> void:
+	if not is_instance_valid(_lulu_hunt_feedback_label):
+		return
+	var count := _state.get("lulu_found_star_ids", []).size()
+	_lulu_hunt_feedback_label.text = "النجوم التي وجدتها: %d / %d" % [count, LULU_STAR_POSITIONS.size()]
 
 
 func _show_cubesat_panel() -> void:
@@ -955,6 +1105,7 @@ func _add_close_button() -> void:
 func _close_modal() -> void:
 	_modal_active = false
 	_touch_keys = {"up": false, "down": false, "left": false, "right": false}
+	_lulu_hunt_feedback_label = null
 	_relay_buttons.clear()
 	_relay_progress_label = null
 	_relay_feedback_label = null
@@ -972,11 +1123,13 @@ func _update_status() -> void:
 	var visited_count := _state.get("visited_station_ids", []).size()
 	var relay_text := "رسالة مرقاب: مكتملة" if is_relay_completed() else "رسالة مرقاب: بانتظار التوصيل"
 	var cubesat_text := "القمر المصغّر: جاهز" if is_cubesat_built() else "القمر المصغّر: قيد البناء"
-	_status_label.text = "المحطات: %d / %d   •   %s   •   %s" % [
+	var lulu_text := "نجوم لولو: %d / %d" % [_state.get("lulu_found_star_ids", []).size(), LULU_STAR_POSITIONS.size()]
+	_status_label.text = "المحطات: %d / %d   •   %s   •   %s   •   %s" % [
 		visited_count,
 		STATION_IDS.size(),
 		relay_text,
-		cubesat_text
+		cubesat_text,
+		lulu_text
 	]
 
 
@@ -1038,7 +1191,9 @@ func _load_state() -> Dictionary:
 		"relay_progress": 0,
 		"relay_activity_completed": false,
 		"cubesat_step": 0,
-		"cubesat_built": false
+		"cubesat_built": false,
+		"lulu_found_star_ids": [],
+		"lulu_hunt_completed": false
 	}
 	if not FileAccess.file_exists(SAVE_PATH):
 		return defaults
@@ -1063,6 +1218,12 @@ func _load_state() -> Dictionary:
 		result["relay_progress"] = RELAY_SEQUENCE.size()
 	result["cubesat_step"] = clampi(int(parsed.get("cubesat_step", 0)), 0, CUBESAT_SEQUENCE.size())
 	result["cubesat_built"] = result["cubesat_step"] == CUBESAT_SEQUENCE.size()
+	var raw_lulu_stars: Variant = parsed.get("lulu_found_star_ids", [])
+	if raw_lulu_stars is Array:
+		for star_id in raw_lulu_stars:
+			if LULU_STAR_POSITIONS.has(str(star_id)) and not result["lulu_found_star_ids"].has(str(star_id)):
+				result["lulu_found_star_ids"].append(str(star_id))
+	result["lulu_hunt_completed"] = result["lulu_found_star_ids"].size() == LULU_STAR_POSITIONS.size()
 	return result
 
 
