@@ -43,15 +43,13 @@ func _run_sana_hub_tests() -> void:
 	if hub.get_relay_progress() != 0:
 		_errors.append("An incorrect relay selection must not change progress.")
 
-	var correct_route := ["moon_relay", "sana_station", "mars_rover"]
-	for relay_id in correct_route:
+	var first_relay_steps := ["moon_relay", "sana_station"]
+	for relay_id in first_relay_steps:
 		if not hub.submit_relay_node(relay_id):
-			_errors.append("The expected relay node should be accepted: " + relay_id)
+			_errors.append("The expected relay checkpoint should be accepted: " + relay_id)
 
-	if hub.get_relay_progress() != 3:
-		_errors.append("The completed relay should record all three steps.")
-	if not hub.is_relay_completed():
-		_errors.append("The completed relay activity must be persisted.")
+	if hub.get_relay_progress() != 2 or hub.is_relay_completed():
+		_errors.append("The relay should preserve its partial two-step checkpoint.")
 
 	hub.queue_free()
 	await process_frame
@@ -61,10 +59,14 @@ func _run_sana_hub_tests() -> void:
 	root.add_child(resumed_hub)
 	await process_frame
 
-	if not resumed_hub.is_relay_completed():
-		_errors.append("A new hub instance must restore relay completion.")
+	if resumed_hub.is_relay_completed() or resumed_hub.get_relay_progress() != 2:
+		_errors.append("A new hub instance must restore the partial Relay checkpoint.")
 	if not resumed_hub.get_visited_station_ids().has("bridge"):
 		_errors.append("A new hub instance must restore visited stations.")
+	if not resumed_hub.start_relay_activity() or not resumed_hub.submit_relay_node("mars_rover"):
+		_errors.append("The resumed Relay activity should accept the final destination.")
+	if not resumed_hub.is_relay_completed():
+		_errors.append("The Relay activity should be complete after the final destination.")
 
 	if not resumed_hub.interact_station("workshop"):
 		_errors.append("The workshop should launch the CubeSat builder.")
@@ -73,18 +75,12 @@ func _run_sana_hub_tests() -> void:
 	if resumed_hub.get_cubesat_progress() != 0:
 		_errors.append("A rejected CubeSat component must not change progress.")
 
-	var cubesat_parts := [
-		"central_bus",
-		"solar_panels",
-		"communication_antenna",
-		"science_camera"
-	]
-	for part_id in cubesat_parts:
+	var first_cubesat_steps := ["central_bus", "solar_panels"]
+	for part_id in first_cubesat_steps:
 		if not resumed_hub.select_cubesat_part(part_id):
-			_errors.append("The expected CubeSat component should be accepted: " + part_id)
-
-	if resumed_hub.get_cubesat_progress() != 4 or not resumed_hub.is_cubesat_built():
-		_errors.append("The CubeSat should be complete after all four components are installed.")
+			_errors.append("The expected CubeSat checkpoint should be accepted: " + part_id)
+	if resumed_hub.get_cubesat_progress() != 2:
+		_errors.append("The CubeSat should save its partial two-component checkpoint.")
 
 	resumed_hub.queue_free()
 	await process_frame
@@ -93,14 +89,33 @@ func _run_sana_hub_tests() -> void:
 	final_hub.enable_gameplay_bridge = false
 	root.add_child(final_hub)
 	await process_frame
+	if final_hub.get_cubesat_progress() != 2 or final_hub.is_cubesat_built():
+		_errors.append("A new hub instance must restore the partial CubeSat checkpoint.")
+	if not final_hub.interact_station("workshop"):
+		_errors.append("The workshop should reopen the CubeSat builder.")
+	for part_id in ["communication_antenna", "science_camera"]:
+		if not final_hub.select_cubesat_part(part_id):
+			_errors.append("The resumed CubeSat should accept: " + part_id)
 	if not final_hub.is_cubesat_built() or final_hub.get_cubesat_progress() != 4:
-		_errors.append("A fresh hub instance must restore the completed CubeSat.")
+		_errors.append("The CubeSat should complete after the final two components.")
+
 	final_hub.queue_free()
+	await process_frame
+
+	var restored_hub = HubScene.instantiate()
+	restored_hub.enable_gameplay_bridge = false
+	root.add_child(restored_hub)
+	await process_frame
+	if not restored_hub.is_cubesat_built() or restored_hub.get_cubesat_progress() != 4:
+		_errors.append("A fresh hub instance must restore the completed CubeSat.")
+	if not restored_hub.is_relay_completed() or restored_hub.get_relay_progress() != 3:
+		_errors.append("A fresh hub instance must restore the completed Relay activity.")
+	restored_hub.queue_free()
 	await process_frame
 	_remove_test_save()
 
 	if _errors.is_empty():
-		print("PASS: Sana Hub scene, five stations, Relay routing, CubeSat assembly, gentle retry, local persistence, and restore.")
+		print("PASS: Sana Hub scene, five stations, Relay and CubeSat checkpoints, gentle retry, local persistence, and multi-session restore.")
 		quit(0)
 		return
 
