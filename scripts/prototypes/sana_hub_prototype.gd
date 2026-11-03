@@ -1020,7 +1020,8 @@ func _show_lulu_hunt_panel() -> void:
 func _refresh_lulu_hunt_panel() -> void:
 	if not is_instance_valid(_lulu_hunt_feedback_label):
 		return
-	var count := _state.get("lulu_found_star_ids", []).size()
+	var found_ids: Array = _state.get("lulu_found_star_ids", [])
+	var count: int = found_ids.size()
 	_lulu_hunt_feedback_label.text = "النجوم التي وجدتها: %d / %d" % [count, LULU_STAR_POSITIONS.size()]
 
 
@@ -1120,10 +1121,13 @@ func _close_modal() -> void:
 func _update_status() -> void:
 	if not is_instance_valid(_status_label):
 		return
-	var visited_count := _state.get("visited_station_ids", []).size()
+	var visited_stations: Array = _state.get("visited_station_ids", [])
+	var visited_count: int = visited_stations.size()
+	var lulu_found_ids: Array = _state.get("lulu_found_star_ids", [])
+	var lulu_found_count: int = lulu_found_ids.size()
 	var relay_text := "رسالة مرقاب: مكتملة" if is_relay_completed() else "رسالة مرقاب: بانتظار التوصيل"
 	var cubesat_text := "القمر المصغّر: جاهز" if is_cubesat_built() else "القمر المصغّر: قيد البناء"
-	var lulu_text := "نجوم لولو: %d / %d" % [_state.get("lulu_found_star_ids", []).size(), LULU_STAR_POSITIONS.size()]
+	var lulu_text := "نجوم لولو: %d / %d" % [lulu_found_count, LULU_STAR_POSITIONS.size()]
 	_status_label.text = "المحطات: %d / %d   •   %s   •   %s   •   %s" % [
 		visited_count,
 		STATION_IDS.size(),
