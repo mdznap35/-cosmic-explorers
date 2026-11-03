@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "reem",
+      "name_ar": "ريم",
+      "role_ar": "مستكشفة ميدانية ومصوّرة الاكتشافات",
+      "description_ar": "تلاحظ التفاصيل، توثق المشاهد، وتقود أنشطة الاستكشاف الميداني.",
+      "controller_type": "humanoid_explorer",
+      "abilities": ["field_observation", "photo_documentation", "surface_scanning"],
+      "visual_profile": "reem_explorer",
+      "rig_status": "concept_and_rig_pending",
+      "selection_order": 1
+    },
+    {
+      "id": "salim",
+      "name_ar": "سليم",
+      "role_ar": "مهندس المركبات ومبرمج الروبوتات",
+      "description_ar": "يجرب النماذج، يصلح الأجهزة، ويبرمج الروفر والأدوات.",
+      "controller_type": "humanoid_engineer",
+      "abilities": ["device_repair", "rover_programming", "model_building"],
+      "visual_profile": "salim_engineer",
+      "rig_status": "concept_and_rig_pending",
+      "selection_order": 2
+    },
+    {
+      "id": "lulu",
+      "name_ar": "لولو",
+      "role_ar": "رفيق حلزوني ومستكشف الأماكن الضيقة",
+      "description_ar": "يتسلل إلى الممرات الصغيرة، يلاحظ الآثار المخفية، ويحمل أدوات خفيفة على قوقعته.",
+      "controller_type": "custom_snail",
+      "abilities": ["narrow_path_crawl", "hidden_trace_detection", "light_tool_carry"],
+      "visual_profile": "lulu_snail",
+      "rig_status": "custom_snail_rig_required",
+      "selection_order": 3
+    }
+  ]
+}
