@@ -14,8 +14,8 @@ const RewardService = preload("res://scripts/reward_service.gd")
 const SaveService = preload("res://scripts/save_service.gd")
 
 var _bundle: Dictionary = {}
-var _mission_director: RefCounted
-var _reward_service: RefCounted
+var _mission_director
+var _reward_service
 var _initialized := false
 var _initialization_errors: Array[String] = []
 
