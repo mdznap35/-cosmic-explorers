@@ -1,7 +1,7 @@
 extends RefCounted
 
 const SAVE_PATH := "user://cosmic_explorers_progress.json"
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 
 
 static func _default_state() -> Dictionary:
@@ -12,15 +12,13 @@ static func _default_state() -> Dictionary:
 		"best_mission_score": 0,
 		"last_mission_score": 0,
 		"guided_expeditions_completed": 0,
-		"guided_expedition_stage": 0
+		"guided_expedition_stage": 0,
+		"mission_runtime": {},
+		"reward_runtime": {}
 	}
 
 
-static func _load_state() -> Dictionary:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return _default_state()
-
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
+static func migrate_state(parsed: Variant) -> Dictionary:
 	if not (parsed is Dictionary):
 		return _default_state()
 
@@ -28,7 +26,7 @@ static func _load_state() -> Dictionary:
 	if old_version < 1 or old_version > SAVE_VERSION:
 		return _default_state()
 
-	# Version 1 only stored discovered planets. Preserve that progress on migration.
+	# Rebuild a known-good shape and copy only fields understood by this save version.
 	var state := _default_state()
 	var raw_discovered: Variant = parsed.get("discovered", [])
 	if raw_discovered is Array:
@@ -42,7 +40,27 @@ static func _load_state() -> Dictionary:
 	state["last_mission_score"] = maxi(0, int(parsed.get("last_mission_score", 0)))
 	state["guided_expeditions_completed"] = maxi(0, int(parsed.get("guided_expeditions_completed", 0)))
 	state["guided_expedition_stage"] = clampi(int(parsed.get("guided_expedition_stage", 0)), 0, 8)
+
+	var mission_runtime: Variant = parsed.get("mission_runtime", {})
+	if mission_runtime is Dictionary:
+		state["mission_runtime"] = mission_runtime.duplicate(true)
+	var reward_runtime: Variant = parsed.get("reward_runtime", {})
+	if reward_runtime is Dictionary:
+		state["reward_runtime"] = reward_runtime.duplicate(true)
+
 	return state
+
+
+static func _load_state() -> Dictionary:
+	if not FileAccess.file_exists(SAVE_PATH):
+		return _default_state()
+
+	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if file == null:
+		return _default_state()
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	return migrate_state(parsed)
 
 
 static func _write_state(state: Dictionary) -> bool:
@@ -115,3 +133,18 @@ static func record_guided_expedition_completed() -> int:
 	state["guided_expedition_stage"] = 0
 	_write_state(state)
 	return get_guided_expedition_count()
+
+
+static func load_gameplay_runtime() -> Dictionary:
+	var state := _load_state()
+	return {
+		"mission": state.get("mission_runtime", {}).duplicate(true),
+		"rewards": state.get("reward_runtime", {}).duplicate(true)
+	}
+
+
+static func save_gameplay_runtime(mission_state: Dictionary, reward_state: Dictionary) -> bool:
+	var state := _load_state()
+	state["mission_runtime"] = mission_state.duplicate(true)
+	state["reward_runtime"] = reward_state.duplicate(true)
+	return _write_state(state)
