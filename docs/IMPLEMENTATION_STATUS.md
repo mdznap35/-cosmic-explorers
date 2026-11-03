@@ -121,3 +121,24 @@
 - Full project import, all content/roster/router/mission/reward/save/integration tests, main-scene smoke test, and Android debug export passed.
 - APK artifact ID: `13245977458`; archive size: 42,268,647 bytes; SHA-256: `1fdcf4ced6b779c15f25c2c1a1118b1bcbb143d6c2181a997f57caafd5810966`.
 - This is CI/export evidence only; visual and device verification remain open.
+
+
+---
+
+## تحديث الاستمرارية — خطة المصادر المفتوحة والألعاب المترابطة (3 نوفمبر 2026)
+
+- فرع الإنتاج المرجعي وقت هذا التحديث: cosmic-production-roadmap-v1.
+- رأس PR #3 عند التحقق: 2449faaa3c5c1d4d521aa532b245f745fd939896.
+- تحقق GitHub Actions على الرأس نفسه: run 41666988003، النتيجة success. اكتملت خطوات فحص المحتوى والشخصيات والتفاعل والحوار والمهمات والحفظ والتكامل وسموك المشهد وتصدير APK.
+- PR #3 ما زال مسودة مفتوحة وغير مدمج؛ PR #2 ما زال مفتوحاً ويستهدف main.
+- أُنشئ فرع التخطيط المستقل connected-space-open-source-plan-v1 من رأس PR #3 دون تعديل main أو PR #2 أو PR #3.
+- أضيفت وثائق: OPEN_SOURCE_REUSE_PLAYBOOK.md، SPACE_ACTIVITY_CATALOG.md، IMPLEMENTATION_ROADMAP_NEXT_WAVES.md، ASSET_PROVENANCE_LEDGER.md.
+- حُدّث README ليعرض روابط الوثائق الجديدة.
+- لم تُنزّل أصول جديدة، ولم تُدمج إضافات، ولم تتغير مشاهد Godot أو كود runtime في دفعة التخطيط هذه.
+- أول خطر يجب حسمه قبل التنفيذ الفني: PR #2 مبني على main بينما PR #3 مبني على world-bible-content-v1؛ يجب إعداد مقارنة وخطة تكامل مستقلة قبل أي دمج.
+- الأنشطة الجانبية في الكتالوج مصممة لتكون جزءاً من عالم الفضاء والسفينة والشخصيات، وليست ألعاباً عامة منفصلة.
+- كل موارد المصدر المفتوح لا تزال candidates ما لم يوجد ملف فعلي ونسخة مثبتة وSHA-256 ورخصة واختبار Godot/Android.
+- لا يوجد قبول بصري أو device_verified على Galaxy A15 حتى تاريخ هذا التحديث.
+
+### نقطة الاستئناف التنفيذية
+W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة تكامل آمنة. بعد ذلك W1: اختيار أصغر عينة أصول فضائية موثقة لبناء نموذج سفينة أولي في CI، مع إبقاء أصول الهاتف والتنزيلات الكبيرة خارج هاتف المستخدم.
