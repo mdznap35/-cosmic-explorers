@@ -189,9 +189,10 @@ jobs:
 
       - name: Validate Sana Hub prototype and relay activity
         shell: bash
+        timeout-minutes: 2
         run: |
           set -euo pipefail
-          godot --headless --path . --script res://tests/validate_sana_hub_prototype.gd 2>&1 | tee "$RUNNER_TEMP/sana-hub-test.log"
+          timeout 90s godot --headless --path . --script res://tests/validate_sana_hub_prototype.gd 2>&1 | tee "$RUNNER_TEMP/sana-hub-test.log"
           if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-test.log"; then
             echo "Sana Hub prototype validation failed." >&2
             exit 1
