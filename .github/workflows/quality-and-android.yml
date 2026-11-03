@@ -187,6 +187,15 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Sana Hub prototype and relay activity
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_sana_hub_prototype.gd 2>&1 | tee "$RUNNER_TEMP/sana-hub-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-test.log"; then
+            echo "Sana Hub prototype validation failed." >&2
+            exit 1
+          fi
       - name: Run main-scene smoke test
         shell: bash
         run: |
@@ -306,6 +315,78 @@ jobs:
           fi
           sha256sum build/CosmicExplorers-Android-debug.apk
 
+      - name: Export standalone Sana Hub preview APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ORIGINAL_PROJECT="$RUNNER_TEMP/project.godot.before-sana"
+          ORIGINAL_PRESETS="$RUNNER_TEMP/export_presets.before-sana"
+          cp project.godot "$ORIGINAL_PROJECT"
+          cp export_presets.cfg "$ORIGINAL_PRESETS"
+          restore_project_files() {
+            cp "$ORIGINAL_PROJECT" project.godot
+            cp "$ORIGINAL_PRESETS" export_presets.cfg
+          }
+          trap restore_project_files EXIT
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          project_path = Path("project.godot")
+          project = project_path.read_text(encoding="utf-8")
+          old_main = 'run/main_scene="res://scenes/main.tscn"'
+          new_main = 'run/main_scene="res://scenes/prototypes/sana_hub_prototype.tscn"'
+          if project.count(old_main) != 1:
+              raise SystemExit("Expected exactly one existing main-scene setting.")
+          project_path.write_text(project.replace(old_main, new_main, 1), encoding="utf-8")
+
+          presets_path = Path("export_presets.cfg")
+          presets = presets_path.read_text(encoding="utf-8")
+          replacements = {
+              'package/unique_name="org.mdznap35.cosmicexplorers"': 'package/unique_name="org.mdznap35.cosmicexplorers.sanahubpreview"',
+              'package/name="مستكشفو الكون"': 'package/name="مستكشفو الكون — تجربة سَنا"',
+              'version/name="0.1.0"': 'version/name="0.1.0-sana-preview"',
+          }
+          for old, new in replacements.items():
+              if presets.count(old) != 1:
+                  raise SystemExit(f"Expected exactly one export setting: {old}")
+              presets = presets.replace(old, new, 1)
+          presets_path.write_text(presets, encoding="utf-8")
+          PY
+
+          godot --headless --editor --path . --quit 2>&1 | tee "$RUNNER_TEMP/sana-hub-import.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-import.log"; then
+            echo "Sana Hub preview resource import failed." >&2
+            exit 1
+          fi
+
+          godot --headless --path . --export-debug "Android" build/CosmicExplorers-SanaHub-Prototype.apk 2>&1 | tee "$RUNNER_TEMP/sana-hub-export.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-export.log"; then
+            echo "Sana Hub preview APK export failed." >&2
+            exit 1
+          fi
+          test -s build/CosmicExplorers-SanaHub-Prototype.apk
+          unzip -t build/CosmicExplorers-SanaHub-Prototype.apk
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          "$AAPT" dump badging build/CosmicExplorers-SanaHub-Prototype.apk | tee build/sana-hub-apk-badging.txt
+          grep -F "package: name='org.mdznap35.cosmicexplorers.sanahubpreview'" build/sana-hub-apk-badging.txt
+          "$AAPT" dump permissions build/CosmicExplorers-SanaHub-Prototype.apk | tee build/sana-hub-apk-permissions.txt
+          if grep -q "android.permission.INTERNET" build/sana-hub-apk-permissions.txt; then
+            echo "Unexpected internet permission in the offline Sana Hub preview." >&2
+            exit 1
+          fi
+          sha256sum build/CosmicExplorers-SanaHub-Prototype.apk
+
+          restore_project_files
+          trap - EXIT
+
+      - name: Upload standalone Sana Hub preview APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: CosmicExplorers-SanaHub-Prototype
+          path: build/CosmicExplorers-SanaHub-Prototype.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload installable debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
