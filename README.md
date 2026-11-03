@@ -129,3 +129,10 @@
 - Save schema v5 keeps legacy progress and adds mission/reward snapshots: `scripts/save_service.gd`.
 - Integration and migration checks run in GitHub Actions before the main-scene smoke test.
 - Current implementation is a tested systems foundation; the gameplay UI and 3D scenes are still pending.
+
+
+### Integrated gameplay runtime
+- `scripts/gameplay_runtime.gd` connects content loading, mission objectives, reward unlocking, and SaveService.
+- Starting a mission, recording a valid objective event, and completing a mission persist local snapshots.
+- `tests/validate_gameplay_runtime_integration.gd` checks integrated completion, reward persistence, runtime recreation, and replay idempotency.
+- This is a gameplay service foundation. It is not yet connected to a new character or world scene.
