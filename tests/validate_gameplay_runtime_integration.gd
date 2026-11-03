@@ -5,19 +5,22 @@ const SaveService = preload("res://scripts/save_service.gd")
 
 
 func _initialize() -> void:
-	_run_gameplay_runtime_integration_tests()
+	call_deferred("_run_gameplay_runtime_integration_tests")
 
 
 func _run_gameplay_runtime_integration_tests() -> void:
 	var errors: Array[String] = []
 	var original_state: Dictionary = SaveService._load_state()
+	print("INTEGRATION CHECKPOINT: original save read")
 
 	# Start with a clean game-runtime snapshot while preserving the runner's other save fields.
 	if not SaveService.save_gameplay_runtime({}, {}):
 		errors.append("The integration test could not initialize empty gameplay snapshots.")
-		_restore_and_finish(original_state, errors)
+		print("INTEGRATION CHECKPOINT: replay inspected; restoring runner save")
+	_restore_and_finish(original_state, errors)
 		return
 
+	print("INTEGRATION CHECKPOINT: clean runtime snapshot saved")
 	var runtime = GameplayRuntime.new()
 	var init_errors: Array[String] = runtime.initialize()
 	errors.append_array(init_errors)
@@ -25,6 +28,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 		_restore_and_finish(original_state, errors)
 		return
 
+	print("INTEGRATION CHECKPOINT: runtime initialized")
 	var start_result: Dictionary = runtime.start_mission("mission.mars.rover_survey")
 	if not bool(start_result.get("accepted", false)) or not bool(start_result.get("persisted", false)):
 		errors.append("Starting a mission must persist its active state.")
@@ -33,6 +37,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 
 	runtime.record_event("mars.site.selected")
 	runtime.record_event("scanner.sample_recorded")
+	print("INTEGRATION CHECKPOINT: mission events recorded")
 	var completion: Dictionary = runtime.record_event("scanner.sample_recorded")
 	if not bool(completion.get("mission_completed", false)):
 		errors.append("The Mars mission must complete through the integrated runtime.")
@@ -41,6 +46,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 	if not _has_value(completion.get("unlocked_reward_ids", []), "reward.badge.mars_field_detective"):
 		errors.append("The integrated runtime must unlock the configured Mars badge.")
 
+	print("INTEGRATION CHECKPOINT: mission completion evaluated")
 	var saved_runtime: Dictionary = SaveService.load_gameplay_runtime()
 	var mission_snapshot: Dictionary = saved_runtime.get("mission", {})
 	var reward_snapshot: Dictionary = saved_runtime.get("rewards", {})
@@ -49,6 +55,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 	if not reward_snapshot.get("unlocked_reward_ids", []).has("reward.badge.mars_field_detective"):
 		errors.append("The Mars reward must be written to the save file.")
 
+	print("INTEGRATION CHECKPOINT: save snapshot inspected")
 	var resumed_runtime = GameplayRuntime.new()
 	var resume_errors: Array[String] = resumed_runtime.initialize()
 	errors.append_array(resume_errors)
@@ -58,6 +65,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 		errors.append("A new runtime instance must restore the unlocked reward.")
 
 	# Replay is allowed, but the first-completion reward stays unique.
+	print("INTEGRATION CHECKPOINT: new runtime restored")
 	var replay_start: Dictionary = resumed_runtime.start_mission("mission.mars.rover_survey")
 	if not bool(replay_start.get("accepted", false)):
 		errors.append("The completed replayable mission should be startable again.")
