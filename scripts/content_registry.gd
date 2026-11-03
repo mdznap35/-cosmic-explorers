@@ -5,6 +5,7 @@ extends RefCounted
 const SCHEMA_VERSION := 1
 const CONTENT_FILES := {
 	"chapters": "chapters.json",
+	"characters": "characters.json",
 	"missions": "missions.json",
 	"science_cards": "science_cards.json",
 	"dialogues": "dialogues.json",
@@ -18,6 +19,7 @@ static func load_bundle(base_path: String = "res://data/content") -> Dictionary:
 	var bundle := {
 		"schema_version": SCHEMA_VERSION,
 		"chapters": [],
+		"characters": [],
 		"missions": [],
 		"science_cards": [],
 		"dialogues": [],
@@ -90,11 +92,34 @@ static func validate_bundle(bundle: Dictionary) -> Array[String]:
 				index[entry_id] = entry
 		indexes[kind] = index
 
+	var characters: Dictionary = indexes.get("characters", {})
 	var chapters: Dictionary = indexes.get("chapters", {})
 	var missions: Dictionary = indexes.get("missions", {})
 	var science_cards: Dictionary = indexes.get("science_cards", {})
 	var dialogues: Dictionary = indexes.get("dialogues", {})
 	var rewards: Dictionary = indexes.get("rewards", {})
+
+	if characters.size() < 3:
+		errors.append("The content bundle needs the three core character profiles.")
+	for character_id in characters:
+		var character: Dictionary = characters[character_id]
+		if str(character.get("name_ar", "")).strip_edges().is_empty():
+			errors.append(str(character_id) + " needs an Arabic character name.")
+		if str(character.get("role_ar", "")).strip_edges().is_empty():
+			errors.append(str(character_id) + " needs a gameplay role.")
+		var abilities: Variant = character.get("abilities", [])
+		if not (abilities is Array) or abilities.is_empty():
+			errors.append(str(character_id) + " needs at least one gameplay ability.")
+		else:
+			var ability_ids: Dictionary = {}
+			for ability_value in abilities:
+				var ability_id := str(ability_value).strip_edges()
+				if ability_id.is_empty() or ability_ids.has(ability_id):
+					errors.append(str(character_id) + " has a missing or duplicate ability.")
+				else:
+					ability_ids[ability_id] = true
+		if str(character.get("controller_type", "")).strip_edges().is_empty():
+			errors.append(str(character_id) + " needs a controller_type.")
 
 	for chapter_id in chapters:
 		var chapter: Dictionary = chapters[chapter_id]
@@ -114,7 +139,7 @@ static func validate_bundle(bundle: Dictionary) -> Array[String]:
 			errors.append(str(mission_id) + " references a missing chapter.")
 		if str(mission.get("title_ar", "")).strip_edges().is_empty():
 			errors.append(str(mission_id) + " needs an Arabic title.")
-		if not CHARACTER_IDS.has(str(mission.get("primary_character_id", ""))):
+		if not characters.has(str(mission.get("primary_character_id", ""))):
 			errors.append(str(mission_id) + " has an unknown primary character.")
 
 		var objectives: Variant = mission.get("objectives", [])
@@ -184,7 +209,7 @@ static func validate_bundle(bundle: Dictionary) -> Array[String]:
 
 	for dialogue_id in dialogues:
 		var dialogue: Dictionary = dialogues[dialogue_id]
-		_validate_dialogue(str(dialogue_id), dialogue, errors)
+		_validate_dialogue(str(dialogue_id), dialogue, errors, characters)
 
 	for reward_id in rewards:
 		var reward: Dictionary = rewards[reward_id]
@@ -199,9 +224,9 @@ static func validate_bundle(bundle: Dictionary) -> Array[String]:
 	return errors
 
 
-static func _validate_dialogue(dialogue_id: String, dialogue: Dictionary, errors: Array[String]) -> void:
+static func _validate_dialogue(dialogue_id: String, dialogue: Dictionary, errors: Array[String], characters: Dictionary) -> void:
 	var speaker_id := str(dialogue.get("speaker_id", ""))
-	if not CHARACTER_IDS.has(speaker_id) and speaker_id != "mirqab":
+	if not characters.has(speaker_id) and speaker_id != "mirqab":
 		errors.append(dialogue_id + " has an unknown speaker.")
 
 	var nodes: Variant = dialogue.get("nodes", {})
