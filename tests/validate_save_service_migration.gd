@@ -79,15 +79,37 @@ func _run_save_migration_tests() -> void:
 		errors.append("Gameplay runtime snapshots should be written to local save storage.")
 	else:
 		var loaded := SaveService.load_gameplay_runtime()
-		print("SAVE TEST DEBUG mission expected=", JSON.stringify(mission_snapshot), " actual=", JSON.stringify(loaded.get("mission", {})))
-		print("SAVE TEST DEBUG rewards expected=", JSON.stringify(reward_snapshot), " actual=", JSON.stringify(loaded.get("rewards", {})))
-		if loaded.get("mission", {}) != mission_snapshot:
+		if not _deep_equal(loaded.get("mission", {}), mission_snapshot):
 			errors.append("Mission runtime snapshot must survive a disk round-trip.")
-		if loaded.get("rewards", {}) != reward_snapshot:
+		if not _deep_equal(loaded.get("rewards", {}), reward_snapshot):
 			errors.append("Reward runtime snapshot must survive a disk round-trip.")
 
 	if not SaveService._write_state(original_state):
 		errors.append("The test must restore the save file that existed before it ran.")
+
+func _deep_equal(left: Variant, right: Variant) -> bool:
+	if typeof(left) == TYPE_DICTIONARY and typeof(right) == TYPE_DICTIONARY:
+		if left.size() != right.size():
+			return false
+		for key in left:
+			if not right.has(key) or not _deep_equal(left[key], right[key]):
+				return false
+		return true
+
+	if typeof(left) == TYPE_ARRAY and typeof(right) == TYPE_ARRAY:
+		if left.size() != right.size():
+			return false
+		for index in range(left.size()):
+			if not _deep_equal(left[index], right[index]):
+				return false
+		return true
+
+	var left_is_number := typeof(left) == TYPE_INT or typeof(left) == TYPE_FLOAT
+	var right_is_number := typeof(right) == TYPE_INT or typeof(right) == TYPE_FLOAT
+	if left_is_number and right_is_number:
+		return is_equal_approx(float(left), float(right))
+
+	return left == right
 
 	if errors.is_empty():
 		print("PASS: save v1-v5 migration, legacy progress preservation, gameplay snapshot persistence, and disk round-trip.")
