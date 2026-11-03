@@ -144,3 +144,8 @@
 - Save schema v6 persists the selected character while preserving older progress.
 - Automated tests cover roster order, ability lookup, invalid IDs, and save migration.
 - This is a systems milestone; character meshes, rigs, animation, and in-world switching remain pending.
+
+
+### خطة موجات التنفيذ والقبول
+- [خطة التنفيذ ذات المراحل والبوابات والشرائح الرأسية](docs/EXECUTION_WAVE_PLAN.md)
+- لا تُغلق ميزة قبل وجود commit واختبار CI؛ والميزات المرئية تحتاج تحققاً على Android الفعلي.
