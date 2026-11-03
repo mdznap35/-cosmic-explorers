@@ -6,7 +6,7 @@
 
 | المعرّف | المورد/الحزمة | المصدر الأصلي | الرخصة المنشورة | الاستخدام المخطط | الحالة |
 |---|---|---|---|---|---|
-| ASSET-KENNEY-STATION | Kenney Space Station Kit | https://kenney.nl/assets/space-station-kit | CC0 | بناء غرفة سفينة ومحطة اختبار | candidate |
+| ASSET-KENNEY-STATION | Kenney Space Station Kit | https://kenney.nl/assets/space-station-kit | CC0 1.0 | 80+ نموذجاً؛ ZIP معلن 1.7 MB؛ OBJ/FBX/glTF؛ بناء غرفة سفينة ومحطة اختبار | candidate — لم ينزّل بعد؛ SHA-256 غير مسجل |
 | ASSET-KENNEY-SFX | Kenney Interface Sounds | https://kenney.nl/assets/interface-sounds | CC0 | مؤثرات واجهة مختارة | candidate |
 | ASSET-QUATERNIUS-ANIM | Quaternius Universal Animation Library | https://quaternius.com/packs/universalanimationlibrary.html | CC0 | اختبار حركات ريم وسليم | candidate |
 | ASSET-POLYHAVEN | Poly Haven | https://polyhaven.com/license | CC0 حسب صفحة الترخيص العامة | خامات أو HDRI مختارة | candidate |
