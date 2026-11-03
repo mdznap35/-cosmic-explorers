@@ -79,6 +79,8 @@ func _run_save_migration_tests() -> void:
 		errors.append("Gameplay runtime snapshots should be written to local save storage.")
 	else:
 		var loaded := SaveService.load_gameplay_runtime()
+		print("SAVE TEST DEBUG mission expected=", JSON.stringify(mission_snapshot), " actual=", JSON.stringify(loaded.get("mission", {})))
+		print("SAVE TEST DEBUG rewards expected=", JSON.stringify(reward_snapshot), " actual=", JSON.stringify(loaded.get("rewards", {})))
 		if loaded.get("mission", {}) != mission_snapshot:
 			errors.append("Mission runtime snapshot must survive a disk round-trip.")
 		if loaded.get("rewards", {}) != reward_snapshot:
