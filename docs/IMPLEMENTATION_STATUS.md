@@ -102,3 +102,12 @@
 - Android debug APK exported and uploaded as artifact ID `13244823318`.
 - Artifact archive: 42,262,863 bytes; SHA-256 digest: `12540e6c8b56bbbdb04307623b8c24e87907133ee6dd8d9d0a12c8042fb64ae6`.
 - This verifies CI and export only. It does not verify visual quality, touch feel, frame rate, thermal behavior, or playability on Galaxy A15.
+
+
+## P2.3 — DialogueDirector
+
+- [x] إضافة مفسّر حوار runtime للحوارات المتفرعة المعرّفة في JSON.
+- [x] دعم البدء والتنقل الخطي والاختيارات والنهايات والتخطي وإعادة التشغيل.
+- [x] منع تشغيل حوار غير معروف أو متابعة حوار منتهٍ.
+- [x] إضافة اختبار للمسارات المتفرعة والنهاية والتخطي وربطه بـ CI.
+- [ ] ربطه بواجهة حوار عربية وصوت اختياري ومشاهد الشخصيات.

@@ -146,6 +146,16 @@ jobs:
             exit 1
           fi
 
+      - name: Validate branching dialogue runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_dialogue_director.gd 2>&1 | tee "$RUNNER_TEMP/dialogue-director-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/dialogue-director-test.log"; then
+            echo "Dialogue director validation failed." >&2
+            exit 1
+          fi
+
       - name: Validate mission progression and reward ledger
         shell: bash
         run: |
