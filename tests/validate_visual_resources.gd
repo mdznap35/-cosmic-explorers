@@ -26,6 +26,9 @@ const SHADERS := [
 
 func _initialize() -> void:
 	var errors: Array[String] = []
+	for body_data in PlanetCatalog.get_all():
+		_validate_body_texture_binding(body_data, errors)
+	_validate_body_texture_binding(PlanetCatalog.get_sun(), errors)
 
 	for texture_path in PLANET_TEXTURES:
 		if not ResourceLoader.exists(texture_path):
@@ -86,3 +89,19 @@ func _initialize() -> void:
 	for error in errors:
 		push_error(error)
 	quit(1)
+
+func _validate_body_texture_binding(body_data: Dictionary, errors: Array[String]) -> void:
+	var body := PlanetBody.new()
+	body.configure(body_data)
+	var surface := body.find_child("PlanetSurface", true, false) as MeshInstance3D
+	if surface == null:
+		errors.append("Planet surface is missing for body: " + str(body_data.get("id", "unknown")))
+	else:
+		var material := surface.material_override as ShaderMaterial
+		if material == null:
+			errors.append("Planet surface material is missing for body: " + str(body_data.get("id", "unknown")))
+		elif material.get_shader_parameter("use_albedo_texture") != true:
+			errors.append("Licensed albedo map was not bound for body: " + str(body_data.get("id", "unknown")))
+		elif not (material.get_shader_parameter("albedo_texture") is Texture2D):
+			errors.append("Licensed albedo map binding is not a Texture2D for body: " + str(body_data.get("id", "unknown")))
+	body.free()
