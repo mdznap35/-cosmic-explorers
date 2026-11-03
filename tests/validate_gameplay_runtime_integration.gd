@@ -21,6 +21,10 @@ func _run_gameplay_runtime_integration_tests() -> void:
 
 	print("INTEGRATION CHECKPOINT: clean runtime snapshot saved")
 	var runtime = GameplayRuntime.new()
+	if runtime == null:
+		errors.append("GameplayRuntime instance could not be created.")
+		_restore_and_finish(original_state, errors)
+		return
 	var init_errors: Array[String] = runtime.initialize()
 	errors.append_array(init_errors)
 	if not errors.is_empty():
