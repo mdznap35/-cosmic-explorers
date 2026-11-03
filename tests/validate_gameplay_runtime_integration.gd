@@ -16,8 +16,7 @@ func _run_gameplay_runtime_integration_tests() -> void:
 	# Start with a clean game-runtime snapshot while preserving the runner's other save fields.
 	if not SaveService.save_gameplay_runtime({}, {}):
 		errors.append("The integration test could not initialize empty gameplay snapshots.")
-		print("INTEGRATION CHECKPOINT: replay inspected; restoring runner save")
-	_restore_and_finish(original_state, errors)
+		_restore_and_finish(original_state, errors)
 		return
 
 	print("INTEGRATION CHECKPOINT: clean runtime snapshot saved")
