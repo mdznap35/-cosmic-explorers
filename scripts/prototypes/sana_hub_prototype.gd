@@ -29,6 +29,18 @@ const RELAY_LABELS := {
 	"sana_station": "محطة سَنا",
 	"mars_rover": "مركبة الروفر"
 }
+const CUBESAT_SEQUENCE := [
+	"central_bus",
+	"solar_panels",
+	"communication_antenna",
+	"science_camera"
+]
+const CUBESAT_LABELS := {
+	"central_bus": "الهيكل المركزي",
+	"solar_panels": "ألواح الطاقة الشمسية",
+	"communication_antenna": "هوائي الاتصال",
+	"science_camera": "كاميرا الملاحظة"
+}
 const STATION_DATA := {
 	"bridge": {
 		"title": "جسر القيادة",
@@ -70,6 +82,9 @@ var _modal_content: VBoxContainer
 var _relay_progress_label: Label
 var _relay_feedback_label: Label
 var _relay_buttons: Array[Button] = []
+var _cubesat_progress_label: Label
+var _cubesat_feedback_label: Label
+var _cubesat_buttons: Array[Button] = []
 
 var _stations: Dictionary = {}
 var _touch_keys: Dictionary = {
@@ -82,6 +97,7 @@ var _nearby_station_id := ""
 var _relay_active := false
 var _relay_progress := 0
 var _relay_feedback := ""
+var _cubesat_display_added := false
 var _state: Dictionary = {}
 
 var _interaction_router
@@ -108,6 +124,9 @@ func _process(_delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_player):
+		return
+	if _relay_active:
+		_player.velocity = Vector3.ZERO
 		return
 
 	var horizontal := 0.0
@@ -177,6 +196,40 @@ func is_relay_completed() -> bool:
 	return bool(_state.get("relay_activity_completed", false))
 
 
+func get_cubesat_progress() -> int:
+	return clampi(int(_state.get("cubesat_step", 0)), 0, CUBESAT_SEQUENCE.size())
+
+
+func is_cubesat_built() -> bool:
+	return bool(_state.get("cubesat_built", false))
+
+
+func start_cubesat_activity() -> bool:
+	_show_cubesat_panel()
+	return true
+
+
+func select_cubesat_part(part_id: String) -> bool:
+	var current_step := get_cubesat_progress()
+	if current_step >= CUBESAT_SEQUENCE.size():
+		return false
+	var expected_id: String = CUBESAT_SEQUENCE[current_step]
+	if part_id != expected_id:
+		if is_instance_valid(_cubesat_feedback_label):
+			_cubesat_feedback_label.text = "لنبدأ بالهيكل المركزي، ثم نضيف الطاقة والاتصال والكاميرا. لا مشكلة، جرّب مجدداً."
+		return false
+
+	current_step += 1
+	_state["cubesat_step"] = current_step
+	if current_step >= CUBESAT_SEQUENCE.size():
+		_state["cubesat_built"] = true
+	_save_state()
+	if is_cubesat_built():
+		_add_cubesat_display()
+	_refresh_cubesat_panel()
+	return true
+
+
 func is_gameplay_bridge_ready() -> bool:
 	return _gameplay_bridge_ready
 
@@ -230,6 +283,9 @@ func interact_station(station_id: String) -> bool:
 
 	if station_id == "bridge":
 		start_relay_activity()
+		return true
+	if station_id == "workshop":
+		start_cubesat_activity()
 		return true
 
 	var station: Dictionary = STATION_DATA[station_id]
@@ -383,6 +439,48 @@ func _create_station(station_id: String, station_position: Vector3, accent: Colo
 			_add_telescope(station, accent)
 		"lulu_nook":
 			_add_lulu_shell(station, accent)
+
+	if station_id == "workshop" and is_cubesat_built():
+		_add_cubesat_display()
+
+
+func _add_cubesat_display() -> void:
+	if _cubesat_display_added:
+		return
+	var station: Node3D = _stations.get("workshop")
+	if not is_instance_valid(station):
+		return
+	var satellite := Node3D.new()
+	satellite.name = "CompletedCubeSatDisplay"
+	satellite.position = Vector3(0.0, 1.55, -0.62)
+	station.add_child(satellite)
+
+	var body := MeshInstance3D.new()
+	var body_mesh := BoxMesh.new()
+	body_mesh.size = Vector3(0.46, 0.46, 0.46)
+	body.mesh = body_mesh
+	body.material_override = _make_material(Color(0.72, 0.78, 0.84), Color(0.24, 0.42, 0.56), 0.28)
+	satellite.add_child(body)
+
+	for side in [-1.0, 1.0]:
+		var panel := MeshInstance3D.new()
+		var panel_mesh := BoxMesh.new()
+		panel_mesh.size = Vector3(0.55, 0.035, 0.38)
+		panel.mesh = panel_mesh
+		panel.position = Vector3(side * 0.5, 0.0, 0.0)
+		panel.material_override = _make_material(Color(0.10, 0.24, 0.52), Color(0.10, 0.24, 0.52), 0.25)
+		satellite.add_child(panel)
+
+	var antenna := MeshInstance3D.new()
+	var antenna_mesh := CylinderMesh.new()
+	antenna_mesh.top_radius = 0.025
+	antenna_mesh.bottom_radius = 0.025
+	antenna_mesh.height = 0.42
+	antenna.mesh = antenna_mesh
+	antenna.position = Vector3(0.0, 0.36, 0.0)
+	antenna.material_override = _make_material(Color(0.92, 0.74, 0.40), Color(0.65, 0.45, 0.18), 0.3)
+	satellite.add_child(antenna)
+	_cubesat_display_added = true
 
 
 func _add_planet_orbit_display(station: Node3D, accent: Color) -> void:
@@ -758,6 +856,57 @@ func _refresh_relay_panel() -> void:
 		button.disabled = finished
 
 
+func _show_cubesat_panel() -> void:
+	_open_modal("ورشة القمر المصغّر")
+	_relay_active = true
+	var introduction := _new_label(
+		"ساعد سليم في بناء قمر مصغّر. أضف الهيكل، ثم ألواح الطاقة، فالهوائي، وأخيراً كاميرا الملاحظة.",
+		18,
+		Color(0.82, 0.90, 0.97)
+	)
+	introduction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	introduction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(introduction)
+
+	_cubesat_progress_label = _new_label("", 17, Color(1.0, 0.79, 0.42), true)
+	_cubesat_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_modal_content.add_child(_cubesat_progress_label)
+
+	_cubesat_feedback_label = _new_label("", 16, Color(0.48, 0.85, 0.94))
+	_cubesat_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_cubesat_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_cubesat_feedback_label.custom_minimum_size = Vector2(0.0, 48.0)
+	_modal_content.add_child(_cubesat_feedback_label)
+
+	_cubesat_buttons.clear()
+	for part_id in CUBESAT_SEQUENCE:
+		var button := _new_button(
+			str(CUBESAT_LABELS[part_id]),
+			func() -> void: select_cubesat_part(part_id),
+			Vector2(0.0, 54.0)
+		)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_modal_content.add_child(button)
+		_cubesat_buttons.append(button)
+
+	_add_close_button()
+	_refresh_cubesat_panel()
+
+
+func _refresh_cubesat_panel() -> void:
+	if not is_instance_valid(_cubesat_progress_label) or not is_instance_valid(_cubesat_feedback_label):
+		return
+	var progress := get_cubesat_progress()
+	if is_cubesat_built():
+		_cubesat_progress_label.text = "اكتمل القمر المصغّر!"
+		_cubesat_feedback_label.text = "رائع! أصبح القمر جاهزاً للعرض في ورشة سليم."
+	else:
+		_cubesat_progress_label.text = "الوحدات المركّبة: %d / %d" % [progress, CUBESAT_SEQUENCE.size()]
+		_cubesat_feedback_label.text = "الوحدة التالية: " + str(CUBESAT_LABELS[CUBESAT_SEQUENCE[progress]])
+	for index in range(_cubesat_buttons.size()):
+		_cubesat_buttons[index].disabled = index < progress or is_cubesat_built()
+
+
 func _open_modal(title_text: String) -> void:
 	_close_modal()
 	_modal_panel = PanelContainer.new()
@@ -789,6 +938,9 @@ func _close_modal() -> void:
 	_relay_buttons.clear()
 	_relay_progress_label = null
 	_relay_feedback_label = null
+	_cubesat_buttons.clear()
+	_cubesat_progress_label = null
+	_cubesat_feedback_label = null
 	if is_instance_valid(_modal_panel):
 		_modal_panel.queue_free()
 	_modal_panel = null
@@ -799,10 +951,12 @@ func _update_status() -> void:
 		return
 	var visited_count := _state.get("visited_station_ids", []).size()
 	var relay_text := "رسالة مرقاب: مكتملة" if is_relay_completed() else "رسالة مرقاب: بانتظار التوصيل"
-	_status_label.text = "المحطات المستكشفة: %d / %d   •   %s" % [
+	var cubesat_text := "القمر المصغّر: جاهز" if is_cubesat_built() else "القمر المصغّر: قيد البناء"
+	_status_label.text = "المحطات: %d / %d   •   %s   •   %s" % [
 		visited_count,
 		STATION_IDS.size(),
-		relay_text
+		relay_text,
+		cubesat_text
 	]
 
 
@@ -861,7 +1015,9 @@ func _load_state() -> Dictionary:
 	var defaults := {
 		"version": SAVE_VERSION,
 		"visited_station_ids": [],
-		"relay_activity_completed": false
+		"relay_activity_completed": false,
+		"cubesat_step": 0,
+		"cubesat_built": false
 	}
 	if not FileAccess.file_exists(SAVE_PATH):
 		return defaults
@@ -881,6 +1037,8 @@ func _load_state() -> Dictionary:
 			if STATION_IDS.has(str(station_id)) and not result["visited_station_ids"].has(str(station_id)):
 				result["visited_station_ids"].append(str(station_id))
 	result["relay_activity_completed"] = bool(parsed.get("relay_activity_completed", false))
+	result["cubesat_step"] = clampi(int(parsed.get("cubesat_step", 0)), 0, CUBESAT_SEQUENCE.size())
+	result["cubesat_built"] = bool(parsed.get("cubesat_built", false)) and result["cubesat_step"] == CUBESAT_SEQUENCE.size()
 	return result
 
 
