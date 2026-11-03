@@ -6,10 +6,8 @@
 
 | المعرّف | المورد/الحزمة | المصدر الأصلي | الرخصة المنشورة | الاستخدام المخطط | الحالة |
 |---|---|---|---|---|---|
-| ASSET-KENNEY-SPACE | Kenney Space Kit | https://kenney.nl/assets/space-kit | CC0 | قطع فضائية ومركبات للـgraybox | candidate |
 | ASSET-KENNEY-STATION | Kenney Space Station Kit | https://kenney.nl/assets/space-station-kit | CC0 | بناء غرفة سفينة ومحطة اختبار | candidate |
 | ASSET-KENNEY-SFX | Kenney Interface Sounds | https://kenney.nl/assets/interface-sounds | CC0 | مؤثرات واجهة مختارة | candidate |
-| ASSET-QUATERNIUS-SPACE | Quaternius Ultimate Space Kit | https://quaternius.com/packs/ultimatespacekit.html | CC0 | عناصر بيئة ومركبات منتقاة | candidate |
 | ASSET-QUATERNIUS-ANIM | Quaternius Universal Animation Library | https://quaternius.com/packs/universalanimationlibrary.html | CC0 | اختبار حركات ريم وسليم | candidate |
 | ASSET-POLYHAVEN | Poly Haven | https://polyhaven.com/license | CC0 حسب صفحة الترخيص العامة | خامات أو HDRI مختارة | candidate |
 | ASSET-SOLARSYSTEMSCOPE | Solar System Scope textures | https://www.solarsystemscope.com/textures/ | CC BY 4.0 | خرائط كوكبية موجودة في مسار PR #2 | branch-dependent |
@@ -40,9 +38,7 @@
 ## 3. أدلة التراخيص المعروفة
 
 - Kenney يعلن أن أصول صفحات الحزم مرخصة CC0، ويطلب الرجوع إلى صفحة كل حزمة أو ملف الرخصة المرفق: https://kenney.nl/support
-- صفحة Kenney Space Kit تعرض 150+ ملفاً ورخصة CC0؛ قائمة itch تعرض ملفاً مضغوطاً بحجم 6.3 MB: https://kenney.nl/assets/space-kit وhttps://kenney-assets.itch.io/space-kit
 - صفحة Kenney Space Station Kit تعرض 90 ملفاً ورخصة CC0: https://kenney.nl/assets/space-station-kit
-- Quaternius Ultimate Space Kit يعرض 92 نموذجاً وصيغ FBX/OBJ/Blend/glTF ورخصة CC0: https://quaternius.com/packs/ultimatespacekit.html
 - Poly Haven يعلن CC0 لجميع أصوله المنشورة، مع إتاحة الاستخدام التجاري وإعادة التوزيع: https://polyhaven.com/license
 - Solar System Scope يعلن CC BY 4.0، ويذكر وجود مناطق غير مكتملة ممثلة بتضاريس خيالية وتشبع لوني أكبر في بعض الخرائط: https://www.solarsystemscope.com/textures/
 - NASA تذكر أن كثيراً من موادها لا تخضع عادة لحقوق النشر في الولايات المتحدة، لكن توجد مواد لطرف ثالث يجب تدقيقها، وشعارات وهوية NASA لها قيود خاصة: https://www.nasa.gov/nasa-brand-center/images-and-media/
