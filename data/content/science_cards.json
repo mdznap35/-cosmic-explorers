@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "science.moon.reflected_light",
+      "topic": "moon",
+      "title_ar": "القمر يعكس ضوء الشمس",
+      "child_text_ar": "القمر لا يصنع ضوءه مثل الشمس. نراه مضيئاً لأن ضوء الشمس ينعكس عن سطحه.",
+      "more_text_ar": "يتغير الجزء المضيء الذي نراه من القمر خلال الشهر بحسب موضعه بالنسبة إلى الأرض والشمس.",
+      "certainty": "established_fact",
+      "source": {"url": "https://science.nasa.gov/moon/moon-phases/", "checked_on": "2026-11-03"}
+    },
+    {
+      "id": "science.moon.phases",
+      "topic": "moon",
+      "title_ar": "أطوار القمر",
+      "child_text_ar": "يتغير شكل الجزء المضيء الذي نراه من القمر، وهذه الأشكال تسمى أطوار القمر.",
+      "more_text_ar": "ترتبط الأطوار بمواقع القمر والأرض والشمس، وليست بسبب ظل الأرض في معظم الأيام.",
+      "certainty": "established_fact",
+      "source": {"url": "https://science.nasa.gov/moon/moon-phases/", "checked_on": "2026-11-03"}
+    },
+    {
+      "id": "science.mars.iron_oxide",
+      "topic": "mars",
+      "title_ar": "لماذا يبدو المريخ أحمر؟",
+      "child_text_ar": "يرتبط اللون الأحمر في كثير من غبار وصخور المريخ بأكاسيد الحديد.",
+      "more_text_ar": "تساعد الصور والقياسات في دراسة المعادن والمواد الموجودة على سطح المريخ.",
+      "certainty": "established_fact",
+      "source": {"url": "https://science.nasa.gov/mars/facts/", "checked_on": "2026-11-03"}
+    },
+    {
+      "id": "science.mars.water_evidence",
+      "topic": "mars",
+      "title_ar": "آثار ماء قديم",
+      "child_text_ar": "توجد على المريخ تضاريس تساعد العلماء على دراسة وجود الماء السائل في الماضي.",
+      "more_text_ar": "الدليل على ماء قديم لا يثبت وحده وجود حياة. يدرس العلماء صوراً وقياسات وأنواعاً مختلفة من الأدلة.",
+      "certainty": "evidence",
+      "source": {"url": "https://science.nasa.gov/mars/", "checked_on": "2026-11-03"}
+    }
+  ]
+}

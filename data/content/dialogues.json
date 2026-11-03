@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "dialogue.prologue.signal",
+      "speaker_id": "reem",
+      "start_node": "notice",
+      "nodes": {
+        "notice": {
+          "text_ar": "كل ليلة أراقب السماء، لكن هذه الإشارة مختلفة.",
+          "choices": [
+            {"text_ar": "المس الإشارة", "next": "identify"},
+            {"text_ar": "اسأل مرقاب", "next": "identify"}
+          ]
+        },
+        "identify": {
+          "text_ar": "هذه رسالة قديمة من مسبار أُفُق-1. سجله غير مكتمل.",
+          "next": "team"
+        },
+        "team": {
+          "text_ar": "لنبدأ الرحلة معاً. كل واحد منا يلاحظ شيئاً مختلفاً.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.mars.first_sample",
+      "speaker_id": "reem",
+      "start_node": "observe",
+      "nodes": {
+        "observe": {
+          "text_ar": "لاحظ لون هذه العينة. ماذا ترى؟",
+          "choices": [
+            {"text_ar": "لون أحمر صدئ", "next": "iron"},
+            {"text_ar": "أريد تكبير الصورة", "next": "magnify"}
+          ]
+        },
+        "magnify": {
+          "text_ar": "فكرة جيدة. لنقرب الصورة ونلاحظ التفاصيل.",
+          "next": "iron"
+        },
+        "iron": {
+          "text_ar": "يرتبط اللون الأحمر في كثير من مواد سطح المريخ بأكاسيد الحديد.",
+          "next": "evidence"
+        },
+        "evidence": {
+          "text_ar": "الصورة دليل يساعدنا، لكننا نحتاج إلى أكثر من أداة لفهم العينة.",
+          "terminal": true
+        }
+      }
+    }
+  ]
+}
