@@ -13,15 +13,20 @@ func _run_content_registry_tests() -> void:
 
 	if int(bundle.get("schema_version", 0)) != ContentRegistry.SCHEMA_VERSION:
 		errors.append("The content bundle schema version is incorrect.")
-	if not bundle.get("chapters", []) is Array or bundle.get("chapters", []).size() != 3:
+	var chapter_entries: Variant = bundle.get("chapters", [])
+	var mission_entries: Variant = bundle.get("missions", [])
+	var science_entries: Variant = bundle.get("science_cards", [])
+	var dialogue_entries: Variant = bundle.get("dialogues", [])
+	var reward_entries: Variant = bundle.get("rewards", [])
+	if not (chapter_entries is Array) or chapter_entries.size() != 3:
 		errors.append("Expected the prologue, Moon, and Mars chapters.")
-	if not bundle.get("missions", []) is Array or bundle.get("missions", []).size() != 4:
+	if not (mission_entries is Array) or mission_entries.size() != 4:
 		errors.append("Expected four first-slice missions.")
-	if not bundle.get("science_cards", []) is Array or bundle.get("science_cards", []).size() != 4:
+	if not (science_entries is Array) or science_entries.size() != 4:
 		errors.append("Expected four source-backed science cards.")
-	if not bundle.get("dialogues", []) is Array or bundle.get("dialogues", []).size() != 2:
+	if not (dialogue_entries is Array) or dialogue_entries.size() != 2:
 		errors.append("Expected two scripted dialogue sequences.")
-	if not bundle.get("rewards", []) is Array or bundle.get("rewards", []).size() != 4:
+	if not (reward_entries is Array) or reward_entries.size() != 4:
 		errors.append("Expected four first-slice rewards.")
 
 	var duplicate_bundle: Dictionary = bundle.duplicate(true)
