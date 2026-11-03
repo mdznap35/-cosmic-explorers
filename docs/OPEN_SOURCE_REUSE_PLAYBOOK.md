@@ -18,10 +18,8 @@
 
 | المصدر | ما يقدمه | الرخصة/الحالة المنشورة | طريقة الاستفادة المقترحة |
 |---|---|---|---|
-| Kenney Space Kit | أكثر من 150 نموذجاً فضائياً بصيغ متعددة؛ صفحة itch تعرض ZIP بحجم 6.3 MB | CC0 1.0 | بناء أولي للمركبات والمحطات والقطع الفضائية، بعد فحص كل ملف |
 | Kenney Space Station Kit | نحو 90 قطعة لمحطة وبيئات داخلية | CC0 | تركيب غرفة قيادة وممرات ومختبر كنموذج أولي |
 | Kenney Interface Sounds | نحو 100 مؤثر واجهة | CC0 | أصوات أزرار واختيار وتأكيد وانتقال، بعد اختبار الجودة |
-| Quaternius Ultimate Space Kit | 92 نموذجاً؛ نماذج متحركة ومكسوة؛ FBX وOBJ وglTF وBlend | CC0 بحسب صفحة الحزمة | عناصر فضائية وبيئية منتقاة، مع توحيد المقياس والخامات |
 | Quaternius Universal Animation Library | أكثر من 120 حركة بشرية بحسب سجل الموارد الحالي | CC0؛ حجم الحزمة القياسية مسجل سابقاً بنحو 15 MB | تجربة حركة ريم وسليم وإعادة توجيه الحركات؛ لا تصلح وحدها للولو |
 | Poly Haven | نماذج وخامات PBR وHDRI | CC0 بحسب صفحة الترخيص العامة | خامات محدودة أو إضاءة مرجعية؛ تجنب خامات 8K غير الضرورية |
 | Solar System Scope Textures | خرائط للشمس والكواكب | CC BY 4.0 | نحتفظ بالخرائط الموجودة في مسار PR #2 بعد تسوية الفروع، مع النسبة وإيضاح التعديلات |
@@ -36,11 +34,9 @@
 
 ### روابط المصادر الأصلية
 
-- Kenney Space Kit: https://kenney.nl/assets/space-kit
 - Kenney Space Station Kit: https://kenney.nl/assets/space-station-kit
 - Kenney Interface Sounds: https://kenney.nl/assets/interface-sounds
 - Kenney license FAQ: https://kenney.nl/support
-- Quaternius Ultimate Space Kit: https://quaternius.com/packs/ultimatespacekit.html
 - Quaternius Universal Animation Library: https://quaternius.com/packs/universalanimationlibrary.html
 - Poly Haven license: https://polyhaven.com/license
 - Solar System Scope textures: https://www.solarsystemscope.com/textures/
@@ -73,13 +69,13 @@
 ## 4. استراتيجية الأصول: من النموذج الأولي إلى الهوية النهائية
 
 ### الطبقة الأولى — Graybox قابل للعب
-- نختار أجزاء قليلة من Kenney Space Kit وSpace Station Kit.
+- نختار أجزاء قليلة من Kenney Space Station Kit.
 - نبني غرفة قيادة وممراً ومختبراً مؤقتاً ومركبة اختبار.
 - الهدف قياس المساحة والحركة والتفاعل، وليس إعلان الشكل النهائي.
 - لا ندخل حزمة كاملة لمجرد أنها مجانية؛ نستورد الملفات التي تستخدمها المشاهد فقط.
 
 ### الطبقة الثانية — Prototype art
-- نختار مجموعة محدودة من Quaternius أو Kenney لتجربة التناسق.
+- نختار مجموعة محدودة من Kenney Space Station Kit أو نماذج علمية مناسبة من NASA بعد تدقيق كل ملف.
 - نختبر نماذج الشخصيات والهيكل والتحريك قبل اعتماد مصدر نهائي.
 - نضع خامات وألواناً وإضاءة موحدة حتى لا تبدو الغرفة خليطاً من مكتبات غير متجانسة.
 - ننتج نماذج بديلة منخفضة التفاصيل عند الحاجة إلى قياس الأداء.
@@ -131,8 +127,8 @@
 
 ## 8. قرارات هذه الخطة
 
-- **نبدأ بفحص Kenney Space Kit وSpace Station Kit** لبناء نموذج سفينة أولي صغير.
-- **نختبر Quaternius Ultimate Space Kit** كمصدر ثانٍ للأصول الفضائية؛ لا نخلط كل عناصره قبل مراجعة الأسلوب والحجم.
+- **نبدأ بفحص Kenney Space Station Kit** لبناء نموذج سفينة أولي صغير.
+- **نختار نماذج NASA العلمية بعناية** عند الحاجة إلى مركبات أو أجهزة موثقة، ونراجع حقوق كل ملف على حدة.
 - **نختبر Universal Animation Library** على Rig واحد لريم أو سليم قبل اعتمادها.
 - **نستفيد من Godot Demo Projects وGDQuest** في هندسة الحركة والكاميرا، مع احترام اختلاف رخص الأصول.
 - **نستعمل OpenSpace وNASA Space Place كمراجع تصميمية**، لا كمواد جاهزة للنسخ.
