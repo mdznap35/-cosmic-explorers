@@ -182,7 +182,6 @@ func is_gameplay_bridge_ready() -> bool:
 
 
 func start_relay_activity() -> bool:
-	_relay_active = true
 	_relay_progress = 0
 	_relay_feedback = "ابدأ من قمر الاتصال، ثم محطة سَنا، ثم مركبة الروفر."
 	_show_relay_panel()
@@ -637,8 +636,6 @@ func _add_dpad_spacer(parent: GridContainer) -> void:
 
 func _add_dpad_button(parent: GridContainer, caption: String, direction_key: String) -> void:
 	var button := _new_button(caption, Callable(), Vector2(52.0, 48.0))
-	button.pressed.disconnect(_on_interaction_button_pressed)
-	button.pressed.connect(func() -> void: _touch_keys[direction_key] = true)
 	button.button_up.connect(func() -> void: _touch_keys[direction_key] = false)
 	button.button_down.connect(func() -> void: _touch_keys[direction_key] = true)
 	parent.add_child(button)
@@ -654,7 +651,8 @@ func _new_button(caption: String, callback: Callable, minimum_size: Vector2) -> 
 	button.add_theme_stylebox_override("normal", _button_style(Color(0.055, 0.15, 0.25), Color(0.20, 0.48, 0.68)))
 	button.add_theme_stylebox_override("hover", _button_style(Color(0.08, 0.22, 0.34), Color(0.38, 0.70, 0.88)))
 	button.add_theme_stylebox_override("pressed", _button_style(Color(0.10, 0.30, 0.40), Color(0.45, 0.78, 0.92)))
-	button.pressed.connect(callback)
+	if callback.is_valid():
+		button.pressed.connect(callback)
 	return button
 
 
@@ -702,6 +700,7 @@ func _show_info_panel(title_text: String, body_text: String, hint_text: String) 
 
 func _show_relay_panel() -> void:
 	_open_modal("لعبة رسالة مرقاب")
+	_relay_active = true
 	var introduction := _new_label(
 		"رتّب محطات الاتصال حتى تصل رسالة الرحلة إلى الروفر. لا توجد عقوبة على المحاولة؛ جرّب وتعلّم.",
 		18,
