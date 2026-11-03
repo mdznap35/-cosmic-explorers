@@ -136,6 +136,16 @@ jobs:
             exit 1
           fi
 
+      - name: Validate interaction event routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_interaction_router.gd 2>&1 | tee "$RUNNER_TEMP/interaction-router-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/interaction-router-test.log"; then
+            echo "Interaction router validation failed." >&2
+            exit 1
+          fi
+
       - name: Validate mission progression and reward ledger
         shell: bash
         run: |
