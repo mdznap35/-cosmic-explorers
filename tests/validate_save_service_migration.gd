@@ -60,6 +60,18 @@ func _run_save_migration_tests() -> void:
 	if version_five.get("reward_runtime", {}).get("unlocked_reward_ids", []) != ["reward.badge.mars_field_detective"]:
 		errors.append("Version 5 migration must preserve unlocked rewards.")
 
+	var version_six := SaveService.migrate_state({
+		"version": 6,
+		"selected_character_id": "lulu",
+		"discovered": ["mars"]
+	})
+	if str(version_six.get("selected_character_id", "")) != "lulu":
+		errors.append("Version 6 migration must preserve the selected character.")
+
+	var version_five_default := SaveService.migrate_state({"version": 5})
+	if str(version_five_default.get("selected_character_id", "")) != "reem":
+		errors.append("Version 5 saves must receive the default selected character.")
+
 	var future_version := SaveService.migrate_state({"version": SaveService.SAVE_VERSION + 1, "discovered": ["mars"]})
 	if future_version.get("discovered", []) != []:
 		errors.append("Unknown future save versions must not be misread as current data.")
@@ -75,6 +87,13 @@ func _run_save_migration_tests() -> void:
 		"version": 1,
 		"unlocked_reward_ids": ["reward.sticker.first_signal"]
 	}
+	if not SaveService.save_selected_character_id("lulu"):
+		errors.append("A valid selected character should be persisted.")
+	elif SaveService.load_selected_character_id() != "lulu":
+		errors.append("Selected character must survive a disk round-trip.")
+	if SaveService.save_selected_character_id("unknown"):
+		errors.append("Unknown character IDs must not be persisted.")
+
 	if not SaveService.save_gameplay_runtime(mission_snapshot, reward_snapshot):
 		errors.append("Gameplay runtime snapshots should be written to local save storage.")
 	else:
@@ -88,7 +107,7 @@ func _run_save_migration_tests() -> void:
 		errors.append("The test must restore the save file that existed before it ran.")
 
 	if errors.is_empty():
-		print("PASS: save v1-v5 migration, legacy progress preservation, gameplay snapshot persistence, and disk round-trip.")
+		print("PASS: save v1-v6 migration, legacy progress preservation, gameplay snapshot persistence, and disk round-trip.")
 		quit(0)
 		return
 
