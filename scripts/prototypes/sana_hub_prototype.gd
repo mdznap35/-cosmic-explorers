@@ -420,9 +420,12 @@ func _create_station(station_id: String, station_position: Vector3, accent: Colo
 	var title_label := Label3D.new()
 	title_label.text = str(STATION_DATA[station_id].get("title", station_id))
 	title_label.position = Vector3(0.0, 2.1, 0.0)
+	title_label.font = preload("res://assets/fonts/NotoSansArabic[wdth,wght].ttf")
 	title_label.font_size = 38
 	title_label.pixel_size = 0.006
 	title_label.modulate = Color(0.91, 0.96, 1.0)
+	title_label.text_direction = TextServer.DIRECTION_RTL
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.outline_size = 6
 	title_label.outline_modulate = Color(0.015, 0.035, 0.075, 0.95)
 	title_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -487,6 +490,14 @@ func _add_cubesat_display() -> void:
 	antenna.position = Vector3(0.0, 0.36, 0.0)
 	antenna.material_override = _make_material(Color(0.92, 0.74, 0.40), Color(0.65, 0.45, 0.18), 0.3)
 	satellite.add_child(antenna)
+
+	var camera_sensor := MeshInstance3D.new()
+	var sensor_mesh := BoxMesh.new()
+	sensor_mesh.size = Vector3(0.18, 0.16, 0.14)
+	camera_sensor.mesh = sensor_mesh
+	camera_sensor.position = Vector3(0.0, -0.10, 0.29)
+	camera_sensor.material_override = _make_material(Color(0.12, 0.22, 0.32), Color(0.12, 0.30, 0.58), 0.2)
+	satellite.add_child(camera_sensor)
 	_cubesat_display_added = true
 
 
@@ -657,7 +668,7 @@ func _build_hud() -> void:
 	header.anchor_left = 0.025
 	header.anchor_top = 0.025
 	header.anchor_right = 0.52
-	header.anchor_bottom = 0.18
+	header.anchor_bottom = 0.21
 	header.add_theme_stylebox_override("panel", _panel_style())
 	_hud.add_child(header)
 
