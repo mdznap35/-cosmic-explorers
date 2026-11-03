@@ -23,6 +23,36 @@ jobs:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Check out pinned planetary texture source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Sanghel/solar-system-3d
+          ref: 47c8bbc6b63f4c6c2310911238c2c4b6bff6d20b
+          path: .asset-source/solar-system-3d
+          sparse-checkout: |
+            public/textures
+          sparse-checkout-cone-mode: false
+
+      - name: Stage licensed planetary maps for offline runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE=".asset-source/solar-system-3d/public/textures"
+          DEST="assets/planetary_textures"
+          mkdir -p "$DEST"
+          for body in sun mercury venus earth mars jupiter saturn uranus neptune; do
+            test -s "$SOURCE/$body.jpg"
+            cp "$SOURCE/$body.jpg" "$DEST/$body.jpg"
+          done
+          cp "$SOURCE/README.md" "$DEST/SOURCE_ATTRIBUTION.md"
+          (
+            cd "$DEST"
+            sha256sum sun.jpg mercury.jpg venus.jpg earth.jpg mars.jpg jupiter.jpg saturn.jpg uranus.jpg neptune.jpg > SHA256SUMS
+          )
+          test "$(find "$DEST" -maxdepth 1 -name '*.jpg' | wc -l)" -eq 9
+          cat "$DEST/SHA256SUMS"
+          rm -rf .asset-source
+
       - name: Install Godot 4.7.2 and matching export templates
         uses: SolarLabyrinth/Action-Setup-Godot@d9f6c080367bc8e35dd623433be29e9f59f53a87 # v3
         with:
@@ -66,6 +96,26 @@ jobs:
             exit 1
           fi
 
+      - name: Validate planetary visual resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_visual_resources.gd 2>&1 | tee "$RUNNER_TEMP/visual-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/visual-test.log"; then
+            echo "Planetary visual resource validation failed." >&2
+            exit 1
+          fi
+
+      - name: Validate guided exploration trail
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script res://tests/validate_guided_expedition.gd 2>&1 | tee "$RUNNER_TEMP/guided-expedition-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/guided-expedition-test.log"; then
+            echo "Guided expedition validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |
@@ -100,9 +150,34 @@ jobs:
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.1" \
-            "cmdline-tools;latest" \
-            "cmake;3.10.2.4988404" \
-            "ndk;28.1.13356709"
+            "cmake;3.10.2.4988404"
+
+          # NDK archives are large; a partial/corrupt SDK Manager cache can otherwise
+          # make every retry fail with "Error on ZipFile unknown archive".
+          NDK_VERSION="28.1.13356709"
+          NDK_PACKAGE="ndk;$NDK_VERSION"
+          NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
+          NDK_INSTALLED=false
+          for attempt in 1 2 3; do
+            echo "Installing $NDK_PACKAGE (attempt $attempt/3)"
+            if sdkmanager --sdk_root="$SDK_ROOT" "$NDK_PACKAGE" \
+              && test -f "$NDK_DIR/source.properties"; then
+              NDK_INSTALLED=true
+              break
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::NDK installation failed; clearing partial SDK download cache before retry."
+              rm -rf "$SDK_ROOT/.downloadIntermediates" "$NDK_DIR"
+              sleep 6
+            fi
+          done
+
+          if [ "$NDK_INSTALLED" != true ]; then
+            echo "NDK $NDK_VERSION could not be installed after three clean attempts." >&2
+            exit 1
+          fi
+          grep -F "Pkg.Revision = $NDK_VERSION" "$NDK_DIR/source.properties"
 
       - name: Create temporary debug signing key
         shell: bash

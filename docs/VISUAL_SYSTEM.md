@@ -1,19 +1,35 @@
-# Round 1 visual system
+# Visual system — Cosmic Explorers
 
-## Design tokens
+## Art direction
 
-- Space background: deep navy with a quiet blue horizon.
-- Navigation: navy panels with cyan outlines.
-- Primary learning action: warm gold focus state.
-- Text: near-white primary text and muted blue-grey supporting text.
-- Body surfaces: procedural shader profiles, not externally hosted images.
+The interface uses a calm observatory identity: deep-space navy surfaces, restrained cyan guidance, warm gold for the primary learning action, and clear near-white Arabic typography. Decorative treatment must never compete with the selected celestial body or the learning objective.
 
-## Procedural material profiles
+## Layout hierarchy
 
-The first rendering layer uses distinct shader branches for:
+1. Welcome experience — a short first screen that introduces the journey and offers two direct paths: free exploration or the explorer mission.
+2. Exploration header — product identity, local discovery progress, mission access, motion preference, scene reset, and zoom.
+3. World navigation — a horizontal, touch-friendly selector for the Sun and eight planets. Discovered planets receive a subtle completion mark; the selected body receives a gold focus treatment.
+4. Discovery station — selected body name, English identifier, body classification, one-sentence headline, concise description, one quick fact, and an expandable fact layer.
+5. Scene hint — a compact instruction for drag rotation and tap selection.
+6. Guided discovery — an optional, one-clue-at-a-time path through all eight planets, with positive feedback and no timer or penalty.
+
+## Interface design tokens
+
+- Space base: #030A1D to #07152B.
+- Main panels: deep navy with a cool blue-grey border.
+- Secondary panels: slightly lighter navy for depth without harsh contrast.
+- Guidance accent: cyan.
+- Primary learning action and selected state: warm gold.
+- Main text: near-white; secondary text: muted blue-grey.
+- Panels use restrained rounded corners and low-opacity shadows.
+- Buttons have explicit hover, pressed, focus, and disabled states.
+
+## Celestial material profiles
+
+The current rendering layer uses distinct procedural shader branches for:
 - Mercury: mineral ground and crater-like relief.
 - Venus: turbulent golden cloud bands.
-- Earth: blue ocean, irregular green land masses, and high cloud detail.
+- Earth: blue ocean, irregular green land masses, and cloud detail.
 - Mars: rusty terrain and polar regions.
 - Jupiter: atmospheric stripes and a stylized Great Red Spot.
 - Saturn: layered atmospheric bands; its rings are separate geometry.
@@ -21,12 +37,41 @@ The first rendering layer uses distinct shader branches for:
 - Neptune: deep-blue bands and a darker storm.
 - Sun: warm convection-like texture and a soft corona.
 
-These are visual interpretations, not mapped spacecraft images or measured surface data. Later photographic texture packs must cite their original source and license separately.
+These are visual interpretations, not mapped spacecraft images or measured surface data. Any later photographic or scanned texture pack must cite its original source, usage rights, and alterations in docs/ASSET_CREDITS.md.
 
-## Interaction
+## Child-first interaction rules
 
-- Tap a planet or choose its name from the body strip.
-- Drag the scene to rotate the camera around the current focus.
-- Zoom buttons adjust camera distance.
-- A single tap selects; a drag rotates rather than selecting.
-- The Sun is a star entry, not one of the eight planets and is not included in the eight-planet discovery count.
+- Keep the primary exploration action obvious.
+- Use concise Arabic instructions and one main learning idea at a time.
+- Keep touch targets comfortably large.
+- Do not depend on color alone: selected/discovered states also change border, text, or marker.
+- Preserve a clear route back to the main scene.
+- Motion can be paused from the header.
+- The welcome layer is dismissible through explicit actions and does not require network access.
+- A single tap selects a body; dragging rotates the view rather than selecting a body.
+
+## Scientific visualization caveats
+
+The scene compresses orbital distances and exaggerates body sizes to fit a phone display. The orbital animation is illustrative and accelerated, not a live ephemeris or a scale-accurate model. The Sun is a star, not one of the eight planets, and is excluded from the eight-planet discovery count.
+
+## Responsive and device acceptance
+
+The layout is authored against the 16:9 landscape design viewport and uses proportional panel anchors. This is a design baseline, not proof of device fit. Every release must be checked on the target Android phone for Arabic shaping, clipping, touch areas, safe areas, and frame pacing. Device acceptance remains open until a real-device test is recorded.
+
+
+## Round 4 foundation — real planetary maps
+
+The visual pipeline now stages nine equirectangular planetary maps from a pinned, attribution-licensed source commit during CI. The maps are imported into the offline APK and sampled by the existing planet surface material; procedural shading remains a fallback and a restrained detail overlay. The runtime does not fetch assets from the network. The Moon remains on the procedural fallback until a separately verified map source is added.
+
+## Round 2 — layered planetary materials
+
+- Mercury and the Moon use procedural impact-basin and crater-rim fields.
+- Venus uses denser turbulent golden cloud bands.
+- Earth uses an independent cloud shell and a view-dependent additive atmospheric rim.
+- Mars uses layered mineral terrain, dark regions, fine texture, and polar frost.
+- Jupiter uses differentiated zonal belts and a stylized Great Red Spot.
+- Saturn uses softer atmospheric belts and a separate particle-density ring shader with broad and narrow divisions.
+- Uranus and Neptune retain distinct cool atmospheric profiles.
+- The Sun uses animated granular surface detail and two procedural corona shells.
+
+Animation time is advanced by the body controller only while motion is enabled, so the motion preference also pauses procedural shader animation. These are stylized procedural visuals, not measured map reconstructions.
