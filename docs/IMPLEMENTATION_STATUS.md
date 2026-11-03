@@ -79,7 +79,7 @@
 - [x] توسيع `ContentRegistry` للتحقق من ملفات الشخصيات ومراجع المهمات والحوار.
 - [x] إضافة اختبارات للشخصيات والقدرات والاختيارات غير الصالحة وترحيل الحفظ.
 - [x] إضافة اختبار roster إلى GitHub Actions.
-- [ ] انتظار CI على رأس هذه الدفعة ومراجعة أي فشل.
+- [x] CI نجح على commit `783f60b0d3abd76b17a6b8db683c4e4611095ad1` بعد إضافة اختبارات roster وInteractionRouter، وتصدير APK. [Run 41666153049](https://github.com/mdznap35/-cosmic-explorers/actions/runs/41666153049).
 - [ ] ربط الاختيار بمشهد 3D وتحكم لمسي واختبار تبديل حي على الجهاز.
 
 **الحد:** هذه بيانات ونظام اختيار قابلان للاختبار، وليسا نماذج شخصيات ثلاثية الأبعاد أو Rig أو حركات جاهزة. حالة النماذج مسجلة صراحة بأنها لم تُنتج بعد.
@@ -90,4 +90,15 @@
 - [x] إضافة `InteractionRouter` يستخرج قائمة الأحداث المسموح بها من أهداف المهمات.
 - [x] منع تمرير أحداث غير معرّفة أو payloads تحتوي Objects/كائنات تنفيذية.
 - [x] إضافة اختبار قبول ورفض وربطه بخط CI.
+- [x] CI نجح على commit `783f60b0d3abd76b17a6b8db683c4e4611095ad1`؛ اختبار التفاعل وتصدير APK اجتازا التشغيل رقم 41666153049.
 - [ ] توصيل نقاط التفاعل في المشاهد بالـrouter ثم بـGameplayRuntime.
+
+
+## Evidence — CI after P2.1 and P2.2
+
+- Tested commit: `783f60b0d3abd76b17a6b8db683c4e4611095ad1`.
+- GitHub Actions run: https://github.com/mdznap35/-cosmic-explorers/actions/runs/41666153049 — success.
+- Automated checks passed: project import, planet catalog/orbit math, existing missions, visual resources, guided exploration, content registry, character roster, interaction router, mission/reward runtime, save migration, gameplay runtime integration, and main-scene smoke test.
+- Android debug APK exported and uploaded as artifact ID `13244823318`.
+- Artifact archive: 42,262,863 bytes; SHA-256 digest: `12540e6c8b56bbbdb04307623b8c24e87907133ee6dd8d9d0a12c8042fb64ae6`.
+- This verifies CI and export only. It does not verify visual quality, touch feel, frame rate, thermal behavior, or playability on Galaxy A15.
