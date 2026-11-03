@@ -136,3 +136,11 @@
 - Starting a mission, recording a valid objective event, and completing a mission persist local snapshots.
 - `tests/validate_gameplay_runtime_integration.gd` checks integrated completion, reward persistence, runtime recreation, and replay idempotency.
 - This is a gameplay service foundation. It is not yet connected to a new character or world scene.
+
+
+### P2.1 — Character roster foundation
+- Character profiles for Reem, Salim, and Lulu are data-driven.
+- CharacterRoster resolves playable character selection and ability queries.
+- Save schema v6 persists the selected character while preserving older progress.
+- Automated tests cover roster order, ability lookup, invalid IDs, and save migration.
+- This is a systems milestone; character meshes, rigs, animation, and in-world switching remain pending.
