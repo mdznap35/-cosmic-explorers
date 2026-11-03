@@ -110,12 +110,52 @@ func _run_sana_hub_tests() -> void:
 		_errors.append("A fresh hub instance must restore the completed CubeSat.")
 	if not restored_hub.is_relay_completed() or restored_hub.get_relay_progress() != 3:
 		_errors.append("A fresh hub instance must restore the completed Relay activity.")
+
+	var lulu_star_ids: PackedStringArray = restored_hub.get_lulu_star_ids()
+	if lulu_star_ids.size() != 5:
+		_errors.append("Lulu's hidden-star hunt must expose five unique stars.")
+	if not restored_hub.interact_station("lulu_nook"):
+		_errors.append("Lulu's nook should launch the hidden-star hunt.")
+	if restored_hub.collect_lulu_star("star_not_in_catalog"):
+		_errors.append("The hidden-star hunt must reject unknown star IDs.")
+	for index in range(2):
+		if not restored_hub.collect_lulu_star(lulu_star_ids[index]):
+			_errors.append("The first hidden-star checkpoints should be collectable.")
+	if restored_hub.get_lulu_found_star_ids().size() != 2 or restored_hub.is_lulu_hunt_completed():
+		_errors.append("The hunt should preserve its partial two-star checkpoint.")
+
 	restored_hub.queue_free()
+	await process_frame
+
+	var lulu_resume_hub = HubScene.instantiate()
+	lulu_resume_hub.enable_gameplay_bridge = false
+	root.add_child(lulu_resume_hub)
+	await process_frame
+	if lulu_resume_hub.get_lulu_found_star_ids().size() != 2 or lulu_resume_hub.is_lulu_hunt_completed():
+		_errors.append("A new hub instance must restore the partial Lulu star hunt.")
+	if not lulu_resume_hub.start_lulu_hunt():
+		_errors.append("The hidden-star hunt should resume from its saved checkpoint.")
+	for index in range(2, lulu_star_ids.size()):
+		if not lulu_resume_hub.collect_lulu_star(lulu_star_ids[index]):
+			_errors.append("The remaining hidden star should be collectable.")
+	if not lulu_resume_hub.is_lulu_hunt_completed():
+		_errors.append("Finding all five stars should complete Lulu's activity.")
+
+	lulu_resume_hub.queue_free()
+	await process_frame
+
+	var final_restore_hub = HubScene.instantiate()
+	final_restore_hub.enable_gameplay_bridge = false
+	root.add_child(final_restore_hub)
+	await process_frame
+	if not final_restore_hub.is_lulu_hunt_completed() or final_restore_hub.get_lulu_found_star_ids().size() != 5:
+		_errors.append("A fresh hub instance must restore the completed Lulu hunt.")
+	final_restore_hub.queue_free()
 	await process_frame
 	_remove_test_save()
 
 	if _errors.is_empty():
-		print("PASS: Sana Hub scene, five stations, Relay and CubeSat checkpoints, gentle retry, local persistence, and multi-session restore.")
+		print("PASS: Sana Hub scene, five stations, Relay, CubeSat, Lulu hidden-star hunt, partial checkpoints, and multi-session restore.")
 		quit(0)
 		return
 
