@@ -94,7 +94,7 @@ var _touch_keys: Dictionary = {
 	"right": false
 }
 var _nearby_station_id := ""
-var _relay_active := false
+var _modal_active := false
 var _relay_progress := 0
 var _relay_feedback := ""
 var _cubesat_display_added := false
@@ -107,6 +107,7 @@ var _gameplay_bridge_ready := false
 
 func _ready() -> void:
 	_state = _load_state()
+	_relay_progress = clampi(int(_state.get("relay_progress", 0)), 0, RELAY_SEQUENCE.size())
 	_build_world()
 	_build_player()
 	_build_camera()
@@ -125,7 +126,7 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_player):
 		return
-	if _relay_active:
+	if _modal_active:
 		_player.velocity = Vector3.ZERO
 		return
 
@@ -170,10 +171,13 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE and is_instance_valid(_modal_panel):
+			_close_modal()
+			return
+		if _modal_active:
+			return
 		if event.keycode == KEY_E or event.keycode == KEY_SPACE:
 			interact_with_nearest_station()
-		elif event.keycode == KEY_ESCAPE and is_instance_valid(_modal_panel):
-			_close_modal()
 
 
 # Public surface used by the headless acceptance test and future UI integration.
@@ -235,14 +239,16 @@ func is_gameplay_bridge_ready() -> bool:
 
 
 func start_relay_activity() -> bool:
-	_relay_progress = 0
-	_relay_feedback = "ابدأ من قمر الاتصال، ثم محطة سَنا، ثم مركبة الروفر."
+	_relay_progress = clampi(int(_state.get("relay_progress", 0)), 0, RELAY_SEQUENCE.size())
+	_relay_feedback = "تابع من المحطة التالية في مسار الاتصال."
+	if _relay_progress == 0:
+		_relay_feedback = "ابدأ من قمر الاتصال، ثم محطة سَنا، ثم مركبة الروفر."
 	_show_relay_panel()
 	return true
 
 
 func submit_relay_node(relay_id: String) -> bool:
-	if not _relay_active or _relay_progress >= RELAY_SEQUENCE.size():
+	if not _modal_active or _relay_progress >= RELAY_SEQUENCE.size():
 		return false
 
 	var expected_id: String = RELAY_SEQUENCE[_relay_progress]
@@ -252,13 +258,14 @@ func submit_relay_node(relay_id: String) -> bool:
 		return false
 
 	_relay_progress += 1
+	_state["relay_progress"] = _relay_progress
 	if _relay_progress >= RELAY_SEQUENCE.size():
 		_state["relay_activity_completed"] = true
-		_save_state()
 		_relay_feedback = "وصلت الرسالة إلى الروفر! أحسنت تنظيم مسار الاتصال."
 		_publish_gameplay_event("signal.interacted", {"activity_id": "activity.relay_message"})
 	else:
 		_relay_feedback = "ممتاز! انتقلت الرسالة إلى المحطة التالية."
+	_save_state()
 	_refresh_relay_panel()
 	return true
 
@@ -784,7 +791,7 @@ func _update_nearby_station() -> void:
 			closest_id = station_id
 
 	_nearby_station_id = closest_id
-	_interaction_button.disabled = closest_id.is_empty() or _relay_active
+	_interaction_button.disabled = closest_id.is_empty() or _modal_active
 	if closest_id.is_empty():
 		_nearby_label.text = "اقترب من محطة لعرض التفاعل"
 	else:
@@ -809,7 +816,7 @@ func _show_info_panel(title_text: String, body_text: String, hint_text: String) 
 
 func _show_relay_panel() -> void:
 	_open_modal("لعبة رسالة مرقاب")
-	_relay_active = true
+	_modal_active = true
 	var introduction := _new_label(
 		"رتّب محطات الاتصال حتى تصل رسالة الرحلة إلى الروفر. لا توجد عقوبة على المحاولة؛ جرّب وتعلّم.",
 		18,
@@ -858,7 +865,7 @@ func _refresh_relay_panel() -> void:
 
 func _show_cubesat_panel() -> void:
 	_open_modal("ورشة القمر المصغّر")
-	_relay_active = true
+	_modal_active = true
 	var introduction := _new_label(
 		"ساعد سليم في بناء قمر مصغّر. أضف الهيكل، ثم ألواح الطاقة، فالهوائي، وأخيراً كاميرا الملاحظة.",
 		18,
@@ -909,6 +916,7 @@ func _refresh_cubesat_panel() -> void:
 
 func _open_modal(title_text: String) -> void:
 	_close_modal()
+	_modal_active = true
 	_modal_panel = PanelContainer.new()
 	_modal_panel.anchor_left = 0.18
 	_modal_panel.anchor_top = 0.17
@@ -934,7 +942,8 @@ func _add_close_button() -> void:
 
 
 func _close_modal() -> void:
-	_relay_active = false
+	_modal_active = false
+	_touch_keys = {"up": false, "down": false, "left": false, "right": false}
 	_relay_buttons.clear()
 	_relay_progress_label = null
 	_relay_feedback_label = null
@@ -1015,6 +1024,7 @@ func _load_state() -> Dictionary:
 	var defaults := {
 		"version": SAVE_VERSION,
 		"visited_station_ids": [],
+		"relay_progress": 0,
 		"relay_activity_completed": false,
 		"cubesat_step": 0,
 		"cubesat_built": false
@@ -1036,9 +1046,12 @@ func _load_state() -> Dictionary:
 		for station_id in raw_visited:
 			if STATION_IDS.has(str(station_id)) and not result["visited_station_ids"].has(str(station_id)):
 				result["visited_station_ids"].append(str(station_id))
-	result["relay_activity_completed"] = bool(parsed.get("relay_activity_completed", false))
+	result["relay_progress"] = clampi(int(parsed.get("relay_progress", 0)), 0, RELAY_SEQUENCE.size())
+	result["relay_activity_completed"] = result["relay_progress"] == RELAY_SEQUENCE.size() or bool(parsed.get("relay_activity_completed", false))
+	if result["relay_activity_completed"]:
+		result["relay_progress"] = RELAY_SEQUENCE.size()
 	result["cubesat_step"] = clampi(int(parsed.get("cubesat_step", 0)), 0, CUBESAT_SEQUENCE.size())
-	result["cubesat_built"] = bool(parsed.get("cubesat_built", false)) and result["cubesat_step"] == CUBESAT_SEQUENCE.size()
+	result["cubesat_built"] = result["cubesat_step"] == CUBESAT_SEQUENCE.size()
 	return result
 
 
