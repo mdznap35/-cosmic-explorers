@@ -111,3 +111,13 @@
 - [x] منع تشغيل حوار غير معروف أو متابعة حوار منتهٍ.
 - [x] إضافة اختبار للمسارات المتفرعة والنهاية والتخطي وربطه بـ CI.
 - [ ] ربطه بواجهة حوار عربية وصوت اختياري ومشاهد الشخصيات.
+
+
+## Evidence — DialogueDirector CI
+
+- Tested commit: `d5dd1ddbb739bb82c8447129ee9f66978dc46194`.
+- GitHub Actions run: https://github.com/mdznap35/-cosmic-explorers/actions/runs/41666671001 — success.
+- Dialogue graph runtime tests passed: branching choices, linear progression, terminal completion, skip, and invalid-state rejection.
+- Full project import, all content/roster/router/mission/reward/save/integration tests, main-scene smoke test, and Android debug export passed.
+- APK artifact ID: `13245977458`; archive size: 42,268,647 bytes; SHA-256: `1fdcf4ced6b779c15f25c2c1a1118b1bcbb143d6c2181a997f57caafd5810966`.
+- This is CI/export evidence only; visual and device verification remain open.
