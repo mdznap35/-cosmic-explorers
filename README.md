@@ -104,3 +104,48 @@
 - [خطة الإنتاج ومعايير القبول](docs/PRODUCTION_BACKLOG.md)
 
 هذه وثائق محتوى وتصميم وبحث؛ تنفيذ الشخصيات والمشاهد والأنشطة داخل التطبيق يأتي في مراحل إنتاج منفصلة.
+
+
+## خطة الإنتاج والتنفيذ الجديد
+
+- [خطة الإنتاج الشاملة](docs/MASTER_PRODUCTION_PLAN.md)
+- [سجل التنفيذ والحالة الحالية](docs/IMPLEMENTATION_STATUS.md)
+- [فهرس موسوعة اللعبة](docs/CONTENT_BIBLE_INDEX.md)
+- خط محتوى JSON قابل للتحقق: الفصول والمهمات والحوارات والبطاقات العلمية والمكافآت داخل data/content.
+- اختبار آلي لسجل المحتوى عبر Godot 4.7.2 في GitHub Actions.
+
+
+### Gameplay systems implemented on the execution branch
+
+- Event-driven mission progression with required and optional objectives: scripts/mission_director.gd
+- Idempotent unlock ledger for non-repeatable rewards: scripts/reward_service.gd
+- Integration test for mission completion, replay, optional objectives, reward uniqueness, and state round-trip: tests/validate_mission_runtime.gd
+- GitHub Actions runs the mission runtime test before the main-scene smoke test.
+
+
+### Mission progression, rewards and local saves
+- Event-driven mission objectives and replay policy: `scripts/mission_director.gd`.
+- Idempotent local reward ledger: `scripts/reward_service.gd`.
+- Save schema v5 keeps legacy progress and adds mission/reward snapshots: `scripts/save_service.gd`.
+- Integration and migration checks run in GitHub Actions before the main-scene smoke test.
+- Current implementation is a tested systems foundation; the gameplay UI and 3D scenes are still pending.
+
+
+### Integrated gameplay runtime
+- `scripts/gameplay_runtime.gd` connects content loading, mission objectives, reward unlocking, and SaveService.
+- Starting a mission, recording a valid objective event, and completing a mission persist local snapshots.
+- `tests/validate_gameplay_runtime_integration.gd` checks integrated completion, reward persistence, runtime recreation, and replay idempotency.
+- This is a gameplay service foundation. It is not yet connected to a new character or world scene.
+
+
+### P2.1 — Character roster foundation
+- Character profiles for Reem, Salim, and Lulu are data-driven.
+- CharacterRoster resolves playable character selection and ability queries.
+- Save schema v6 persists the selected character while preserving older progress.
+- Automated tests cover roster order, ability lookup, invalid IDs, and save migration.
+- This is a systems milestone; character meshes, rigs, animation, and in-world switching remain pending.
+
+
+### خطة موجات التنفيذ والقبول
+- [خطة التنفيذ ذات المراحل والبوابات والشرائح الرأسية](docs/EXECUTION_WAVE_PLAN.md)
+- لا تُغلق ميزة قبل وجود commit واختبار CI؛ والميزات المرئية تحتاج تحققاً على Android الفعلي.

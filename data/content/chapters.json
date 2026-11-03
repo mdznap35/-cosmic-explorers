@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "chapter.prologue",
+      "order": 0,
+      "title_ar": "الإشارة التي طرقت النافذة",
+      "summary_ar": "اكتشف مرصد الأفق، وتعرّف إلى الفريق وسفينة سَنا، وابدأ دفتر الرحلة.",
+      "mission_ids": ["mission.prologue.signal"],
+      "unlock_policy": "available"
+    },
+    {
+      "id": "chapter.moon",
+      "order": 1,
+      "title_ar": "جارنا القمر",
+      "summary_ar": "جرّب الضوء والظلال، واكتشف الفوهات، ووجّه أول روفر.",
+      "mission_ids": ["mission.moon.light_reflection"],
+      "unlock_policy": "previous_chapter_complete"
+    },
+    {
+      "id": "chapter.mars",
+      "order": 2,
+      "title_ar": "سر الإشارة الحمراء",
+      "summary_ar": "استكشف المريخ من المدار والسطح، وسجّل الأدلة في المختبر.",
+      "mission_ids": ["mission.mars.rover_survey", "mission.mars.evidence_sort"],
+      "unlock_policy": "previous_chapter_complete"
+    }
+  ]
+}

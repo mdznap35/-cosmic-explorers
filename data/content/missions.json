@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "mission.prologue.signal",
+      "chapter_id": "chapter.prologue",
+      "kind": "story",
+      "title_ar": "إشارة في القبة",
+      "summary_ar": "تتبّع الإشارة القديمة وتعرّف إلى دفتر أُفُق-1.",
+      "primary_character_id": "reem",
+      "objectives": [
+        {"id": "objective.signal.touch", "title_ar": "المس الإشارة المضيئة", "required": true, "event_id": "signal.interacted"},
+        {"id": "objective.ship.visit", "title_ar": "تفقّد غرفة في سَنا", "required": false, "event_id": "ship.room.visited"}
+      ],
+      "dialogue_ids": ["dialogue.prologue.signal"],
+      "science_card_ids": [],
+      "reward_ids": ["reward.sticker.first_signal"],
+      "replayable": true
+    },
+    {
+      "id": "mission.moon.light_reflection",
+      "chapter_id": "chapter.moon",
+      "kind": "science",
+      "title_ar": "من أين يأتي ضوء القمر؟",
+      "summary_ar": "حرّك الضوء والكرة لترى الجزء الذي يصل إليه ضوء الشمس.",
+      "primary_character_id": "reem",
+      "objectives": [
+        {"id": "objective.moon.rotate_light", "title_ar": "حرّك مصدر الضوء", "required": true, "event_id": "moon.light_source_moved"},
+        {"id": "objective.moon.view_phase", "title_ar": "شاهد الجزء المضيء", "required": true, "event_id": "moon.illuminated_side_observed"}
+      ],
+      "dialogue_ids": [],
+      "science_card_ids": ["science.moon.reflected_light"],
+      "reward_ids": ["reward.badge.moon_friend"],
+      "replayable": true
+    },
+    {
+      "id": "mission.mars.rover_survey",
+      "chapter_id": "chapter.mars",
+      "kind": "story",
+      "title_ar": "آثار على الرمال الحمراء",
+      "summary_ar": "اختر منطقة مسح، ووجّه الروفر، وسجّل ملاحظات عن الصخور.",
+      "primary_character_id": "reem",
+      "objectives": [
+        {"id": "objective.mars.choose_site", "title_ar": "اختر منطقة للمسح", "required": true, "event_id": "mars.site.selected"},
+        {"id": "objective.mars.scan_samples", "title_ar": "افحص عينتين", "required": true, "event_id": "scanner.sample_recorded", "target_count": 2},
+        {"id": "objective.mars.photo", "title_ar": "التقط صورة للمشهد", "required": false, "event_id": "photo.captured"}
+      ],
+      "dialogue_ids": ["dialogue.mars.first_sample"],
+      "science_card_ids": ["science.mars.iron_oxide"],
+      "reward_ids": ["reward.badge.mars_field_detective"],
+      "replayable": true
+    },
+    {
+      "id": "mission.mars.evidence_sort",
+      "chapter_id": "chapter.mars",
+      "kind": "science",
+      "title_ar": "ما الذي نعرفه حقاً؟",
+      "summary_ar": "فرّق بين ما نراه في الصور وما نستنتجه وما لا نعرفه بعد.",
+      "primary_character_id": "salim",
+      "objectives": [
+        {"id": "objective.mars.sort_observations", "title_ar": "رتّب بطاقات الملاحظة", "required": true, "event_id": "evidence.cards_sorted"},
+        {"id": "objective.mars.review_water", "title_ar": "راجع دليل الماء القديم", "required": true, "event_id": "science.card.reviewed"},
+        {"id": "objective.mars.find_hidden", "title_ar": "اعثر على علامة لولو", "required": false, "event_id": "discovery.hidden_mark_found"}
+      ],
+      "dialogue_ids": [],
+      "science_card_ids": ["science.mars.water_evidence"],
+      "reward_ids": ["reward.sticker.evidence_detective"],
+      "replayable": true
+    }
+  ]
+}
