@@ -75,6 +75,10 @@ func _run_mission_runtime_tests() -> void:
 	if resumed_rewards.has_reward("reward.removed_in_future"):
 		errors.append("Unknown reward IDs must be ignored during restore.")
 
+	# The original director still has the Moon mission active; explicitly leave it
+	# before asking that same director to replay Mars.
+	mission_director.cancel_active_mission()
+
 	# Replaying a completed replayable mission must not issue its one-time reward again.
 	if not mission_director.start_mission("mission.mars.rover_survey"):
 		errors.append("The completed replayable Mars mission should be replayable.")
