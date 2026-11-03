@@ -113,3 +113,11 @@
 - [فهرس موسوعة اللعبة](docs/CONTENT_BIBLE_INDEX.md)
 - خط محتوى JSON قابل للتحقق: الفصول والمهمات والحوارات والبطاقات العلمية والمكافآت داخل data/content.
 - اختبار آلي لسجل المحتوى عبر Godot 4.7.2 في GitHub Actions.
+
+
+### Gameplay systems implemented on the execution branch
+
+- Event-driven mission progression with required and optional objectives: scripts/mission_director.gd
+- Idempotent unlock ledger for non-repeatable rewards: scripts/reward_service.gd
+- Integration test for mission completion, replay, optional objectives, reward uniqueness, and state round-trip: tests/validate_mission_runtime.gd
+- GitHub Actions runs the mission runtime test before the main-scene smoke test.
