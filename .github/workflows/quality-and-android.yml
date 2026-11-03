@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: cosmic-explorers-${{ github.ref }}
+  group: cosmic-explorers-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -148,9 +148,10 @@ jobs:
 
       - name: Validate integrated gameplay runtime
         shell: bash
+        timeout-minutes: 2
         run: |
           set -euo pipefail
-          godot --headless --path . --script res://tests/validate_gameplay_runtime_integration.gd 2>&1 | tee "$RUNNER_TEMP/gameplay-runtime-integration.log"
+          timeout 90s godot --headless --path . --script res://tests/validate_gameplay_runtime_integration.gd 2>&1 | tee "$RUNNER_TEMP/gameplay-runtime-integration.log"
           if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/gameplay-runtime-integration.log"; then
             echo "Integrated gameplay runtime validation failed." >&2
             exit 1
