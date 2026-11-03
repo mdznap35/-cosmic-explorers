@@ -19,7 +19,8 @@ func _run_save_migration_tests() -> void:
 		errors.append("Version 1 migration must preserve valid unique planet discoveries.")
 	if int(version_one.get("version", 0)) != SaveService.SAVE_VERSION:
 		errors.append("Migrated saves must use the current version.")
-	if not version_one.get("mission_runtime", {}) is Dictionary or not version_one.get("mission_runtime", {}).is_empty():
+	var legacy_mission_runtime: Variant = version_one.get("mission_runtime", {})
+	if not (legacy_mission_runtime is Dictionary) or not legacy_mission_runtime.is_empty():
 		errors.append("Legacy saves must receive an empty mission runtime snapshot.")
 
 	var version_four := SaveService.migrate_state({
