@@ -97,3 +97,15 @@ GitHub Actions يجلب المسارات المحددة من commit ثابت، �
 - اختبار لمس وأداء وحرارة على هاتف Android فعلي.
 
 لا تُرفع حالة هذا النشاط إلى `CI_passed` إلا بعد نجاح CI على الرأس الحالي، ولا إلى `device_verified` إلا بعد اختبار APK الفعلي على الجهاز المستهدف.
+
+
+## 9. دليل CI الفعلي
+
+- GitHub Actions run #86: success — https://github.com/mdznap35/-cosmic-explorers/actions/runs/41844954673
+- Implementation commit tested: `d18c5c08486d15b85b3f7fb1b24da9abd9e3d392`.
+- نجحت خطوة `Validate Mars rover survey and staged open assets`، وكذلك استيراد Godot واختبارات المشروع وسموك المشهد الرئيسي.
+- نجح تصدير APK الأساسي وAPK معاينة سَنا المستقل ورفع الأثرين.
+- Sana Hub preview artifact ID: `13330557185`, archive size: 42,505,989 bytes.
+- Android debug artifact ID: `13330397426`, archive size: 42,505,921 bytes.
+- الرأسان الخمسة التالية لهذا commit كانت تعديلات README وتوثيقاً فقط؛ latest-head run #89 ظل قيد التنفيذ وقت تحديث هذه الوثيقة.
+- هذا دليل بناء واختبارات آلية، وليس اختباراً على هاتف Android فعلي.
