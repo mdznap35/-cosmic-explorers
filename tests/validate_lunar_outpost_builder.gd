@@ -34,11 +34,6 @@ func _run_builder_tests() -> void:
 
 	if builder.get_required_component_ids() != PackedStringArray(EXPECTED_COMPONENTS):
 		_errors.append("The lunar builder must expose four stable construction component IDs.")
-	var loaded: PackedStringArray = builder.get_loaded_asset_ids()
-	for asset_id in EXPECTED_ASSETS:
-		if not loaded.has(asset_id):
-			_errors.append("Pinned CC0 model did not load in lunar builder: " + asset_id)
-
 	if builder.place_component("habitat"):
 		_errors.append("The builder must reject out-of-order placement without penalty.")
 	if not builder.place_component("landing_zone"):
@@ -60,6 +55,11 @@ func _run_builder_tests() -> void:
 	for component_id in EXPECTED_COMPONENTS.slice(1):
 		if not resumed.place_component(component_id):
 			_errors.append("Could not place the expected construction component: " + component_id)
+
+	var loaded: PackedStringArray = resumed.get_loaded_asset_ids()
+	for asset_id in EXPECTED_ASSETS:
+		if not loaded.has(asset_id):
+			_errors.append("Pinned CC0 model did not load after its placement/decorative use: " + asset_id)
 	if resumed.place_component("solar_array"):
 		_errors.append("A completed component must not be counted twice.")
 	if not resumed.is_base_complete() or resumed.get_build_progress() != EXPECTED_COMPONENTS.size():
