@@ -32,6 +32,11 @@ func _run_builder_tests() -> void:
 	root.add_child(builder)
 	await process_frame
 
+	if not builder.has_node("MirqabGuideDrone"):
+		_errors.append("The lunar scene must include the animated Mirqab guide drone.")
+	if builder.find_child("ConstructionProgress", true, false) == null:
+		_errors.append("The construction HUD must expose a visible progress bar.")
+
 	if builder.get_required_component_ids() != PackedStringArray(EXPECTED_COMPONENTS):
 		_errors.append("The lunar builder must expose four stable construction component IDs.")
 	if builder.place_component("habitat"):
