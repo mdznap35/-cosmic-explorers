@@ -61,8 +61,8 @@ const STATION_DATA := {
 	},
 	"laboratory": {
 		"title": "مختبر مرقاب",
-		"hint": "نفحص العينات ونرتب الأدلة.",
-		"description": "الملاحظة ليست هي الاستنتاج. في المختبر نسجل ما رأيناه، ثم نبحث عما يمكن أن يعنيه."
+		"hint": "انطلق بمركبة المسح إلى سطح المريخ.",
+		"description": "جرّب قيادة الروفر وسجّل ثلاث ملاحظات مختلفة. لاحظ أولاً، ثم استنتج بحذر."
 	},
 	"observatory": {
 		"title": "مرصد ريم",
@@ -354,6 +354,12 @@ func interact_station(station_id: String) -> bool:
 		return true
 	if station_id == "lulu_nook":
 		start_lulu_hunt()
+		return true
+	if station_id == "laboratory":
+		var scene_result := get_tree().change_scene_to_file("res://scenes/prototypes/mars_rover_survey.tscn")
+		if scene_result != OK:
+			push_warning("Unable to open the Mars rover survey prototype.")
+			return false
 		return true
 
 	var station: Dictionary = STATION_DATA[station_id]
