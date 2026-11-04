@@ -153,6 +153,8 @@ func execute_program() -> bool:
 		_set_feedback("تعذّر حفظ المرحلة. بقيت المحاولة متاحة ويمكنك تشغيلها مجدداً.")
 		return false
 
+	if is_all_levels_completed():
+		_level_index = LEVELS.size()
 	_set_feedback("نجحت المهمة! جمع الروفر العينات وعاد إلى محطة سَنا. أحسنت التخطيط!")
 	_update_interface()
 	return true
@@ -318,7 +320,7 @@ func _update_interface() -> void:
 	var level: Dictionary = LEVELS[_level_index]
 	_level_label.text = "%s  •  المرحلة %d من %d" % [str(level["title"]), _level_index + 1, LEVELS.size()]
 	_hint_label.text = str(level["hint"])
-	var glyphs: Array[String] = []
+	var glyphs := PackedStringArray()
 	for command_id in _commands:
 		glyphs.append(str(COMMAND_GLYPHS[command_id]))
 	_commands_label.text = "الأوامر: " + ("  ".join(glyphs) if not glyphs.is_empty() else "—")
