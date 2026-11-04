@@ -268,6 +268,14 @@ func start_cubesat_activity() -> bool:
 	_show_cubesat_panel()
 	return true
 
+func start_lunar_outpost_activity() -> bool:
+	_close_modal()
+	var scene_result := get_tree().change_scene_to_file("res://scenes/prototypes/lunar_outpost_builder.tscn")
+	if scene_result != OK:
+		push_warning("Unable to open the lunar outpost builder.")
+		return false
+	return true
+
 
 func select_cubesat_part(part_id: String) -> bool:
 	var current_step := get_cubesat_progress()
@@ -1063,6 +1071,14 @@ func _show_cubesat_panel() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_modal_content.add_child(button)
 		_cubesat_buttons.append(button)
+
+	var lunar_builder_button := _new_button(
+		"بناء القاعدة القمرية",
+		Callable(self, "start_lunar_outpost_activity"),
+		Vector2(0.0, 54.0)
+	)
+	lunar_builder_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_modal_content.add_child(lunar_builder_button)
 
 	_add_close_button()
 	_refresh_cubesat_panel()
