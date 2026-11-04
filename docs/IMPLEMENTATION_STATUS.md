@@ -173,3 +173,14 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 2. فحص CI بما فيه اختبارات Relay وCubeSat وأسرار لولو وبناء APK التجريبي.
 3. إصلاح أي خطأ بناء أو اختبار على نفس الفرع.
 4. بعد CI أخضر، اختبار APK على Android قبل توسيع النموذج والأصول.
+
+
+---
+
+## 4 November 2026 — Visual production specification
+
+- Added `docs/SANA_HUB_VISUAL_PRODUCTION_SPEC.md` to define the art direction, five station identities, character model/rig requirements, Android-first technical-art constraints, open-source asset intake gates, production sequence ART-0 through ART-5, and regression contracts.
+- Linked the specification from README.
+- This is a production specification only. No external art pack was downloaded or imported, no character model/rig was created, and no runtime scene/code was changed in this documentation pass.
+- Existing Sana Hub gameplay contracts are explicitly protected: station IDs, Relay/CubeSat/Lulu progress restoration, touch/input cleanup, optional gameplay bridge, isolated prototype save, and the original main solar-system scene.
+- Next implementation increment: ART-0 style lock and ART-1 bridge-room asset pilot. Before importing any pack, verify the exact archive, license, size, SHA-256, selected files, Godot 4.7.2 Compatibility import, and Android export.
