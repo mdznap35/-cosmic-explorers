@@ -184,3 +184,24 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - This is a production specification only. No external art pack was downloaded or imported, no character model/rig was created, and no runtime scene/code was changed in this documentation pass.
 - Existing Sana Hub gameplay contracts are explicitly protected: station IDs, Relay/CubeSat/Lulu progress restoration, touch/input cleanup, optional gameplay bridge, isolated prototype save, and the original main solar-system scene.
 - Next implementation increment: ART-0 style lock and ART-1 bridge-room asset pilot. Before importing any pack, verify the exact archive, license, size, SHA-256, selected files, Godot 4.7.2 Compatibility import, and Android export.
+
+
+---
+
+## 4 November 2026 — Mars rover survey vertical slice
+
+### Added on `sana-hub-vertical-slice-v1`
+- [x] Independent `scenes/prototypes/mars_rover_survey.tscn` and `scripts/prototypes/mars_rover_survey.gd`.
+- [x] A controllable wheeled rover with keyboard and touch D-pad controls, a follow camera, proximity scanning, and a clear return path to Sana.
+- [x] Three original observation sites: layered rock, sand ripples, and crater rim.
+- [x] Range validation, stable site IDs, local partial progress persistence, cross-instance restoration, and duplicate-scan prevention.
+- [x] The Sana Hub Mirqab laboratory now launches the independent rover survey scene.
+- [x] GitHub Actions checks out a pinned KayKit CC0 repository commit and stages eight selected GLTF models with their binary buffers, atlas texture, and license; CI generates a SHA-256 manifest.
+- [x] Added `tests/validate_mars_rover_survey.gd` to verify the three scan sites, range checks, all eight imported models, partial-save restore, completion, and duplicate protection.
+
+### Evidence state
+- Implementation and workflow changes are on this branch; exact-head CI has not yet been confirmed successful at the time of this status entry.
+- External model source: `KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0`, pinned to `6dfbcac9927d06283752c4defd4882cfe0d29666`; CC0 1.0 LICENSE is copied into the staged asset directory.
+- The pack is staged during cloud CI, not downloaded to the user's phone. The exported game bundles required imported assets and keeps runtime network access disabled.
+- This is a compact survey prototype, not a complete Mars biome, rover simulation, or device-verified feature.
+- Still open: exact-head CI result, APK installation/touch test on Android, performance/thermal measurement, full rover camera/scanner visuals, and integration of survey discoveries with the core journal/mission/reward services.
