@@ -384,8 +384,8 @@ This is an early, isolated vertical slice attached to the existing Sana Hub bran
 - [x] Persist partial scan progress and resume across scene instances.
 - [x] Stage eight selected CC0 KayKit GLTF props from an immutable source commit in cloud CI.
 - [x] Validate source pin, selected model presence, scan range, persistence, completion, and duplicate rejection in a dedicated Godot test.
-- [ ] Confirm exact-head CI and Android APK exports after the new asset staging step.
-- [ ] Verify the preview APK on a physical Android device.
+- [x] GitHub Actions run #86 passed on implementation commit `d18c5c08486f3f0939e26dfc35e53ba3445b553` (asset staging/import, all tests including rover, main smoke, both Android APK exports, and both artifact uploads).
+- [ ] Verify the preview APK on a physical Android device (touch handling, visual layout, FPS, memory, and thermal behaviour).
 - [ ] Expand from the prototype into a complete Mars level with sample transport, science lab analysis, journal cards, and core mission/reward integration.
 
 **Scope guard:** no changes to `main`, the original solar-system scene, PR #2, PR #3, or the existing Sana Hub save contract. KayKit assets are obtained by cloud CI; the player-facing app remains offline.
