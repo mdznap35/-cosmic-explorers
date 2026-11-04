@@ -165,6 +165,7 @@
 
 - [توثيق نموذج سفينة سَنا والألعاب الجانبية الأولى](docs/SANA_HUB_PROTOTYPE.md)
 - [مواصفات الإنتاج البصري لسفينة سَنا والشخصيات والأصول](docs/SANA_HUB_VISUAL_PRODUCTION_SPEC.md)
+- [نشاط بناء القاعدة القمرية — ورشة سليم](docs/LUNAR_OUTPOST_BUILDER.md)
 - [نموذج بعثة الروفر الحمراء وعينة أصول KayKit CC0](docs/MARS_ROVER_SURVEY_PROTOTYPE.md)
 - [تحويل ألعاب الفضاء المرجعية إلى أنشطة أصلية داخل عالمنا](docs/OPEN_SOURCE_GAMES_ADAPTATION.md)
 

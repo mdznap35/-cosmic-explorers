@@ -247,6 +247,28 @@ jobs:
             exit 1
           fi
 
+      - name: Validate lunar outpost builder and staged CC0 assets
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_lunar_outpost_builder.gd 2>&1 | tee "$RUNNER_TEMP/lunar-outpost-builder.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/lunar-outpost-builder.log"; then
+            echo "Lunar outpost builder or open-asset validation failed." >&2
+            exit 1
+          fi
+
+      - name: Validate lunar rover route planner
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_lunar_rover_route_planner.gd 2>&1 | tee "$RUNNER_TEMP/lunar-rover-routes.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/lunar-rover-routes.log"; then
+            echo "Lunar rover route planner validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |

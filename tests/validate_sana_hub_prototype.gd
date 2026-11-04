@@ -24,6 +24,10 @@ func _run_sana_hub_tests() -> void:
 	root.add_child(hub)
 	await process_frame
 
+	if not hub.has_method("start_lunar_outpost_activity"):
+		_errors.append("The workshop hub must expose the lunar outpost activity entry point.")
+	if not ResourceLoader.exists("res://scenes/prototypes/lunar_outpost_builder.tscn"):
+		_errors.append("The linked lunar outpost builder scene must be available.")
 	var station_ids: PackedStringArray = hub.get_station_ids()
 	if station_ids.size() != EXPECTED_STATIONS.size():
 		_errors.append("The hub must expose exactly five named stations.")

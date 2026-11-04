@@ -74,3 +74,12 @@
 - المسارات التي ينسخها CI فقط: `basemodule_A`, `lander_A`, `landingpad_small`, `rocks_A`, `rocks_B`, `solarpanel`, `spacetruck`, `structure_low` مع ملفات GLTF وBIN وخامة الأطلس وLICENSE.
 - لا تنسخ الحزمة كاملة ولا ملفات لا تخدم تجربة الاستكشاف. يحسب CI SHA-256 فعلياً للملفات المنسوخة في كل تشغيل.
 - الحالة بعد التحقق: tested in GitHub Actions run #86 (code commit `d18c5c08486d15b85b3f7fb1b24da9abd9e3d392`); ما زالت device_verified غير مكتملة حتى اختبار Android فعلي.
+
+
+## 8. استخدام عينة KayKit في نشاط بناء القاعدة القمرية
+
+- النشاط الجديد: `docs/LUNAR_OUTPOST_BUILDER.md`.
+- يستعمل النماذج الأربعة `landingpad_small`, `basemodule_A`, `solarpanel`, `structure_low` كأجزاء بناء، ويستعمل `lander_A`, `spacetruck`, `rocks_A`, `rocks_B` كعناصر بيئية.
+- المصدر والإصدار والرخصة هي نفسها المثبتة في القسم 7؛ لا يوجد تنزيل وقت التشغيل ولا نسخ كامل للحزمة.
+- يتم توفير الأصول مؤقتاً بواسطة خطوة CI المثبتة على commit محدد، ثم يفحص اختبار `validate_lunar_outpost_builder.gd` تحميل النماذج الثمانية واستعادة الحفظ.
+- الحالة: مضافة إلى مشهد مستقل؛ بانتظار نجاح CI على رأس هذا الفرع ثم اختبار APK على جهاز Android. لا ترفع الحالة إلى `device_verified` قبل التجربة الفعلية.

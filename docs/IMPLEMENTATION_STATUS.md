@@ -209,3 +209,19 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - Still open: exact-head CI result, APK installation/touch test on Android, performance/thermal measurement, full rover camera/scanner visuals, and integration of survey discoveries with the core journal/mission/reward services.
 
 - Physical Android verification remains outstanding; CI success is not evidence of frame rate, touch comfort, thermal stability, or visual acceptance on the target phone.
+
+
+---
+
+## 4 November 2026 — ACT-25 Lunar Outpost Builder
+
+- Added `scenes/prototypes/lunar_outpost_builder.tscn` and `scripts/prototypes/lunar_outpost_builder.gd` as a standalone, offline-first construction activity.
+- Added a Workshop entry point from the existing CubeSat panel in Sana Hub.
+- Four stable build IDs: `landing_zone`, `habitat`, `solar_array`, `communications_module`.
+- Reuses the pinned KayKit Space Base Bits CC0 subset already staged by CI: landing pad, habitat module, solar panel, communications structure, lander, utility truck, and two rock sets.
+- Progress is saved to `user://lunar_outpost_builder.json`; invalid order is non-punitive; partial progress resumes; duplicate placements are rejected.
+- Added `tests/validate_lunar_outpost_builder.gd`, extended the Sana Hub test to verify the new entry point, and added the new test to the Android/quality workflow.
+- Added activity documentation and catalog entry ACT-25.
+- PR #6: https://github.com/mdznap35/-cosmic-explorers/pull/6 — draft, stacked on `sana-hub-vertical-slice-v1`, not merged.
+- Initial CI run #94 was in progress after staging both pinned texture and KayKit asset sources. Do not mark this increment CI-passed until the full workflow completes successfully.
+- No changes to `main`, `scenes/main.tscn`, or the solar-system scene. No device verification has been claimed.
