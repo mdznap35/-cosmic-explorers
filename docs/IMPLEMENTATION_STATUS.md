@@ -200,8 +200,12 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - [x] Added `tests/validate_mars_rover_survey.gd` to verify the three scan sites, range checks, all eight imported models, partial-save restore, completion, and duplicate protection.
 
 ### Evidence state
-- Implementation and workflow changes are on this branch; exact-head CI has not yet been confirmed successful at the time of this status entry.
+- GitHub Actions run #86 succeeded on implementation commit `d18c5c08486d15b85b3f7fb1b24da9abd9e3d392`. It completed the asset staging/import, all project tests, the new Mars rover survey test, main-scene smoke test, primary debug APK export, standalone Sana Hub APK export, and both artifact uploads.
+- Artifacts: Sana Hub preview ID `13330557185` (42,505,989 bytes); Android debug ID `13330397426` (42,505,921 bytes). Both were reported unexpired at verification time.
+- The five commits from that implementation commit to current head `01571ae4680ffac8e41de4a3ac0318b4397ff2ce` changed only README and documentation files; latest-head run #89 was still in progress when this entry was prepared.
 - External model source: `KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0`, pinned to `6dfbcac9927d06283752c4defd4882cfe0d29666`; CC0 1.0 LICENSE is copied into the staged asset directory.
 - The pack is staged during cloud CI, not downloaded to the user's phone. The exported game bundles required imported assets and keeps runtime network access disabled.
 - This is a compact survey prototype, not a complete Mars biome, rover simulation, or device-verified feature.
 - Still open: exact-head CI result, APK installation/touch test on Android, performance/thermal measurement, full rover camera/scanner visuals, and integration of survey discoveries with the core journal/mission/reward services.
+
+- Physical Android verification remains outstanding; CI success is not evidence of frame rate, touch comfort, thermal stability, or visual acceptance on the target phone.
