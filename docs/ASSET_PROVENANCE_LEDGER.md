@@ -7,6 +7,7 @@
 | المعرّف | المورد/الحزمة | المصدر الأصلي | الرخصة المنشورة | الاستخدام المخطط | الحالة |
 |---|---|---|---|---|---|
 | ASSET-KENNEY-STATION | Kenney Space Station Kit | https://kenney.nl/assets/space-station-kit | CC0 1.0 | 80+ نموذجاً؛ ZIP معلن 1.7 MB؛ OBJ/FBX/glTF؛ بناء غرفة سفينة ومحطة اختبار | candidate — لم ينزّل بعد؛ SHA-256 غير مسجل |
+| ASSET-KAYKIT-SPACE-BASE-BITS | KayKit Space Base Bits 1.0 | https://github.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0 | CC0 1.0 Universal (LICENSE.txt in pinned repository) | عينة من 8 نماذج GLTF مع buffers وخامة أطلس؛ lander/outpost/rocks/solar panel/truck | staged by GitHub Actions from commit `6dfbcac9927d06283752c4defd4882cfe0d29666`; SHA-256 manifest generated per run; pending CI import/scene test |
 | ASSET-KENNEY-SFX | Kenney Interface Sounds | https://kenney.nl/assets/interface-sounds | CC0 | مؤثرات واجهة مختارة | candidate |
 | ASSET-QUATERNIUS-ANIM | Quaternius Universal Animation Library | https://quaternius.com/packs/universalanimationlibrary.html | CC0 | اختبار حركات ريم وسليم | candidate |
 | ASSET-POLYHAVEN | Poly Haven | https://polyhaven.com/license | CC0 حسب صفحة الترخيص العامة | خامات أو HDRI مختارة | candidate |
@@ -64,3 +65,12 @@
 - rejected: مرفوض، مع توثيق السبب.
 
 هذا السجل إداري وحقوقي. لا يمثل رأياً قانونياً، وتجب إعادة مراجعة الرخصة عند اعتماد إصدار نهائي.
+
+## 7. إدخال KayKit Space Base Bits — عينة مربوطة بالبناء
+
+- المستودع الرسمي: https://github.com/KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0
+- commit ثابت: `6dfbcac9927d06283752c4defd4882cfe0d29666`.
+- الرخصة المرفقة داخل المصدر: CC0 1.0 Universal.
+- المسارات التي ينسخها CI فقط: `basemodule_A`, `lander_A`, `landingpad_small`, `rocks_A`, `rocks_B`, `solarpanel`, `spacetruck`, `structure_low` مع ملفات GLTF وBIN وخامة الأطلس وLICENSE.
+- لا تنسخ الحزمة كاملة ولا ملفات لا تخدم تجربة الاستكشاف. يحسب CI SHA-256 فعلياً للملفات المنسوخة في كل تشغيل.
+- الحالة الإدارية عند إضافة هذا السجل: staged in workflow; لم نعلنها بعد tested أو device_verified. تتغير الحالة فقط بعد دليل CI واختبار الجهاز.
