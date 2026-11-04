@@ -161,7 +161,12 @@ func scan_site(site_id: String) -> bool:
 
 	found.append(site_id)
 	_state["found_site_ids"] = found
-	_save_state()
+	if not _save_state():
+		found.erase(site_id)
+		_state["found_site_ids"] = found
+		_feedback_label.text = "تعذّر حفظ الملاحظة. لم نحتسبها، ويمكنك المحاولة مجدداً."
+		_update_status()
+		return false
 
 	_feedback_label.text = str(site["observation"])
 	if is_survey_completed():
