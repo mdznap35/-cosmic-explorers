@@ -348,3 +348,44 @@ ActivityLauncher وإطار الألعاب الجانبية
 5. اختبار APK على Android قبل توسيع العمل إلى الشخصيات الثلاث.
 
 هذه الخطة توجه العمل؛ ولا تعني أن أي نشاط أو أصل أو مشهد في القائمة أصبح منفذاً.
+
+---
+
+## تحديث التنفيذ الفعلي — شريحة سَنا الأولى
+
+الفرع: `sana-hub-vertical-slice-v1`
+
+- [x] إنشاء مشهد مستقل لخمس محطات في سفينة سَنا دون المساس بالمشهد الرئيسي.
+- [x] إضافة شخصية اختبار مؤقتة، حركة لوحة مفاتيح/لمس، كاميرا متابعة، تفاعل قريب، ومسار رجوع.
+- [x] لعبة «رسالة مرقاب» على جسر القيادة.
+- [x] حفظ خطوات Relay واستعادتها بعد إغلاق المشهد.
+- [x] لعبة «ابنِ قمرك المصغّر» في ورشة سليم، بأربع وحدات.
+- [x] حفظ نقاط توقف CubeSat وإظهار نموذج بعد اكتماله.
+- [x] لعبة «أسرار لولو» للعثور على خمس نجوم مخفية في السفينة.
+- [x] حفظ نقاط العثور الجزئية واستكمال الجمع بعد إعادة فتح المشهد.
+- [x] إضافة اختبار واحد يغطي المحطات والألعاب الثلاث واستئناف التقدم الجزئي من جلسة إلى أخرى.
+- [x] إضافة خطوة CI منفصلة لبناء APK معاينة لسفينة سَنا بمعرّف حزمة مستقل.
+- [ ] نتيجة CI ناجحة على رأس الفرع الحالي بعد إصلاح خطأ استنتاج النوع الذي ظهر في run 76.
+- [ ] مراجعة لقطات/عرض بصري واختبار يدوي على Android.
+- [ ] استيراد عينة Kenney Space Station Kit بعد تثبيت الملف الفعلي والتحقق من SHA-256؛ حتى الآن هو مرشح فقط.
+
+**الحالة:** implemented على الفرع، وليس بعد CI_passed أو device_verified. الأبطال والنماذج النهائية والروفر والبيئات التفصيلية لم تنفذ بعد.
+
+
+---
+
+## 4 November 2026 — First Mars rover surface activity
+
+This is an early, isolated vertical slice attached to the existing Sana Hub branch, not completion of the larger W7 Mars campaign.
+
+- [x] Enter the rover activity from the Mirqab laboratory.
+- [x] Create a separate Mars survey scene and a controllable rover.
+- [x] Add three original scan sites and short observation-first feedback.
+- [x] Persist partial scan progress and resume across scene instances.
+- [x] Stage eight selected CC0 KayKit GLTF props from an immutable source commit in cloud CI.
+- [x] Validate source pin, selected model presence, scan range, persistence, completion, and duplicate rejection in a dedicated Godot test.
+- [x] GitHub Actions run #86 passed on implementation commit `d18c5c08486d15b85b3f7fb1b24da9abd9e3d392` (asset staging/import, all tests including rover, main smoke, both Android APK exports, and both artifact uploads).
+- [ ] Verify the preview APK on a physical Android device (touch handling, visual layout, FPS, memory, and thermal behaviour).
+- [ ] Expand from the prototype into a complete Mars level with sample transport, science lab analysis, journal cards, and core mission/reward integration.
+
+**Scope guard:** no changes to `main`, the original solar-system scene, PR #2, PR #3, or the existing Sana Hub save contract. KayKit assets are obtained by cloud CI; the player-facing app remains offline.

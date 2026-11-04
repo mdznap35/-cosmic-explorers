@@ -142,3 +142,70 @@
 
 ### نقطة الاستئناف التنفيذية
 W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة تكامل آمنة. بعد ذلك W1: اختيار أصغر عينة أصول فضائية موثقة لبناء نموذج سفينة أولي في CI، مع إبقاء أصول الهاتف والتنزيلات الكبيرة خارج هاتف المستخدم.
+
+---
+
+## تنفيذ شريحة سفينة سَنا — فرع sana-hub-vertical-slice-v1
+
+### ما أُضيف في الشريحة
+- مشهد مستقل `scenes/prototypes/sana_hub_prototype.tscn`، دون استبدال `scenes/main.tscn`.
+- باني مشهد 3D إجرائي في `scripts/prototypes/sana_hub_prototype.gd`.
+- خمس محطات أولية: جسر القيادة، ورشة سليم، مختبر مرقاب، مرصد ريم، وركن لولو.
+- شخصية اختبار مؤقتة قابلة للتحرك، كاميرا متابعة، أزرار لمس، تفاعل عند الاقتراب، ومسار رجوع إلى خريطة الكواكب.
+- لعبة Relay أصلية في جسر القيادة، مستلهمة على مستوى الميكانيكية من NASA Space Place Relay.
+- لعبة بناء CubeSat أصلية في ورشة سليم: تركيب أربع وحدات، حفظ التقدم، وإظهار نموذج صغير عند الإكمال؛ مرجع التصميم NASA Space Place CubeSat Builder.
+- لعبة «أسرار لولو»: خمس نجوم مضيئة مخفية داخل السفينة، تجمع بالاقتراب والتفاعل، مع حفظ واستعادة ما تم العثور عليه؛ تستلهم فئة ألعاب العثور على الأشياء المخفية في NASA Space Place دون نسخ الأصول.
+- حفظ مستقل للنموذج الأولي في `user://sana_hub_prototype.json`.
+- ربط اختياري مع ContentRegistry وInteractionRouter وGameplayRuntime لأحداث موجودة مسبقاً فقط؛ لا تستبدل مهمة نشطة أخرى.
+- اختبار آلي موسع في `tests/validate_sana_hub_prototype.gd` يغطي المحطات والألعاب الثلاث ونقاط الحفظ الجزئية.
+- GitHub Actions يضيف اختبار المشهد ومحاولة بناء APK منفصل لسفينة سَنا بهوية حزمة مختلفة.
+
+### الحدود والأدلة
+- هذه إضافة فعلية على الفرع، لكنها ما تزال graybox وليست سفينة نهائية أو أبطالاً بنماذج نهائية.
+- لا توجد في هذا الفرع ملفات أصول Kenney ثنائية مستوردة بعد؛ حزمة Space Station Kit CC0 موثقة كمرشح، وليست مدمجة.
+- NASA Relay وCubeSat Builder مراجع تصميمية؛ لا ندّعي أن مواردهما أو كودهما أُعيد استخدامه.
+- فشل تشغيل GitHub Actions رقم 76 في اختبار سَنا بسبب استنتاج نوع `visited_count`؛ أُصلح التصريح بالنوع في الفرع الحالي، ويجب اعتماد نتيجة التشغيل الجديد قبل إعلان CI_passed.
+- لا يوجد device_verified على Android حتى تاريخ هذا التحديث.
+- لا تغيير مقصود على `main` أو PR #2 أو PR #3؛ الفرع الحالي مبني على فرع التخطيط السابق.
+
+### نقطة الاستئناف
+1. فتح PR مستقل من `sana-hub-vertical-slice-v1` إلى `connected-space-open-source-plan-v1`.
+2. فحص CI بما فيه اختبارات Relay وCubeSat وأسرار لولو وبناء APK التجريبي.
+3. إصلاح أي خطأ بناء أو اختبار على نفس الفرع.
+4. بعد CI أخضر، اختبار APK على Android قبل توسيع النموذج والأصول.
+
+
+---
+
+## 4 November 2026 — Visual production specification
+
+- Added `docs/SANA_HUB_VISUAL_PRODUCTION_SPEC.md` to define the art direction, five station identities, character model/rig requirements, Android-first technical-art constraints, open-source asset intake gates, production sequence ART-0 through ART-5, and regression contracts.
+- Linked the specification from README.
+- This is a production specification only. No external art pack was downloaded or imported, no character model/rig was created, and no runtime scene/code was changed in this documentation pass.
+- Existing Sana Hub gameplay contracts are explicitly protected: station IDs, Relay/CubeSat/Lulu progress restoration, touch/input cleanup, optional gameplay bridge, isolated prototype save, and the original main solar-system scene.
+- Next implementation increment: ART-0 style lock and ART-1 bridge-room asset pilot. Before importing any pack, verify the exact archive, license, size, SHA-256, selected files, Godot 4.7.2 Compatibility import, and Android export.
+
+
+---
+
+## 4 November 2026 — Mars rover survey vertical slice
+
+### Added on `sana-hub-vertical-slice-v1`
+- [x] Independent `scenes/prototypes/mars_rover_survey.tscn` and `scripts/prototypes/mars_rover_survey.gd`.
+- [x] A controllable wheeled rover with keyboard and touch D-pad controls, a follow camera, proximity scanning, and a clear return path to Sana.
+- [x] Three original observation sites: layered rock, sand ripples, and crater rim.
+- [x] Range validation, stable site IDs, local partial progress persistence, cross-instance restoration, and duplicate-scan prevention.
+- [x] The Sana Hub Mirqab laboratory now launches the independent rover survey scene.
+- [x] GitHub Actions checks out a pinned KayKit CC0 repository commit and stages eight selected GLTF models with their binary buffers, atlas texture, and license; CI generates a SHA-256 manifest.
+- [x] Added `tests/validate_mars_rover_survey.gd` to verify the three scan sites, range checks, all eight imported models, partial-save restore, completion, and duplicate protection.
+
+### Evidence state
+- GitHub Actions run #86 succeeded on implementation commit `d18c5c08486d15b85b3f7fb1b24da9abd9e3d392`. It completed the asset staging/import, all project tests, the new Mars rover survey test, main-scene smoke test, primary debug APK export, standalone Sana Hub APK export, and both artifact uploads.
+- Artifacts: Sana Hub preview ID `13330557185` (42,505,989 bytes); Android debug ID `13330397426` (42,505,921 bytes). Both were reported unexpired at verification time.
+- The five commits from that implementation commit to current head `01571ae4680ffac8e41de4a3ac0318b4397ff2ce` changed only README and documentation files; latest-head run #89 was still in progress when this entry was prepared.
+- External model source: `KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0`, pinned to `6dfbcac9927d06283752c4defd4882cfe0d29666`; CC0 1.0 LICENSE is copied into the staged asset directory.
+- The pack is staged during cloud CI, not downloaded to the user's phone. The exported game bundles required imported assets and keeps runtime network access disabled.
+- This is a compact survey prototype, not a complete Mars biome, rover simulation, or device-verified feature.
+- Still open: exact-head CI result, APK installation/touch test on Android, performance/thermal measurement, full rover camera/scanner visuals, and integration of survey discoveries with the core journal/mission/reward services.
+
+- Physical Android verification remains outstanding; CI success is not evidence of frame rate, touch comfort, thermal stability, or visual acceptance on the target phone.

@@ -53,6 +53,45 @@ jobs:
           cat "$DEST/SHA256SUMS"
           rm -rf .asset-source
 
+      - name: Check out pinned KayKit Space Base Bits source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: KayKit-Game-Assets/KayKit-Space-Base-Bits-1.0
+          ref: 6dfbcac9927d06283752c4defd4882cfe0d29666
+          path: .asset-source/kaykit-space-base-bits
+          sparse-checkout: |
+            addons/kaykit_space_base_bits/Assets/gltf
+            addons/kaykit_space_base_bits/Assets/LICENSE.txt
+          sparse-checkout-cone-mode: false
+
+      - name: Stage selected CC0 space-base models for offline runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE=".asset-source/kaykit-space-base-bits/addons/kaykit_space_base_bits/Assets"
+          DEST="assets/vendor/kaykit_space_base_bits"
+          SOURCE_COMMIT="6dfbcac9927d06283752c4defd4882cfe0d29666"
+          test "$(git -C .asset-source/kaykit-space-base-bits rev-parse HEAD)" = "$SOURCE_COMMIT"
+          mkdir -p "$DEST"
+          for model in basemodule_A lander_A landingpad_small rocks_A rocks_B solarpanel spacetruck structure_low; do
+            test -s "$SOURCE/gltf/$model.gltf"
+            test -s "$SOURCE/gltf/$model.bin"
+            cp "$SOURCE/gltf/$model.gltf" "$DEST/$model.gltf"
+            cp "$SOURCE/gltf/$model.bin" "$DEST/$model.bin"
+          done
+          cp "$SOURCE/gltf/spacebits_texture.png" "$DEST/spacebits_texture.png"
+          cp "$SOURCE/LICENSE.txt" "$DEST/LICENSE.txt"
+          test "$(find "$DEST" -maxdepth 1 -name '*.gltf' | wc -l)" -eq 8
+          test "$(find "$DEST" -maxdepth 1 -name '*.bin' | wc -l)" -eq 8
+          (
+            cd "$DEST"
+            sha256sum LICENSE.txt *.bin *.gltf spacebits_texture.png | sort -k2 > SHA256SUMS
+          )
+          echo "Pinned KayKit source: $SOURCE_COMMIT"
+          echo "Selected models: 8 GLTF scenes with buffers, one shared texture and CC0 license."
+          cat "$DEST/SHA256SUMS"
+          rm -rf .asset-source/kaykit-space-base-bits
+
       - name: Install Godot 4.7.2 and matching export templates
         uses: SolarLabyrinth/Action-Setup-Godot@d9f6c080367bc8e35dd623433be29e9f59f53a87 # v3
         with:
@@ -187,6 +226,27 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Sana Hub prototype and relay activity
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_sana_hub_prototype.gd 2>&1 | tee "$RUNNER_TEMP/sana-hub-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-test.log"; then
+            echo "Sana Hub prototype validation failed." >&2
+            exit 1
+          fi
+      - name: Validate Mars rover survey and staged open assets
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_mars_rover_survey.gd 2>&1 | tee "$RUNNER_TEMP/mars-rover-survey.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/mars-rover-survey.log"; then
+            echo "Mars rover survey or open-asset validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |
@@ -306,6 +366,78 @@ jobs:
           fi
           sha256sum build/CosmicExplorers-Android-debug.apk
 
+      - name: Export standalone Sana Hub preview APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ORIGINAL_PROJECT="$RUNNER_TEMP/project.godot.before-sana"
+          ORIGINAL_PRESETS="$RUNNER_TEMP/export_presets.before-sana"
+          cp project.godot "$ORIGINAL_PROJECT"
+          cp export_presets.cfg "$ORIGINAL_PRESETS"
+          restore_project_files() {
+            cp "$ORIGINAL_PROJECT" project.godot
+            cp "$ORIGINAL_PRESETS" export_presets.cfg
+          }
+          trap restore_project_files EXIT
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          project_path = Path("project.godot")
+          project = project_path.read_text(encoding="utf-8")
+          old_main = 'run/main_scene="res://scenes/main.tscn"'
+          new_main = 'run/main_scene="res://scenes/prototypes/sana_hub_prototype.tscn"'
+          if project.count(old_main) != 1:
+              raise SystemExit("Expected exactly one existing main-scene setting.")
+          project_path.write_text(project.replace(old_main, new_main, 1), encoding="utf-8")
+
+          presets_path = Path("export_presets.cfg")
+          presets = presets_path.read_text(encoding="utf-8")
+          replacements = {
+              'package/unique_name="org.mdznap35.cosmicexplorers"': 'package/unique_name="org.mdznap35.cosmicexplorers.sanahubpreview"',
+              'package/name="مستكشفو الكون"': 'package/name="مستكشفو الكون — تجربة سَنا"',
+              'version/name="0.1.0"': 'version/name="0.1.0-sana-preview"',
+          }
+          for old, new in replacements.items():
+              if presets.count(old) != 1:
+                  raise SystemExit(f"Expected exactly one export setting: {old}")
+              presets = presets.replace(old, new, 1)
+          presets_path.write_text(presets, encoding="utf-8")
+          PY
+
+          godot --headless --editor --path . --quit 2>&1 | tee "$RUNNER_TEMP/sana-hub-import.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-import.log"; then
+            echo "Sana Hub preview resource import failed." >&2
+            exit 1
+          fi
+
+          godot --headless --path . --export-debug "Android" build/CosmicExplorers-SanaHub-Prototype.apk 2>&1 | tee "$RUNNER_TEMP/sana-hub-export.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/sana-hub-export.log"; then
+            echo "Sana Hub preview APK export failed." >&2
+            exit 1
+          fi
+          test -s build/CosmicExplorers-SanaHub-Prototype.apk
+          unzip -t build/CosmicExplorers-SanaHub-Prototype.apk
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          "$AAPT" dump badging build/CosmicExplorers-SanaHub-Prototype.apk | tee build/sana-hub-apk-badging.txt
+          grep -F "package: name='org.mdznap35.cosmicexplorers.sanahubpreview'" build/sana-hub-apk-badging.txt
+          "$AAPT" dump permissions build/CosmicExplorers-SanaHub-Prototype.apk | tee build/sana-hub-apk-permissions.txt
+          if grep -q "android.permission.INTERNET" build/sana-hub-apk-permissions.txt; then
+            echo "Unexpected internet permission in the offline Sana Hub preview." >&2
+            exit 1
+          fi
+          sha256sum build/CosmicExplorers-SanaHub-Prototype.apk
+
+          restore_project_files
+          trap - EXIT
+
+      - name: Upload standalone Sana Hub preview APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: CosmicExplorers-SanaHub-Prototype
+          path: build/CosmicExplorers-SanaHub-Prototype.apk
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload installable debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
