@@ -64,6 +64,9 @@ var _placed_nodes: Dictionary = {}
 var _progress_label: Label
 var _feedback_label: Label
 var _component_buttons: Dictionary = {}
+var _progress_bar: ProgressBar
+var _guide_drone: Node3D
+var _drone_clock := 0.0
 
 
 func _ready() -> void:
@@ -71,10 +74,19 @@ func _ready() -> void:
 	_build_environment()
 	_build_lunar_site()
 	_build_decorative_assets()
+	_build_mirqab_drone()
 	_restore_placed_components()
 	_build_camera()
 	_build_interface()
 	_update_interface()
+
+
+func _process(delta: float) -> void:
+	if not is_instance_valid(_guide_drone):
+		return
+	_drone_clock += delta
+	_guide_drone.position.y = 2.15 + sin(_drone_clock * 1.7) * 0.13
+	_guide_drone.rotation.y += delta * 0.32
 
 
 func get_required_component_ids() -> PackedStringArray:
@@ -131,6 +143,11 @@ func place_component(component_id: String) -> bool:
 		_set_feedback("تعذّر حفظ البناء. لم نحتسب هذه الخطوة، ويمكنك المحاولة مجدداً.")
 		_update_interface()
 		return false
+
+	var target_scale := instance.scale
+	instance.scale = target_scale * 0.04
+	var build_tween := create_tween()
+	build_tween.tween_property(instance, "scale", target_scale, 0.42).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	if is_base_complete():
 		_set_feedback("اكتمل بناء القاعدة القمرية! أصبحت جاهزة لاستقبال فريق سَنا.")
@@ -261,6 +278,49 @@ func _place_asset(asset_id: String, world_position: Vector3, uniform_scale: floa
 	return fallback
 
 
+func _build_mirqab_drone() -> void:
+	_guide_drone = Node3D.new()
+	_guide_drone.name = "MirqabGuideDrone"
+	_guide_drone.position = Vector3(0.0, 2.15, 5.8)
+	add_child(_guide_drone)
+
+	var body := MeshInstance3D.new()
+	var body_mesh := SphereMesh.new()
+	body_mesh.radius = 0.48
+	body_mesh.height = 0.72
+	body.mesh = body_mesh
+	body.material_override = _material(Color(0.18, 0.42, 0.62), Color(0.08, 0.38, 0.62), 0.34)
+	_guide_drone.add_child(body)
+
+	var eye := MeshInstance3D.new()
+	var eye_mesh := BoxMesh.new()
+	eye_mesh.size = Vector3(0.42, 0.16, 0.12)
+	eye.mesh = eye_mesh
+	eye.position = Vector3(0.0, 0.05, -0.40)
+	eye.material_override = _material(Color(0.40, 0.88, 1.0), Color(0.25, 0.78, 1.0), 0.22)
+	_guide_drone.add_child(eye)
+
+	var halo := MeshInstance3D.new()
+	var halo_mesh := TorusMesh.new()
+	halo_mesh.inner_radius = 0.58
+	halo_mesh.outer_radius = 0.66
+	halo.mesh = halo_mesh
+	halo.rotation_degrees.x = 90.0
+	halo.material_override = _material(Color(0.42, 0.82, 0.98), Color(0.18, 0.52, 0.82), 0.28)
+	_guide_drone.add_child(halo)
+
+	for side in [-1.0, 1.0]:
+		var thruster := MeshInstance3D.new()
+		var thruster_mesh := CylinderMesh.new()
+		thruster_mesh.top_radius = 0.10
+		thruster_mesh.bottom_radius = 0.14
+		thruster_mesh.height = 0.24
+		thruster.mesh = thruster_mesh
+		thruster.position = Vector3(side * 0.30, -0.42, 0.0)
+		thruster.material_override = _material(Color(0.94, 0.73, 0.34), Color(0.72, 0.42, 0.12), 0.35)
+		_guide_drone.add_child(thruster)
+
+
 func _build_camera() -> void:
 	var camera := Camera3D.new()
 	camera.name = "LunarOutpostCamera"
@@ -320,6 +380,14 @@ func _build_interface() -> void:
 	_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	build_content.add_child(_progress_label)
 
+	_progress_bar = ProgressBar.new()
+	_progress_bar.name = "ConstructionProgress"
+	_progress_bar.min_value = 0.0
+	_progress_bar.max_value = float(BUILD_SEQUENCE.size())
+	_progress_bar.show_percentage = false
+	_progress_bar.custom_minimum_size = Vector2(0.0, 14.0)
+	build_content.add_child(_progress_bar)
+
 	for component_id in BUILD_SEQUENCE:
 		var button := _new_button(
 			str(COMPONENT_DATA[component_id]["title"]),
@@ -341,6 +409,8 @@ func _build_interface() -> void:
 
 
 func _update_interface() -> void:
+	if is_instance_valid(_progress_bar):
+		_progress_bar.value = get_build_progress()
 	if is_instance_valid(_progress_label):
 		if is_base_complete():
 			_progress_label.text = "اكتملت القاعدة القمرية!"
