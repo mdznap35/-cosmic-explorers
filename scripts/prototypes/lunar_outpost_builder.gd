@@ -359,6 +359,9 @@ func _build_interface() -> void:
 	var description := _new_label("جهّز موقع الهبوط، ثم ابنِ المأوى والطاقة والاتصال. لا يوجد وقت محدد ولا خسارة للتقدم.", 14, Color(0.80, 0.87, 0.95))
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(description)
+	var route_button := _new_button("تدريب قيادة الروفر", Callable(self, "_start_rover_route"), Vector2(0.0, 40.0))
+	route_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	header_content.add_child(route_button)
 	var back_button := _new_button("العودة إلى سَنا", Callable(self, "_return_to_sana"), Vector2(0.0, 40.0))
 	back_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	header_content.add_child(back_button)
@@ -424,6 +427,10 @@ func _update_interface() -> void:
 	for component_id in _component_buttons:
 		var button: Button = _component_buttons[component_id]
 		button.disabled = get_placed_component_ids().has(component_id)
+
+
+func _start_rover_route() -> void:
+	get_tree().change_scene_to_file("res://scenes/prototypes/lunar_rover_route_planner.tscn")
 
 
 func _return_to_sana() -> void:
