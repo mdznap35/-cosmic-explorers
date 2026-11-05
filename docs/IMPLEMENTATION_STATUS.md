@@ -276,3 +276,32 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - الملفات المفقودة أو الفاسدة أو ذات إصدار غير مدعوم لا تُحتسب.
 - لا يعني نجاح CI أن التمرير واللمس وحجم الخط قد جرى قبولها بصرياً على Android.
 - لا تعديل على المشهد الرئيسي للمجموعة الشمسية أو main أو PR #9.
+
+
+---
+
+## 5 November 2026 — WAVE 2: reliable Sana Hub progress commits
+
+**Branch:** `production-reuse-wave-1-v1`  
+**Starting head:** `fd2bdfe90128fedde5573309de4ada0f31fbeee5`
+
+### Why this increment was required
+
+The Relay, CubeSat, Lulu hunt, and first-visit paths previously changed in-memory progress and/or emitted world/gameplay side effects without requiring `_save_state()` to succeed. A storage failure could therefore make a step look accepted even though it would disappear after reopening the hub. Reem's observatory already had an explicit rollback path; the other activities needed the same guarantee.
+
+### Implemented
+
+- [x] Add one shared persist-or-restore path for Sana Hub state changes.
+- [x] Keep the previous deep state snapshot until the new state has been written successfully.
+- [x] Relay progress and completion roll back on failed persistence; the Relay gameplay event is published only after a successful save.
+- [x] CubeSat progress rolls back on failed persistence; the display model is added only after successful persistence.
+- [x] Lulu's star remains in the world and the collection is not counted until the save succeeds.
+- [x] Station visits are not retained and do not emit a visit event when persistence fails; station interaction itself remains available.
+- [x] Check the FileAccess write error after storing the save payload and display a child-facing retry message on failure.
+- [x] Add failure-simulation regression coverage plus retry and fresh-instance restoration checks.
+
+### Verification boundary
+
+The new regression test simulates a failed storage operation deterministically; it does not claim to reproduce every Android filesystem, sudden power loss, or low-storage condition. The save file still uses the existing direct-write format and is not yet an atomic temp-file replacement. Existing save schema v2 and the discovery-journal read contracts are unchanged.
+
+The exact-head CI result for this increment must be checked before marking it CI-passed. Device installation, touch review, frame-rate and thermal checks remain pending. No merge to `main`, no PR merge, and no edits to the original solar-system main scene are authorized by this work.

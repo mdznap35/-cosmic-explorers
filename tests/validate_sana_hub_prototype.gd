@@ -227,8 +227,64 @@ func _run_sana_hub_tests() -> void:
 	await process_frame
 	_remove_test_save()
 
+	# Simulate a storage failure and make sure no activity reports unsaved progress.
+	var failure_hub = HubScene.instantiate()
+	failure_hub.enable_gameplay_bridge = false
+	root.add_child(failure_hub)
+	await process_frame
+	failure_hub.set_save_failure_simulation_for_testing(true)
+	if not failure_hub.interact_station("bridge"):
+		_errors.append("The bridge should remain usable while persistence is unavailable.")
+	if failure_hub.get_visited_station_ids().has("bridge"):
+		_errors.append("A station visit must not count when its save fails.")
+	if failure_hub.submit_relay_node("moon_relay") or failure_hub.get_relay_progress() != 0:
+		_errors.append("Relay progress must roll back when the checkpoint cannot be saved.")
+	if not failure_hub.interact_station("workshop"):
+		_errors.append("The workshop should remain usable while persistence is unavailable.")
+	if failure_hub.select_cubesat_part("central_bus") or failure_hub.get_cubesat_progress() != 0:
+		_errors.append("CubeSat progress must roll back when the checkpoint cannot be saved.")
+	if not failure_hub.start_lulu_hunt():
+		_errors.append("Lulu's hunt should remain open while persistence is unavailable.")
+	var failed_star_id := str(failure_hub.get_lulu_star_ids()[0])
+	if failure_hub.collect_lulu_star(failed_star_id) or failure_hub.get_lulu_found_star_ids().size() != 0:
+		_errors.append("Lulu's star must not count when its checkpoint cannot be saved.")
+	if not failure_hub._secret_star_nodes.has(failed_star_id):
+		_errors.append("A star must remain visible when its collection save fails.")
+	failure_hub.queue_free()
+	await process_frame
+	_remove_test_save()
+
+	# A fresh instance must still see the last persisted state, then accept retries.
+	var recovery_hub = HubScene.instantiate()
+	recovery_hub.enable_gameplay_bridge = false
+	root.add_child(recovery_hub)
+	await process_frame
+	if recovery_hub.get_visited_station_ids().size() != 0 or recovery_hub.get_relay_progress() != 0:
+		_errors.append("A new hub instance must not restore any rejected station or Relay progress.")
+	if recovery_hub.get_cubesat_progress() != 0 or recovery_hub.get_lulu_found_star_ids().size() != 0:
+		_errors.append("A new hub instance must not restore any rejected CubeSat or Lulu progress.")
+	if not recovery_hub.interact_station("bridge") or not recovery_hub.submit_relay_node("moon_relay"):
+		_errors.append("Relay should accept a retry after storage becomes available.")
+	if not recovery_hub.interact_station("workshop") or not recovery_hub.select_cubesat_part("central_bus"):
+		_errors.append("CubeSat should accept a retry after storage becomes available.")
+	if not recovery_hub.start_lulu_hunt() or not recovery_hub.collect_lulu_star(failed_star_id):
+		_errors.append("Lulu should accept the same star after storage becomes available.")
+	recovery_hub.queue_free()
+	await process_frame
+	var recovery_check_hub = HubScene.instantiate()
+	recovery_check_hub.enable_gameplay_bridge = false
+	root.add_child(recovery_check_hub)
+	await process_frame
+	if recovery_check_hub.get_relay_progress() != 1 or recovery_check_hub.get_cubesat_progress() != 1:
+		_errors.append("Successful retries must persist Relay and CubeSat checkpoints.")
+	if recovery_check_hub.get_lulu_found_star_ids().size() != 1:
+		_errors.append("A successful Lulu retry must persist the collected star.")
+	recovery_check_hub.queue_free()
+	await process_frame
+	_remove_test_save()
+
 	if _errors.is_empty():
-		print("PASS: Sana Hub stations, pinned KayKit CC0 props, Relay, CubeSat, Lulu hunt, Reem PNG photo album, save migration, partial checkpoints, and multi-session restore.")
+		print("PASS: Sana Hub stations, pinned KayKit CC0 props, Relay, CubeSat, Lulu hunt, Reem PNG photo album, save migration, partial checkpoints, multi-session restore, and failed-save rollback/retry.")
 		quit(0)
 		return
 
@@ -247,8 +303,11 @@ func _write_save_state(state: Dictionary) -> void:
 
 
 func _remove_test_save() -> void:
-	if FileAccess.file_exists(SAVE_PATH):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	var absolute_save_path := ProjectSettings.globalize_path(SAVE_PATH)
+	if DirAccess.dir_exists_absolute(absolute_save_path):
+		DirAccess.remove_absolute(absolute_save_path)
+	elif FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(absolute_save_path)
 	var album := DirAccess.open("user://observatory_album")
 	if album != null:
 		for file_name in album.get_files():

@@ -150,6 +150,7 @@ var _relay_feedback := ""
 var _cubesat_display_added := false
 var _lulu_hunt_active := false
 var _state: Dictionary = {}
+var _simulate_save_failure_for_tests := false
 
 var _interaction_router
 var _gameplay_runtime
@@ -234,6 +235,10 @@ func _unhandled_input(event: InputEvent) -> void:
 # Public surface used by the headless acceptance test and future UI integration.
 func get_station_ids() -> PackedStringArray:
 	return PackedStringArray(STATION_IDS)
+
+
+func set_save_failure_simulation_for_testing(enabled: bool) -> void:
+	_simulate_save_failure_for_tests = enabled
 
 
 func get_discovery_journal_snapshot() -> Dictionary:
@@ -355,23 +360,31 @@ func start_lulu_hunt() -> bool:
 func collect_lulu_star(star_id: String) -> bool:
 	if not _lulu_hunt_active or not LULU_STAR_POSITIONS.has(star_id):
 		return false
-	var found_ids: Array = _state.get("lulu_found_star_ids", [])
+	var previous_state := _state.duplicate(true)
+	var found_ids: Array = _state.get("lulu_found_star_ids", []).duplicate()
 	if found_ids.has(star_id):
 		return false
 	found_ids.append(star_id)
 	_state["lulu_found_star_ids"] = found_ids
+	var completes_hunt := found_ids.size() >= LULU_STAR_POSITIONS.size()
+	if completes_hunt:
+		_state["lulu_hunt_completed"] = true
+	if not _persist_state_or_restore(previous_state):
+		if is_instance_valid(_lulu_hunt_feedback_label):
+			_lulu_hunt_feedback_label.text = "تعذّر حفظ النجمة. بقيت في مكانها؛ حاول جمعها مجدداً."
+		return false
+
+	# Remove the world object only after the progress is durably accepted.
 	if _secret_star_nodes.has(star_id):
 		var star: Node3D = _secret_star_nodes[star_id]
 		if is_instance_valid(star):
 			star.queue_free()
 		_secret_star_nodes.erase(star_id)
-	if found_ids.size() >= LULU_STAR_POSITIONS.size():
-		_state["lulu_hunt_completed"] = true
+	if completes_hunt:
 		_lulu_hunt_active = false
 		if is_instance_valid(_lulu_hunt_feedback_label):
 			_lulu_hunt_feedback_label.text = "وجدت كل النجوم! أحسنت يا مستكشف!"
-	_save_state()
-	if is_instance_valid(_lulu_hunt_feedback_label) and not is_lulu_hunt_completed():
+	elif is_instance_valid(_lulu_hunt_feedback_label):
 		_refresh_lulu_hunt_panel()
 	return true
 
@@ -399,11 +412,15 @@ func select_cubesat_part(part_id: String) -> bool:
 			_cubesat_feedback_label.text = "لنبدأ بالهيكل المركزي، ثم نضيف الطاقة والاتصال والكاميرا. لا مشكلة، جرّب مجدداً."
 		return false
 
+	var previous_state := _state.duplicate(true)
 	current_step += 1
 	_state["cubesat_step"] = current_step
 	if current_step >= CUBESAT_SEQUENCE.size():
 		_state["cubesat_built"] = true
-	_save_state()
+	if not _persist_state_or_restore(previous_state):
+		if is_instance_valid(_cubesat_feedback_label):
+			_cubesat_feedback_label.text = "تعذّر حفظ هذه الوحدة. بقيت القطعة كما كانت؛ حاول مجدداً."
+		return false
 	if is_cubesat_built():
 		_add_cubesat_display()
 	_refresh_cubesat_panel()
@@ -433,15 +450,23 @@ func submit_relay_node(relay_id: String) -> bool:
 		_refresh_relay_panel()
 		return false
 
+	var previous_state := _state.duplicate(true)
+	var previous_progress := _relay_progress
 	_relay_progress += 1
 	_state["relay_progress"] = _relay_progress
-	if _relay_progress >= RELAY_SEQUENCE.size():
+	var completes_relay := _relay_progress >= RELAY_SEQUENCE.size()
+	if completes_relay:
 		_state["relay_activity_completed"] = true
 		_relay_feedback = "وصلت الرسالة إلى الروفر! أحسنت تنظيم مسار الاتصال."
-		_publish_gameplay_event("signal.interacted", {"activity_id": "activity.relay_message"})
 	else:
 		_relay_feedback = "ممتاز! انتقلت الرسالة إلى المحطة التالية."
-	_save_state()
+	if not _persist_state_or_restore(previous_state):
+		_relay_progress = previous_progress
+		_relay_feedback = "تعذّر حفظ خطوة الاتصال. لم نتقدم؛ حاول مجدداً."
+		_refresh_relay_panel()
+		return false
+	if completes_relay:
+		_publish_gameplay_event("signal.interacted", {"activity_id": "activity.relay_message"})
 	_refresh_relay_panel()
 	return true
 
@@ -461,10 +486,12 @@ func interact_station(station_id: String) -> bool:
 	var visited: Array = _state.get("visited_station_ids", [])
 	var first_visit := not visited.has(station_id)
 	if first_visit:
+		var previous_state := _state.duplicate(true)
+		visited = visited.duplicate()
 		visited.append(station_id)
 		_state["visited_station_ids"] = visited
-		_save_state()
-		_publish_gameplay_event("ship.room.visited", {"station_id": station_id})
+		if _persist_state_or_restore(previous_state):
+			_publish_gameplay_event("ship.room.visited", {"station_id": station_id})
 
 	if station_id == "bridge":
 		start_relay_activity()
@@ -1676,13 +1703,37 @@ func _load_state() -> Dictionary:
 	return result
 
 
+func _persist_state_or_restore(previous_state: Dictionary) -> bool:
+	if _save_state():
+		return true
+	_state = previous_state
+	_update_status()
+	_show_save_failure_feedback()
+	return false
+
+
+func _show_save_failure_feedback() -> void:
+	if is_instance_valid(_status_label):
+		_status_label.text = "تعذّر حفظ التقدم؛ لم نحتسب الخطوة. حاول مجدداً."
+
+
 func _save_state() -> bool:
+	if _simulate_save_failure_for_tests:
+		push_warning("Sana Hub save failure simulation is enabled.")
+		_show_save_failure_feedback()
+		return false
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		push_warning("Unable to save the Sana Hub prototype progress.")
+		push_warning("Unable to open the Sana Hub save file for writing.")
+		_show_save_failure_feedback()
 		return false
 	file.store_string(JSON.stringify(_state))
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		push_warning("Unable to write the Sana Hub prototype progress: error %d." % write_error)
+		_show_save_failure_feedback()
+		return false
 	_update_status()
 	return true
 
