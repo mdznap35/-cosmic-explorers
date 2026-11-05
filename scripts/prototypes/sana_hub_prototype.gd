@@ -5,6 +5,7 @@ extends Node3D
 const ContentRegistry = preload("res://scripts/content_registry.gd")
 const GameplayRuntime = preload("res://scripts/gameplay_runtime.gd")
 const InteractionRouter = preload("res://scripts/interaction_router.gd")
+const DiscoveryJournal = preload("res://scripts/prototypes/discovery_journal.gd")
 
 const SAVE_PATH := "user://sana_hub_prototype.json"
 const SAVE_VERSION := 2
@@ -103,7 +104,7 @@ const STATION_DATA := {
 	"lulu_nook": {
 		"title": "ركن لولو",
 		"hint": "مكان صغير للأسرار والمرح.",
-		"description": "يحب لولو اكتشاف الزوايا الصغيرة وترتيب مقتنيات الرحلة. سنضيف هنا نشاط البحث عن النجوم المخفية في دفعة لاحقة."
+		"description": "يحب لولو اكتشاف الزوايا الصغيرة وترتيب مقتنيات الرحلة. ابحث معه عن النجوم الخمس المخفية في أرجاء السفينة."
 	}
 }
 
@@ -233,6 +234,10 @@ func _unhandled_input(event: InputEvent) -> void:
 # Public surface used by the headless acceptance test and future UI integration.
 func get_station_ids() -> PackedStringArray:
 	return PackedStringArray(STATION_IDS)
+
+
+func get_discovery_journal_snapshot() -> Dictionary:
+	return DiscoveryJournal.build_snapshot(_state)
 
 
 func get_visited_station_ids() -> PackedStringArray:
@@ -961,13 +966,26 @@ func _build_hud() -> void:
 	var subtitle := _new_label("تجوّل بين المحطات الخمس، واقترب من أي محطة لتتفاعل معها.", 15, Color(0.68, 0.82, 0.94))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(subtitle)
+	var navigation_row := HBoxContainer.new()
+	navigation_row.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	navigation_row.add_theme_constant_override("separation", 8)
+	header_content.add_child(navigation_row)
+
+	var journal_button := _new_button(
+		"دفتر الرحلة",
+		Callable(self, "_show_discovery_journal"),
+		Vector2(0.0, 42.0)
+	)
+	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation_row.add_child(journal_button)
+
 	var return_button := _new_button(
 		"العودة إلى معرض التجارب",
 		Callable(self, "_return_to_solar_system"),
 		Vector2(0.0, 42.0)
 	)
-	return_button.size_flags_horizontal = Control.SIZE_SHRINK_END
-	header_content.add_child(return_button)
+	return_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation_row.add_child(return_button)
 
 	var status_panel := PanelContainer.new()
 	status_panel.anchor_left = 0.56
@@ -1104,6 +1122,104 @@ func _update_nearby_station() -> void:
 		var station_data: Dictionary = STATION_DATA[closest_id]
 		_nearby_label.text = str(station_data.get("title", "")) + " — " + str(station_data.get("hint", ""))
 		_interaction_button.text = "تفاعل"
+
+
+func _show_discovery_journal() -> void:
+	var snapshot := get_discovery_journal_snapshot()
+	_open_modal("دفتر اكتشافات الرحلة")
+
+	var introduction := _new_label(
+		"هنا تجتمع آثار رحلاتك في سفينة سَنا والمريخ والقمر. يمكنك متابعة ما أنجزته والعودة لأي نشاط لإكماله.",
+		17,
+		Color(0.82, 0.90, 0.97)
+	)
+	introduction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	introduction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(introduction)
+
+	var progress := int(snapshot.get("progress", 0))
+	var total := int(snapshot.get("total", 0))
+	var completed_entries := int(snapshot.get("completed_entries", 0))
+	var summary := _new_label(
+		"إنجازات الرحلة: %d / %d نقطة • مسارات مكتملة: %d / %d" % [
+			progress,
+			total,
+			completed_entries,
+			int(snapshot.get("entry_count", 0))
+		],
+		17,
+		Color(1.0, 0.79, 0.42),
+		true
+	)
+	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_modal_content.add_child(summary)
+
+	var overall_bar := ProgressBar.new()
+	overall_bar.min_value = 0.0
+	overall_bar.max_value = float(maxi(1, total))
+	overall_bar.value = progress
+	overall_bar.show_percentage = false
+	overall_bar.custom_minimum_size = Vector2(0.0, 16.0)
+	_modal_content.add_child(overall_bar)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0.0, 300.0)
+	_modal_content.add_child(scroll)
+
+	var entry_list := VBoxContainer.new()
+	entry_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry_list.add_theme_constant_override("separation", 7)
+	scroll.add_child(entry_list)
+
+	for entry_value in snapshot.get("entries", []):
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		var entry_progress := int(entry.get("progress", 0))
+		var entry_total := int(entry.get("total", 1))
+		var entry_card := PanelContainer.new()
+		entry_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_card.add_theme_stylebox_override(
+			"panel",
+			_button_style(Color(0.025, 0.075, 0.12), Color(0.13, 0.34, 0.50))
+		)
+		entry_list.add_child(entry_card)
+
+		var card_content := VBoxContainer.new()
+		card_content.add_theme_constant_override("separation", 3)
+		entry_card.add_child(card_content)
+
+		var entry_header := HBoxContainer.new()
+		entry_header.layout_direction = Control.LAYOUT_DIRECTION_RTL
+		card_content.add_child(entry_header)
+
+		var entry_title := _new_label(str(entry.get("title", "")), 16, Color(0.92, 0.96, 1.0), true)
+		entry_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		entry_header.add_child(entry_title)
+
+		var count_label := _new_label(
+			"%d / %d" % [entry_progress, entry_total],
+			14,
+			Color(0.55, 0.84, 0.96),
+			true
+		)
+		entry_header.add_child(count_label)
+
+		var entry_bar := ProgressBar.new()
+		entry_bar.min_value = 0.0
+		entry_bar.max_value = float(maxi(1, entry_total))
+		entry_bar.value = entry_progress
+		entry_bar.show_percentage = false
+		entry_bar.custom_minimum_size = Vector2(0.0, 10.0)
+		card_content.add_child(entry_bar)
+
+		if bool(entry.get("completed", false)):
+			count_label.add_theme_color_override("font_color", Color(0.55, 0.91, 0.69))
+
+	_add_close_button()
 
 
 func _show_info_panel(title_text: String, body_text: String, hint_text: String) -> void:
@@ -1391,10 +1507,10 @@ func _open_modal(title_text: String) -> void:
 	_close_modal()
 	_modal_active = true
 	_modal_panel = PanelContainer.new()
-	_modal_panel.anchor_left = 0.18
-	_modal_panel.anchor_top = 0.17
-	_modal_panel.anchor_right = 0.82
-	_modal_panel.anchor_bottom = 0.83
+	_modal_panel.anchor_left = 0.07
+	_modal_panel.anchor_top = 0.08
+	_modal_panel.anchor_right = 0.93
+	_modal_panel.anchor_bottom = 0.92
 	_modal_panel.add_theme_stylebox_override("panel", _panel_style())
 	_hud.add_child(_modal_panel)
 

@@ -253,3 +253,26 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - The corrective commit removes that unverified source and reuses only the already-pinned KayKit pack. Exact-head CI must pass before this increment can be marked `CI_passed`.
 - Manual Android visual/touch/performance/thermal review remains pending.
 - No PR is merged. `main`, the solar-system main scene, and PR #9 remain untouched.
+
+
+---
+
+## 5 November 2026 — WAVE 1B: دفتر اكتشافات الرحلة الموحد
+
+**Branch:** production-reuse-wave-1-v1
+
+### التغييرات في هذه الدفعة
+
+- إضافة قارئ تقدم مستقل باسم discovery_journal.gd يجمع ثمانية مسارات قائمة دون تغيير ملكية ملفات الحفظ.
+- دمج زيارات محطات سَنا ورسالة مرقاب وCubeSat ونجوم لولو وألبوم ريم مع مسح المريخ وبناء القاعدة القمرية ومسارات الروفر.
+- عرض 30 نقطة تقدم عبر زر «دفتر الرحلة» في HUD، مع تقدم إجمالي وقائمة قابلة للتمرير.
+- توسعة مساحة النوافذ المنبثقة لتحسين قراءة الأنشطة على الشاشات الصغيرة، وتصحيح وصف ركن لولو الذي أصبح قديماً.
+- إضافة اختبار مستقل للدفتر وربطه بخط GitHub Actions.
+- توثيق الحقول وإصدارات الحفظ المقبولة في docs/DISCOVERY_JOURNAL.md.
+
+### حدود التحقق
+
+- الدفتر قارئ فقط؛ ملفات الحفظ الأصلية تبقى كما هي.
+- الملفات المفقودة أو الفاسدة أو ذات إصدار غير مدعوم لا تُحتسب.
+- لا يعني نجاح CI أن التمرير واللمس وحجم الخط قد جرى قبولها بصرياً على Android.
+- لا تعديل على المشهد الرئيسي للمجموعة الشمسية أو main أو PR #9.
