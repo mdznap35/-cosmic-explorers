@@ -7,7 +7,9 @@ const GameplayRuntime = preload("res://scripts/gameplay_runtime.gd")
 const InteractionRouter = preload("res://scripts/interaction_router.gd")
 
 const SAVE_PATH := "user://sana_hub_prototype.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
+const ALBUM_DIR := "user://observatory_album"
+const KENNEY_ASSET_ROOT := "res://assets/vendor/kenney_space_station_kit"
 const MOVE_SPEED := 4.0
 const GRAVITY := 18.0
 const INTERACTION_DISTANCE := 2.6
@@ -48,6 +50,25 @@ const LULU_STAR_POSITIONS := {
 	"star_observatory": Vector3(5.6, 0.92, -4.1),
 	"star_corridor": Vector3(8.7, 0.92, 3.8)
 }
+const OBSERVATORY_TARGET_IDS := ["moon", "mars", "saturn"]
+const OBSERVATORY_TARGETS := {
+	"moon": {
+		"title": "القمر",
+			"caption": "وثّقنا تضاريس القمر وظلال الفوهات في لقطة رصد جديدة.",
+		"base_color": Color(0.67, 0.70, 0.74)
+	},
+	"mars": {
+		"title": "المريخ",
+		"caption": "حُفظت لقطة لسطح المريخ المحمر؛ يرتبط لونه في كثير من الغبار والصخور بأكاسيد الحديد.",
+		"base_color": Color(0.76, 0.31, 0.19)
+	},
+	"saturn": {
+		"title": "زحل",
+		"caption": "وثّقنا زحل وحلقاته الواسعة في سجل المرصد.",
+		"base_color": Color(0.83, 0.69, 0.43)
+	}
+}
+
 const STATION_DATA := {
 	"bridge": {
 		"title": "جسر القيادة",
@@ -93,6 +114,15 @@ var _cubesat_progress_label: Label
 var _cubesat_feedback_label: Label
 var _cubesat_buttons: Array[Button] = []
 var _lulu_hunt_feedback_label: Label
+var _observatory_progress_label: Label
+var _observatory_feedback_label: Label
+var _observatory_preview: TextureRect
+var _observatory_buttons: Array[Button] = []
+var _observatory_feedback := ""
+var _observatory_active := false
+
+var _kenney_model_paths: Array[String] = []
+var _loaded_kenney_prop_ids: Array[String] = []
 
 var _stations: Dictionary = {}
 var _secret_star_nodes: Dictionary = {}
@@ -118,6 +148,7 @@ var _gameplay_bridge_ready := false
 
 func _ready() -> void:
 	_state = _load_state()
+	_collect_kenney_models(KENNEY_ASSET_ROOT)
 	_relay_progress = clampi(int(_state.get("relay_progress", 0)), 0, RELAY_SEQUENCE.size())
 	_build_world()
 	_build_player()
@@ -201,6 +232,70 @@ func get_visited_station_ids() -> PackedStringArray:
 	for station_id in _state.get("visited_station_ids", []):
 		result.append(str(station_id))
 	return result
+
+
+func get_kenney_model_count() -> int:
+	return _kenney_model_paths.size()
+
+
+func get_loaded_kenney_prop_ids() -> PackedStringArray:
+	return PackedStringArray(_loaded_kenney_prop_ids)
+
+
+func get_observatory_target_ids() -> PackedStringArray:
+	return PackedStringArray(OBSERVATORY_TARGET_IDS)
+
+
+func get_observatory_photo_ids() -> PackedStringArray:
+	return PackedStringArray(_state.get("observatory_photo_ids", []))
+
+
+func get_observatory_progress() -> int:
+	return get_observatory_photo_ids().size()
+
+
+func is_observatory_complete() -> bool:
+	return get_observatory_progress() == OBSERVATORY_TARGET_IDS.size()
+
+
+func get_observatory_photo_path(target_id: String) -> String:
+	if not OBSERVATORY_TARGETS.has(target_id):
+		return ""
+	return ALBUM_DIR.path_join(target_id + ".png")
+
+
+func start_observatory_activity() -> bool:
+	_observatory_feedback = "اختر جرماً سماوياً لالتقاط صورة بأسلوب المرصد."
+	_show_observatory_panel()
+	return true
+
+
+func capture_observation(target_id: String) -> bool:
+	if not _observatory_active or not OBSERVATORY_TARGETS.has(target_id):
+		return false
+	var photos: Array = _state.get("observatory_photo_ids", [])
+	if photos.has(target_id):
+		_observatory_feedback = "هذه الصورة محفوظة بالفعل في ألبوم ريم."
+		_refresh_observatory_panel()
+		return false
+	if not _save_observatory_thumbnail(target_id):
+		_observatory_feedback = "تعذّر إنشاء الصورة. لم نحتسب هذه اللقطة."
+		_refresh_observatory_panel()
+		return false
+	photos.append(target_id)
+	_state["observatory_photo_ids"] = photos
+	if not _save_state():
+		photos.erase(target_id)
+		_state["observatory_photo_ids"] = photos
+		var photo_path := get_observatory_photo_path(target_id)
+		if FileAccess.file_exists(photo_path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(photo_path))
+		_observatory_feedback = "تعذّر حفظ التقدم. يمكنك المحاولة مجدداً."
+		_refresh_observatory_panel()
+		return false
+	_observatory_feedback = str(OBSERVATORY_TARGETS[target_id]["caption"])
+	_refresh_observatory_panel()
+	return true
 
 
 func get_relay_progress() -> int:
@@ -363,6 +458,8 @@ func interact_station(station_id: String) -> bool:
 	if station_id == "lulu_nook":
 		start_lulu_hunt()
 		return true
+	if station_id == "observatory":
+		return start_observatory_activity()
 	if station_id == "laboratory":
 		var scene_result := get_tree().change_scene_to_file("res://scenes/prototypes/mars_rover_survey.tscn")
 		if scene_result != OK:
@@ -454,6 +551,65 @@ func _build_world() -> void:
 	_create_station("observatory", Vector3(4.0, 0.0, -4.8), Color(0.63, 0.62, 1.0))
 	_create_station("lulu_nook", Vector3(8.0, 0.0, -2.5), Color(0.94, 0.72, 0.42))
 	_build_lulu_secret_stars()
+
+
+func _collect_kenney_models(directory_path: String) -> void:
+	var directory := DirAccess.open(directory_path)
+	if directory == null:
+		return
+	directory.list_dir_begin()
+	while true:
+		var entry := directory.get_next()
+		if entry.is_empty():
+			break
+		if entry.begins_with("."):
+			continue
+		var child_path := directory_path.path_join(entry)
+		if directory.current_is_dir():
+			_collect_kenney_models(child_path)
+		elif entry.get_extension().to_lower() in ["glb", "gltf"]:
+			_kenney_model_paths.append(child_path)
+	directory.list_dir_end()
+	_kenney_model_paths.sort()
+
+
+func _find_kenney_model_path(tokens: PackedStringArray) -> String:
+	for token in tokens:
+		var wanted := token.to_lower().replace("_", " ").replace("-", " ")
+		for model_path in _kenney_model_paths:
+			var model_name := model_path.get_file().get_basename().to_lower().replace("_", " ").replace("-", " ")
+			if model_name.contains(wanted):
+				return model_path
+	return ""
+
+
+func _place_kenney_prop(
+	parent: Node3D,
+	prop_id: String,
+	name_tokens: PackedStringArray,
+	local_position: Vector3,
+	uniform_scale: float,
+	rotation_y_degrees: float = 0.0
+) -> bool:
+	var model_path := _find_kenney_model_path(name_tokens)
+	if model_path.is_empty():
+		return false
+	var packed_scene := ResourceLoader.load(model_path) as PackedScene
+	if packed_scene == null:
+		push_warning("Kenney model could not be loaded as a PackedScene: " + model_path)
+		return false
+	var instance := packed_scene.instantiate() as Node3D
+	if instance == null:
+		push_warning("Kenney model root is not Node3D: " + model_path)
+		return false
+	instance.name = "Kenney_" + prop_id
+	instance.position = local_position
+	instance.scale = Vector3.ONE * uniform_scale
+	instance.rotation_degrees.y = rotation_y_degrees
+	parent.add_child(instance)
+	if not _loaded_kenney_prop_ids.has(prop_id):
+		_loaded_kenney_prop_ids.append(prop_id)
+	return true
 
 
 func _build_lulu_secret_stars() -> void:
@@ -570,6 +726,25 @@ func _create_station(station_id: String, station_position: Vector3, accent: Colo
 			_add_telescope(station, accent)
 		"lulu_nook":
 			_add_lulu_shell(station, accent)
+
+	# Reuse selected CC0 Kenney props. The procedural station remains the
+	# fallback layout if a model is unavailable in a local source checkout.
+	match station_id:
+		"bridge":
+			_place_kenney_prop(station, "bridge_planet_console", PackedStringArray(["table display planet"]), Vector3(0.0, 0.18, -1.18), 0.55)
+			_place_kenney_prop(station, "bridge_screen", PackedStringArray(["display wall", "computer screen"]), Vector3(-0.92, 0.34, -0.62), 0.42)
+		"workshop":
+			_place_kenney_prop(station, "workshop_bench", PackedStringArray(["table large"]), Vector3(0.0, 0.16, -1.18), 0.48)
+			_place_kenney_prop(station, "workshop_computer", PackedStringArray(["computer screen", "computer"]), Vector3(0.0, 0.42, -0.52), 0.42)
+		"laboratory":
+			_place_kenney_prop(station, "lab_display", PackedStringArray(["table display", "table inset"]), Vector3(0.0, 0.16, -1.18), 0.48)
+			_place_kenney_prop(station, "lab_screen", PackedStringArray(["computer screen"]), Vector3(0.88, 0.32, -0.60), 0.38)
+		"observatory":
+			_place_kenney_prop(station, "observatory_window", PackedStringArray(["wall window frame", "wall window"]), Vector3(0.0, 0.20, -1.15), 0.62)
+			_place_kenney_prop(station, "observatory_display", PackedStringArray(["table display planet"]), Vector3(0.0, 0.15, 0.82), 0.40)
+		"lulu_nook":
+			_place_kenney_prop(station, "lulu_bed", PackedStringArray(["bed single"]), Vector3(0.0, 0.12, -1.04), 0.42)
+			_place_kenney_prop(station, "lulu_chair", PackedStringArray(["chair cushion", "chair"]), Vector3(0.72, 0.10, 0.35), 0.32)
 
 	if station_id == "workshop" and is_cubesat_built():
 		_add_cubesat_display()
@@ -963,6 +1138,137 @@ func _show_info_panel(title_text: String, body_text: String, hint_text: String) 
 	_add_close_button()
 
 
+func _show_observatory_panel() -> void:
+	_open_modal("مرصد ريم — ألبوم الصور")
+	_observatory_active = true
+	var introduction := _new_label(
+		"وجّه عدسة المرصد إلى جرم من القائمة، ثم احفظ لقطة رصد مرسومة داخل اللعبة. يمكنك العودة وإكمال الألبوم لاحقاً.",
+		17,
+		Color(0.82, 0.90, 0.97)
+	)
+	introduction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	introduction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(introduction)
+
+	_observatory_progress_label = _new_label("", 17, Color(1.0, 0.79, 0.42), true)
+	_observatory_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_modal_content.add_child(_observatory_progress_label)
+
+	_observatory_feedback_label = _new_label(_observatory_feedback, 15, Color(0.48, 0.85, 0.94))
+	_observatory_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_observatory_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_observatory_feedback_label.custom_minimum_size = Vector2(0.0, 46.0)
+	_modal_content.add_child(_observatory_feedback_label)
+
+	_observatory_preview = TextureRect.new()
+	_observatory_preview.custom_minimum_size = Vector2(0.0, 172.0)
+	_observatory_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_observatory_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_modal_content.add_child(_observatory_preview)
+
+	_observatory_buttons.clear()
+	for target_id in OBSERVATORY_TARGET_IDS:
+		var selected_id := str(target_id)
+		var target_title := str(OBSERVATORY_TARGETS[selected_id]["title"])
+		var button := _new_button(
+			"التقط صورة: " + target_title,
+			func() -> void: capture_observation(selected_id),
+			Vector2(0.0, 48.0)
+		)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_modal_content.add_child(button)
+		_observatory_buttons.append(button)
+
+	_add_close_button()
+	_refresh_observatory_panel()
+
+
+func _refresh_observatory_panel() -> void:
+	if not is_instance_valid(_observatory_progress_label) or not is_instance_valid(_observatory_feedback_label):
+		return
+	var progress := get_observatory_progress()
+	_observatory_progress_label.text = "صور الألبوم: %d / %d" % [progress, OBSERVATORY_TARGET_IDS.size()]
+	if is_observatory_complete():
+		_observatory_progress_label.text = "اكتمل ألبوم المرصد!"
+		_observatory_feedback_label.text = "أحسنت! أصبحت الصور الثلاث محفوظة في دفتر اكتشافات ريم."
+	else:
+		_observatory_feedback_label.text = _observatory_feedback
+	var photo_ids := get_observatory_photo_ids()
+	for index in range(_observatory_buttons.size()):
+		var target_id := OBSERVATORY_TARGET_IDS[index]
+		_observatory_buttons[index].disabled = photo_ids.has(target_id)
+
+	if is_instance_valid(_observatory_preview):
+		_observatory_preview.texture = null
+		if not photo_ids.is_empty():
+			var photo_path := get_observatory_photo_path(str(photo_ids[photo_ids.size() - 1]))
+			if FileAccess.file_exists(photo_path):
+				var photo_image := Image.load_from_file(photo_path)
+				if photo_image != null and not photo_image.is_empty():
+					_observatory_preview.texture = ImageTexture.create_from_image(photo_image)
+
+
+func _save_observatory_thumbnail(target_id: String) -> bool:
+	if not OBSERVATORY_TARGETS.has(target_id):
+		return false
+	var directory_error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ALBUM_DIR))
+	if directory_error != OK and directory_error != ERR_ALREADY_EXISTS:
+		return false
+	var image := _render_observatory_thumbnail(target_id)
+	if image == null or image.is_empty():
+		return false
+	return image.save_png(ProjectSettings.globalize_path(get_observatory_photo_path(target_id))) == OK
+
+
+func _render_observatory_thumbnail(target_id: String) -> Image:
+	const IMAGE_SIZE := 256
+	var image := Image.create(IMAGE_SIZE, IMAGE_SIZE, false, Image.FORMAT_RGBA8)
+	var target: Dictionary = OBSERVATORY_TARGETS[target_id]
+	var base_color: Color = target["base_color"]
+	var target_seed := OBSERVATORY_TARGET_IDS.find(target_id) + 1
+	var moon_craters := [
+		Vector3(-0.42, -0.18, 0.15),
+		Vector3(0.31, -0.36, 0.12),
+		Vector3(0.16, 0.34, 0.10),
+		Vector3(-0.10, 0.06, 0.08)
+	]
+	for y in range(IMAGE_SIZE):
+		for x in range(IMAGE_SIZE):
+			var nx := (float(x) - 128.0) / 82.0
+			var ny := (float(y) - 128.0) / 82.0
+			var radius_squared := nx * nx + ny * ny
+			var pixel_color := Color(0.012, 0.025, 0.075)
+			var star_hash := (x * 73 + y * 151 + x * y * 7 + target_seed * 31) % 997
+			if star_hash < 5:
+				pixel_color = Color(0.68, 0.84, 1.0)
+			if target_id == "saturn":
+				var ring_radius := sqrt(nx * nx + (ny / 0.36) * (ny / 0.36))
+				if ring_radius > 0.94 and ring_radius < 1.62:
+					var band := sin(ring_radius * 58.0) * 0.045
+					pixel_color = Color(0.77 + band, 0.62 + band, 0.38 + band)
+			if radius_squared <= 1.0:
+				var light_depth := sqrt(maxf(0.0, 1.0 - radius_squared))
+				var light_amount := clampf(0.40 - nx * 0.24 - ny * 0.30 + light_depth * 0.62, 0.12, 1.0)
+				var surface_noise := sin(nx * 19.0 + float(target_seed)) * cos(ny * 23.0) * 0.035
+				var shade := clampf(light_amount + surface_noise, 0.08, 1.0)
+				pixel_color = Color(base_color.r * shade, base_color.g * shade, base_color.b * shade)
+				if target_id == "moon":
+					for crater in moon_craters:
+						var crater_distance := Vector2(nx - crater.x, ny - crater.y).length()
+						if crater_distance < crater.z:
+							var crater_shade := 0.72 + crater_distance * 0.9
+							pixel_color = Color(pixel_color.r * crater_shade, pixel_color.g * crater_shade, pixel_color.b * crater_shade)
+				elif target_id == "mars":
+					var ridge := sin(nx * 13.0 + ny * 5.0) * cos(ny * 17.0) * 0.10
+					pixel_color = Color(
+						clampf(pixel_color.r + ridge, 0.0, 1.0),
+						clampf(pixel_color.g + ridge * 0.30, 0.0, 1.0),
+						clampf(pixel_color.b + ridge * 0.14, 0.0, 1.0)
+					)
+			image.set_pixel(x, y, pixel_color)
+	return image
+
+
 func _show_relay_panel() -> void:
 	_open_modal("لعبة رسالة مرقاب")
 	_modal_active = true
@@ -1127,8 +1433,13 @@ func _add_close_button() -> void:
 
 func _close_modal() -> void:
 	_modal_active = false
+	_observatory_active = false
 	_touch_keys = {"up": false, "down": false, "left": false, "right": false}
 	_lulu_hunt_feedback_label = null
+	_observatory_progress_label = null
+	_observatory_feedback_label = null
+	_observatory_preview = null
+	_observatory_buttons.clear()
 	_relay_buttons.clear()
 	_relay_progress_label = null
 	_relay_feedback_label = null
@@ -1150,11 +1461,13 @@ func _update_status() -> void:
 	var relay_text := "رسالة مرقاب: مكتملة" if is_relay_completed() else "رسالة مرقاب: بانتظار التوصيل"
 	var cubesat_text := "القمر المصغّر: جاهز" if is_cubesat_built() else "القمر المصغّر: قيد البناء"
 	var lulu_text := "نجوم لولو: %d / %d" % [lulu_found_count, LULU_STAR_POSITIONS.size()]
-	_status_label.text = "المحطات: %d / %d   •   %s   •   %s   •   %s" % [
+	var photo_text := "صور ريم: %d / %d" % [get_observatory_progress(), OBSERVATORY_TARGET_IDS.size()]
+	_status_label.text = "المحطات: %d / %d • %s • %s • %s • %s" % [
 		visited_count,
 		STATION_IDS.size(),
 		relay_text,
 		cubesat_text,
+		photo_text,
 		lulu_text
 	]
 
@@ -1219,7 +1532,8 @@ func _load_state() -> Dictionary:
 		"cubesat_step": 0,
 		"cubesat_built": false,
 		"lulu_found_star_ids": [],
-		"lulu_hunt_completed": false
+		"lulu_hunt_completed": false,
+		"observatory_photo_ids": []
 	}
 	if not FileAccess.file_exists(SAVE_PATH):
 		return defaults
@@ -1229,9 +1543,13 @@ func _load_state() -> Dictionary:
 		return defaults
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	if not (parsed is Dictionary) or int(parsed.get("version", 0)) != SAVE_VERSION:
+	if not (parsed is Dictionary):
+		return defaults
+	var stored_version := int(parsed.get("version", 0))
+	if stored_version < 1 or stored_version > SAVE_VERSION:
 		return defaults
 
+	# Version 1 saves predate the observatory album. Preserve existing progress.
 	var result: Dictionary = defaults.duplicate(true)
 	var raw_visited: Variant = parsed.get("visited_station_ids", [])
 	if raw_visited is Array:
@@ -1250,6 +1568,12 @@ func _load_state() -> Dictionary:
 			if LULU_STAR_POSITIONS.has(str(star_id)) and not result["lulu_found_star_ids"].has(str(star_id)):
 				result["lulu_found_star_ids"].append(str(star_id))
 	result["lulu_hunt_completed"] = result["lulu_found_star_ids"].size() == LULU_STAR_POSITIONS.size()
+	var raw_observatory_photos: Variant = parsed.get("observatory_photo_ids", [])
+	if raw_observatory_photos is Array:
+		for target_id in raw_observatory_photos:
+			var normalized_id := str(target_id)
+			if OBSERVATORY_TARGETS.has(normalized_id) and not result["observatory_photo_ids"].has(normalized_id):
+				result["observatory_photo_ids"].append(normalized_id)
 	return result
 
 

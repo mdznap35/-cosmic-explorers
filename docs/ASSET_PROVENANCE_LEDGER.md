@@ -83,3 +83,15 @@
 - المصدر والإصدار والرخصة هي نفسها المثبتة في القسم 7؛ لا يوجد تنزيل وقت التشغيل ولا نسخ كامل للحزمة.
 - يتم توفير الأصول مؤقتاً بواسطة خطوة CI المثبتة على commit محدد، ثم يفحص اختبار `validate_lunar_outpost_builder.gd` تحميل النماذج الثمانية واستعادة الحفظ.
 - الحالة: مضافة إلى مشهد مستقل؛ بانتظار نجاح CI على رأس هذا الفرع ثم اختبار APK على جهاز Android. لا ترفع الحالة إلى `device_verified` قبل التجربة الفعلية.
+
+
+## 9. Kenney Space Station Kit — CC0 GLB intake (WAVE 1)
+
+- Official asset page: https://kenney.nl/assets/space-station-kit
+- Official download URL: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
+- License: CC0 1.0 Universal. The official asset page lists 90 assets and CC0; CI checks the received archive against an expected SHA-256 before staging.
+- Cloud-only intake: GitHub Actions downloads the archive and copies only selected standalone GLB models into `assets/vendor/kenney_space_station_kit`. No archive or asset is downloaded to the user's phone.
+- Selected model names are resolved at build time: Table Display Planet, Table Large, Table Display, Wall Window, Wall Window Frame, Wall Door Wide, Computer Screen, Computer System, Chair, Bed Single, Display Wall, Structure Panel, Wall Pillar, Wall Detail, and Container Flat. At least eight matching models are required; actual names, byte sizes, and SHA-256 values are recorded in the generated `SOURCE_MANIFEST.json`.
+- Expected archive SHA-256: `215e79bd5415cff93665183390f0343ed9acf87780306331013b78520170c6d8`. CI fails closed if the received archive differs; an upstream change must be re-reviewed before updating the digest.
+- Runtime reuse: Sana Hub resolves the selected models by filename, instantiates only the props needed by each station, and retains procedural geometry when an optional model is unavailable.
+- State: CI intake is configured; exact-head Godot import, Sana Hub tests, Android export, and manual device review remain pending.

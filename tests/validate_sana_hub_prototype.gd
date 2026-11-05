@@ -24,6 +24,10 @@ func _run_sana_hub_tests() -> void:
 	root.add_child(hub)
 	await process_frame
 
+	if hub.get_kenney_model_count() < 8:
+		_errors.append("The selected Kenney Space Station Kit models must be staged and discoverable.")
+	if hub.get_loaded_kenney_prop_ids().size() < 2:
+		_errors.append("At least two real Kenney models must be instantiated in the Sana Hub.")
 	if not hub.has_method("start_lunar_outpost_activity"):
 		_errors.append("The workshop hub must expose the lunar outpost activity entry point.")
 	if not ResourceLoader.exists("res://scenes/prototypes/lunar_outpost_builder.tscn"):
@@ -154,7 +158,67 @@ func _run_sana_hub_tests() -> void:
 	await process_frame
 	if not final_restore_hub.is_lulu_hunt_completed() or final_restore_hub.get_lulu_found_star_ids().size() != 5:
 		_errors.append("A fresh hub instance must restore the completed Lulu hunt.")
+
+	# Reem's observatory produces PNG thumbnails and saves its local photo album.
+	if final_restore_hub.get_observatory_target_ids().size() != 3:
+		_errors.append("The observatory must expose three stable celestial targets.")
+	if not final_restore_hub.interact_station("observatory"):
+		_errors.append("The observatory station should open Reem's photo activity.")
+	if final_restore_hub.capture_observation("unknown_target"):
+		_errors.append("The observatory must reject unknown target IDs.")
+	if not final_restore_hub.capture_observation("moon"):
+		_errors.append("The first observatory photo should be captured.")
+	if final_restore_hub.capture_observation("moon"):
+		_errors.append("The same observatory target must not be captured twice.")
+	if not FileAccess.file_exists(final_restore_hub.get_observatory_photo_path("moon")):
+		_errors.append("A captured observatory photo must exist as a local PNG file.")
+	if not final_restore_hub.capture_observation("mars"):
+		_errors.append("The second observatory photo should be captured.")
+	if final_restore_hub.get_observatory_progress() != 2 or final_restore_hub.is_observatory_complete():
+		_errors.append("The observatory should preserve a partial two-photo checkpoint.")
+
 	final_restore_hub.queue_free()
+	await process_frame
+
+	var observatory_resume_hub = HubScene.instantiate()
+	observatory_resume_hub.enable_gameplay_bridge = false
+	root.add_child(observatory_resume_hub)
+	await process_frame
+	if observatory_resume_hub.get_observatory_progress() != 2:
+		_errors.append("A new hub instance must restore the partial observatory album.")
+	if not observatory_resume_hub.interact_station("observatory"):
+		_errors.append("The observatory album should reopen after resuming.")
+	if not observatory_resume_hub.capture_observation("saturn"):
+		_errors.append("The resumed observatory should accept the final target.")
+	if not observatory_resume_hub.is_observatory_complete():
+		_errors.append("All three observatory targets should complete the photo album.")
+	if not FileAccess.file_exists(observatory_resume_hub.get_observatory_photo_path("saturn")):
+		_errors.append("The Saturn thumbnail should be written to the local album.")
+	observatory_resume_hub.queue_free()
+	await process_frame
+
+	# A version 1 save must migrate without discarding earlier checkpoints.
+	_write_save_state({
+		"version": 1,
+		"visited_station_ids": ["bridge", "observatory"],
+		"relay_progress": 1,
+		"relay_activity_completed": false,
+		"cubesat_step": 2,
+		"cubesat_built": false,
+		"lulu_found_star_ids": ["star_bridge"],
+		"lulu_hunt_completed": false
+	})
+	var migrated_hub = HubScene.instantiate()
+	migrated_hub.enable_gameplay_bridge = false
+	root.add_child(migrated_hub)
+	await process_frame
+	if migrated_hub.get_relay_progress() != 1 or migrated_hub.get_cubesat_progress() != 2:
+		_errors.append("Save v1 migration must preserve Relay and CubeSat checkpoints.")
+	if migrated_hub.get_lulu_found_star_ids().size() != 1:
+		_errors.append("Save v1 migration must preserve Lulu's partial hunt.")
+	if migrated_hub.get_observatory_progress() != 0:
+		_errors.append("Save v1 migration must initialize the new photo album as empty.")
+	migrated_hub.queue_free()
 	await process_frame
 	_remove_test_save()
 
@@ -168,6 +232,20 @@ func _run_sana_hub_tests() -> void:
 	quit(1)
 
 
+func _write_save_state(state: Dictionary) -> void:
+	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if file == null:
+		_errors.append("Unable to create a save fixture for migration testing.")
+		return
+	file.store_string(JSON.stringify(state))
+	file.close()
+
+
 func _remove_test_save() -> void:
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
+	var album := DirAccess.open("user://observatory_album")
+	if album != null:
+		for file_name in album.get_files():
+			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://observatory_album/" + file_name))
+		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://observatory_album"))

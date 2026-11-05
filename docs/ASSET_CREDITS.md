@@ -30,3 +30,14 @@ The planet shader's procedural treatment, Earth cloud and atmosphere layers, Sat
 ## Third-party project evaluation
 
 CelestialSim (MIT) was evaluated as a possible terrain engine: https://github.com/CelestialSim/CelestialSim. It is not integrated into the mobile app because its current documented path requires Vulkan (Forward+ or Mobile renderer), while this project targets Godot Compatibility/OpenGL ES; its own installation guide also describes Android as experimental and unsupported. It remains a research candidate, not a runtime dependency.
+
+
+## Kenney Space Station Kit
+
+- Asset pack: Space Station Kit (selected GLB models only).
+- Creator: Kenney.
+- Source: https://kenney.nl/assets/space-station-kit
+- Download: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
+- License: CC0 1.0 Universal.
+- Selected GLB files are fetched and integrity-checked by GitHub Actions. Per-file SHA-256 and sizes are recorded in the generated `assets/vendor/kenney_space_station_kit/SOURCE_MANIFEST.json`.
+- The pack dresses the Sana Hub bridge, workshop, laboratory, observatory, and Lulu nook. Gameplay code and original characters remain project-authored.
