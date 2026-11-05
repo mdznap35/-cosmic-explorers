@@ -399,6 +399,15 @@ jobs:
           fi
           sha256sum build/CosmicExplorers-Android-debug.apk
 
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: CosmicExplorers-Android-debug
+          path: build/CosmicExplorers-Android-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+
       - name: Export standalone Sana Hub preview APK
         shell: bash
         run: |
@@ -476,12 +485,5 @@ jobs:
         with:
           name: CosmicExplorers-SanaHub-Prototype
           path: build/CosmicExplorers-SanaHub-Prototype.apk
-          if-no-files-found: error
-          retention-days: 14
-      - name: Upload installable debug APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: CosmicExplorers-Android-debug
-          path: build/CosmicExplorers-Android-debug.apk
           if-no-files-found: error
           retention-days: 14
