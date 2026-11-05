@@ -24,10 +24,10 @@ func _run_sana_hub_tests() -> void:
 	root.add_child(hub)
 	await process_frame
 
-	if hub.get_kenney_model_count() < 8:
-		_errors.append("The selected Kenney Space Station Kit models must be staged and discoverable.")
-	if hub.get_loaded_kenney_prop_ids().size() < 2:
-		_errors.append("At least two real Kenney models must be instantiated in the Sana Hub.")
+	if hub.get_reused_asset_model_count() < 8:
+		_errors.append("All eight pinned KayKit CC0 models must be available in the Sana Hub.")
+	if hub.get_loaded_reused_prop_ids().size() < 6:
+		_errors.append("Sana Hub should instantiate reusable KayKit props across its five stations.")
 	if not hub.has_method("start_lunar_outpost_activity"):
 		_errors.append("The workshop hub must expose the lunar outpost activity entry point.")
 	if not ResourceLoader.exists("res://scenes/prototypes/lunar_outpost_builder.tscn"):
@@ -223,7 +223,7 @@ func _run_sana_hub_tests() -> void:
 	_remove_test_save()
 
 	if _errors.is_empty():
-		print("PASS: Sana Hub scene, five stations, Relay, CubeSat, Lulu hidden-star hunt, partial checkpoints, and multi-session restore.")
+		print("PASS: Sana Hub stations, pinned KayKit CC0 props, Relay, CubeSat, Lulu hunt, Reem PNG photo album, save migration, partial checkpoints, and multi-session restore.")
 		quit(0)
 		return
 

@@ -9,7 +9,17 @@ const InteractionRouter = preload("res://scripts/interaction_router.gd")
 const SAVE_PATH := "user://sana_hub_prototype.json"
 const SAVE_VERSION := 2
 const ALBUM_DIR := "user://observatory_album"
-const KENNEY_ASSET_ROOT := "res://assets/vendor/kenney_space_station_kit"
+const KAYKIT_ASSET_ROOT := "res://assets/vendor/kaykit_space_base_bits"
+const KAYKIT_ASSET_PATHS := {
+	"basemodule_A": KAYKIT_ASSET_ROOT + "/basemodule_A.gltf",
+	"lander_A": KAYKIT_ASSET_ROOT + "/lander_A.gltf",
+	"landingpad_small": KAYKIT_ASSET_ROOT + "/landingpad_small.gltf",
+	"rocks_A": KAYKIT_ASSET_ROOT + "/rocks_A.gltf",
+	"rocks_B": KAYKIT_ASSET_ROOT + "/rocks_B.gltf",
+	"solarpanel": KAYKIT_ASSET_ROOT + "/solarpanel.gltf",
+	"spacetruck": KAYKIT_ASSET_ROOT + "/spacetruck.gltf",
+	"structure_low": KAYKIT_ASSET_ROOT + "/structure_low.gltf"
+}
 const MOVE_SPEED := 4.0
 const GRAVITY := 18.0
 const INTERACTION_DISTANCE := 2.6
@@ -54,7 +64,7 @@ const OBSERVATORY_TARGET_IDS := ["moon", "mars", "saturn"]
 const OBSERVATORY_TARGETS := {
 	"moon": {
 		"title": "القمر",
-			"caption": "وثّقنا تضاريس القمر وظلال الفوهات في لقطة رصد جديدة.",
+		"caption": "وثّقنا تضاريس القمر وظلال الفوهات في لقطة رصد جديدة.",
 		"base_color": Color(0.67, 0.70, 0.74)
 	},
 	"mars": {
@@ -121,8 +131,7 @@ var _observatory_buttons: Array[Button] = []
 var _observatory_feedback := ""
 var _observatory_active := false
 
-var _kenney_model_paths: Array[String] = []
-var _loaded_kenney_prop_ids: Array[String] = []
+var _loaded_reused_prop_ids: Array[String] = []
 
 var _stations: Dictionary = {}
 var _secret_star_nodes: Dictionary = {}
@@ -148,7 +157,6 @@ var _gameplay_bridge_ready := false
 
 func _ready() -> void:
 	_state = _load_state()
-	_collect_kenney_models(KENNEY_ASSET_ROOT)
 	_relay_progress = clampi(int(_state.get("relay_progress", 0)), 0, RELAY_SEQUENCE.size())
 	_build_world()
 	_build_player()
@@ -234,12 +242,16 @@ func get_visited_station_ids() -> PackedStringArray:
 	return result
 
 
-func get_kenney_model_count() -> int:
-	return _kenney_model_paths.size()
+func get_reused_asset_model_count() -> int:
+	var available_count := 0
+	for model_path in KAYKIT_ASSET_PATHS.values():
+		if ResourceLoader.exists(str(model_path)):
+			available_count += 1
+	return available_count
 
 
-func get_loaded_kenney_prop_ids() -> PackedStringArray:
-	return PackedStringArray(_loaded_kenney_prop_ids)
+func get_loaded_reused_prop_ids() -> PackedStringArray:
+	return PackedStringArray(_loaded_reused_prop_ids)
 
 
 func get_observatory_target_ids() -> PackedStringArray:
@@ -553,62 +565,32 @@ func _build_world() -> void:
 	_build_lulu_secret_stars()
 
 
-func _collect_kenney_models(directory_path: String) -> void:
-	var directory := DirAccess.open(directory_path)
-	if directory == null:
-		return
-	directory.list_dir_begin()
-	while true:
-		var entry := directory.get_next()
-		if entry.is_empty():
-			break
-		if entry.begins_with("."):
-			continue
-		var child_path := directory_path.path_join(entry)
-		if directory.current_is_dir():
-			_collect_kenney_models(child_path)
-		elif entry.get_extension().to_lower() in ["glb", "gltf"]:
-			_kenney_model_paths.append(child_path)
-	directory.list_dir_end()
-	_kenney_model_paths.sort()
-
-
-func _find_kenney_model_path(tokens: PackedStringArray) -> String:
-	for token in tokens:
-		var wanted := token.to_lower().replace("_", " ").replace("-", " ")
-		for model_path in _kenney_model_paths:
-			var model_name := model_path.get_file().get_basename().to_lower().replace("_", " ").replace("-", " ")
-			if model_name.contains(wanted):
-				return model_path
-	return ""
-
-
-func _place_kenney_prop(
+func _place_reusable_prop(
 	parent: Node3D,
 	prop_id: String,
-	name_tokens: PackedStringArray,
+	asset_id: String,
 	local_position: Vector3,
 	uniform_scale: float,
 	rotation_y_degrees: float = 0.0
 ) -> bool:
-	var model_path := _find_kenney_model_path(name_tokens)
-	if model_path.is_empty():
+	var model_path := str(KAYKIT_ASSET_PATHS.get(asset_id, ""))
+	if model_path.is_empty() or not ResourceLoader.exists(model_path):
 		return false
 	var packed_scene := ResourceLoader.load(model_path) as PackedScene
 	if packed_scene == null:
-		push_warning("Kenney model could not be loaded as a PackedScene: " + model_path)
+		push_warning("Pinned KayKit model could not be loaded: " + model_path)
 		return false
 	var instance := packed_scene.instantiate() as Node3D
 	if instance == null:
-		push_warning("Kenney model root is not Node3D: " + model_path)
+		push_warning("Pinned KayKit model root is not Node3D: " + model_path)
 		return false
-	instance.name = "Kenney_" + prop_id
+	instance.name = "Reused_" + prop_id
 	instance.position = local_position
 	instance.scale = Vector3.ONE * uniform_scale
 	instance.rotation_degrees.y = rotation_y_degrees
 	parent.add_child(instance)
-	if not _loaded_kenney_prop_ids.has(prop_id):
-		_loaded_kenney_prop_ids.append(prop_id)
+	if not _loaded_reused_prop_ids.has(prop_id):
+		_loaded_reused_prop_ids.append(prop_id)
 	return true
 
 
@@ -727,24 +709,25 @@ func _create_station(station_id: String, station_position: Vector3, accent: Colo
 		"lulu_nook":
 			_add_lulu_shell(station, accent)
 
-	# Reuse selected CC0 Kenney props. The procedural station remains the
-	# fallback layout if a model is unavailable in a local source checkout.
+	# Reuse the eight already-pinned CC0 KayKit models across the ship.
+	# They are small exhibits/props; the existing procedural station geometry
+	# continues to define navigation and acts as a safe fallback.
 	match station_id:
 		"bridge":
-			_place_kenney_prop(station, "bridge_planet_console", PackedStringArray(["table display planet"]), Vector3(0.0, 0.18, -1.18), 0.55)
-			_place_kenney_prop(station, "bridge_screen", PackedStringArray(["display wall", "computer screen"]), Vector3(-0.92, 0.34, -0.62), 0.42)
+			_place_reusable_prop(station, "bridge_module", "basemodule_A", Vector3(0.0, 0.16, -1.12), 0.22)
+			_place_reusable_prop(station, "bridge_relay_unit", "structure_low", Vector3(0.92, 0.10, -0.72), 0.28)
 		"workshop":
-			_place_kenney_prop(station, "workshop_bench", PackedStringArray(["table large"]), Vector3(0.0, 0.16, -1.18), 0.48)
-			_place_kenney_prop(station, "workshop_computer", PackedStringArray(["computer screen", "computer"]), Vector3(0.0, 0.42, -0.52), 0.42)
+			_place_reusable_prop(station, "workshop_rover", "spacetruck", Vector3(0.0, 0.18, -1.18), 0.30)
+			_place_reusable_prop(station, "workshop_solar_panel", "solarpanel", Vector3(0.90, 0.12, 0.58), 0.28)
 		"laboratory":
-			_place_kenney_prop(station, "lab_display", PackedStringArray(["table display", "table inset"]), Vector3(0.0, 0.16, -1.18), 0.48)
-			_place_kenney_prop(station, "lab_screen", PackedStringArray(["computer screen"]), Vector3(0.88, 0.32, -0.60), 0.38)
+			_place_reusable_prop(station, "lab_lander", "lander_A", Vector3(-0.76, 0.12, -0.82), 0.25)
+			_place_reusable_prop(station, "lab_sample_module", "basemodule_A", Vector3(0.82, 0.12, -0.82), 0.19)
 		"observatory":
-			_place_kenney_prop(station, "observatory_window", PackedStringArray(["wall window frame", "wall window"]), Vector3(0.0, 0.20, -1.15), 0.62)
-			_place_kenney_prop(station, "observatory_display", PackedStringArray(["table display planet"]), Vector3(0.0, 0.15, 0.82), 0.40)
+			_place_reusable_prop(station, "observatory_solar_array", "solarpanel", Vector3(0.82, 0.12, -0.62), 0.24)
+			_place_reusable_prop(station, "observatory_rock_sample", "rocks_A", Vector3(-0.82, 0.10, -0.65), 0.26)
 		"lulu_nook":
-			_place_kenney_prop(station, "lulu_bed", PackedStringArray(["bed single"]), Vector3(0.0, 0.12, -1.04), 0.42)
-			_place_kenney_prop(station, "lulu_chair", PackedStringArray(["chair cushion", "chair"]), Vector3(0.72, 0.10, 0.35), 0.32)
+			_place_reusable_prop(station, "lulu_rock_garden_a", "rocks_A", Vector3(-0.62, 0.10, -0.62), 0.24)
+			_place_reusable_prop(station, "lulu_rock_garden_b", "rocks_B", Vector3(0.62, 0.10, -0.62), 0.24)
 
 	if station_id == "workshop" and is_cubesat_built():
 		_add_cubesat_display()

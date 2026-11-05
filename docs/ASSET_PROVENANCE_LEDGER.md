@@ -85,13 +85,10 @@
 - الحالة: مضافة إلى مشهد مستقل؛ بانتظار نجاح CI على رأس هذا الفرع ثم اختبار APK على جهاز Android. لا ترفع الحالة إلى `device_verified` قبل التجربة الفعلية.
 
 
-## 9. Kenney Space Station Kit — CC0 GLB intake (WAVE 1)
+## 9. Kenney Space Station Kit — candidate held after integrity rejection
 
 - Official asset page: https://kenney.nl/assets/space-station-kit
-- Official download URL: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
-- License: CC0 1.0 Universal. The official asset page lists 90 assets and CC0; CI checks the received archive against an expected SHA-256 before staging.
-- Cloud-only intake: GitHub Actions downloads the archive and copies only selected standalone GLB models into `assets/vendor/kenney_space_station_kit`. No archive or asset is downloaded to the user's phone.
-- Selected model names are resolved at build time: Table Display Planet, Table Large, Table Display, Wall Window, Wall Window Frame, Wall Door Wide, Computer Screen, Computer System, Chair, Bed Single, Display Wall, Structure Panel, Wall Pillar, Wall Detail, and Container Flat. At least eight matching models are required; actual names, byte sizes, and SHA-256 values are recorded in the generated `SOURCE_MANIFEST.json`.
-- Expected archive SHA-256: `215e79bd5415cff93665183390f0343ed9acf87780306331013b78520170c6d8`. CI fails closed if the received archive differs; an upstream change must be re-reviewed before updating the digest.
-- Runtime reuse: Sana Hub resolves the selected models by filename, instantiates only the props needed by each station, and retains procedural geometry when an optional model is unavailable.
-- State: CI intake is configured; exact-head Godot import, Sana Hub tests, Android export, and manual device review remain pending.
+- Published terms on the official page: 90 assets, CC0 1.0 Universal.
+- A CI attempt to fetch the official archive returned a 17,974-byte payload whose SHA-256 did not match the recorded reference digest. The payload was rejected before extraction/import. It is **not** part of the current game build.
+- The Sana Hub wave instead reuses the project's already-pinned KayKit Space Base Bits subset (8 GLTF models, commit `6dfbcac9927d06283752c4defd4882cfe0d29666`, CC0 1.0 Universal). Those are already downloaded/staged by the existing CI workflow and are used by the Mars and lunar outpost prototypes.
+- Kenney remains a candidate until a valid official archive or independently verifiable mirror can be obtained and its SHA-256 and selected filenames can be checked.
