@@ -589,7 +589,7 @@ func _update_status() -> void:
 
 func _return_to_sana() -> void:
 	_touch = {"up": false, "down": false, "left": false, "right": false}
-	get_tree().change_scene_to_file("res://scenes/prototypes/showcase_app.tscn")
+	get_tree().change_scene_to_file("res://scenes/prototypes/sana_hub_prototype.tscn")
 
 
 func _make_material(color: Color, emission: Color, roughness: float) -> StandardMaterial3D:
