@@ -434,7 +434,7 @@ func _start_rover_route() -> void:
 
 
 func _return_to_sana() -> void:
-	get_tree().change_scene_to_file("res://scenes/prototypes/sana_hub_prototype.tscn")
+	get_tree().change_scene_to_file("res://scenes/prototypes/showcase_app.tscn")
 
 
 func _set_feedback(message: String) -> void:
