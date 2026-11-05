@@ -422,8 +422,15 @@ jobs:
 
           new_main = 'run/main_scene="res://scenes/prototypes/sana_hub_prototype.tscn"'
           project, replacements = re.subn(
-              r'^run/main_scene="[^"]+"
-
+              r'^run/main_scene="[^"]+"',
+              new_main,
+              project,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if replacements != 1:
+              raise SystemExit("Expected exactly one main-scene setting to replace.")
+          project_path.write_text(project, encoding="utf-8")
           presets_path = Path("export_presets.cfg")
           presets = presets_path.read_text(encoding="utf-8")
           replacements = {
