@@ -269,6 +269,17 @@ jobs:
             exit 1
           fi
 
+      - name: Validate standalone prototype showcase
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_showcase_app.gd 2>&1 | tee "$RUNNER_TEMP/showcase-app.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/showcase-app.log"; then
+            echo "Prototype showcase validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |
@@ -388,6 +399,15 @@ jobs:
           fi
           sha256sum build/CosmicExplorers-Android-debug.apk
 
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: CosmicExplorers-Android-debug
+          path: build/CosmicExplorers-Android-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+
       - name: Export standalone Sana Hub preview APK
         shell: bash
         run: |
@@ -407,12 +427,19 @@ jobs:
 
           project_path = Path("project.godot")
           project = project_path.read_text(encoding="utf-8")
-          old_main = 'run/main_scene="res://scenes/main.tscn"'
-          new_main = 'run/main_scene="res://scenes/prototypes/sana_hub_prototype.tscn"'
-          if project.count(old_main) != 1:
-              raise SystemExit("Expected exactly one existing main-scene setting.")
-          project_path.write_text(project.replace(old_main, new_main, 1), encoding="utf-8")
+          import re
 
+          new_main = 'run/main_scene="res://scenes/prototypes/sana_hub_prototype.tscn"'
+          project, replacements = re.subn(
+              r'^run/main_scene="[^"]+"',
+              new_main,
+              project,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if replacements != 1:
+              raise SystemExit("Expected exactly one main-scene setting to replace.")
+          project_path.write_text(project, encoding="utf-8")
           presets_path = Path("export_presets.cfg")
           presets = presets_path.read_text(encoding="utf-8")
           replacements = {
@@ -458,12 +485,5 @@ jobs:
         with:
           name: CosmicExplorers-SanaHub-Prototype
           path: build/CosmicExplorers-SanaHub-Prototype.apk
-          if-no-files-found: error
-          retention-days: 14
-      - name: Upload installable debug APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: CosmicExplorers-Android-debug
-          path: build/CosmicExplorers-Android-debug.apk
           if-no-files-found: error
           retention-days: 14
