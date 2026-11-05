@@ -5,9 +5,22 @@ extends Node3D
 const ContentRegistry = preload("res://scripts/content_registry.gd")
 const GameplayRuntime = preload("res://scripts/gameplay_runtime.gd")
 const InteractionRouter = preload("res://scripts/interaction_router.gd")
+const DiscoveryJournal = preload("res://scripts/prototypes/discovery_journal.gd")
 
 const SAVE_PATH := "user://sana_hub_prototype.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
+const ALBUM_DIR := "user://observatory_album"
+const KAYKIT_ASSET_ROOT := "res://assets/vendor/kaykit_space_base_bits"
+const KAYKIT_ASSET_PATHS := {
+	"basemodule_A": KAYKIT_ASSET_ROOT + "/basemodule_A.gltf",
+	"lander_A": KAYKIT_ASSET_ROOT + "/lander_A.gltf",
+	"landingpad_small": KAYKIT_ASSET_ROOT + "/landingpad_small.gltf",
+	"rocks_A": KAYKIT_ASSET_ROOT + "/rocks_A.gltf",
+	"rocks_B": KAYKIT_ASSET_ROOT + "/rocks_B.gltf",
+	"solarpanel": KAYKIT_ASSET_ROOT + "/solarpanel.gltf",
+	"spacetruck": KAYKIT_ASSET_ROOT + "/spacetruck.gltf",
+	"structure_low": KAYKIT_ASSET_ROOT + "/structure_low.gltf"
+}
 const MOVE_SPEED := 4.0
 const GRAVITY := 18.0
 const INTERACTION_DISTANCE := 2.6
@@ -48,6 +61,25 @@ const LULU_STAR_POSITIONS := {
 	"star_observatory": Vector3(5.6, 0.92, -4.1),
 	"star_corridor": Vector3(8.7, 0.92, 3.8)
 }
+const OBSERVATORY_TARGET_IDS := ["moon", "mars", "saturn"]
+const OBSERVATORY_TARGETS := {
+	"moon": {
+		"title": "القمر",
+		"caption": "وثّقنا تضاريس القمر وظلال الفوهات في لقطة رصد جديدة.",
+		"base_color": Color(0.67, 0.70, 0.74)
+	},
+	"mars": {
+		"title": "المريخ",
+		"caption": "حُفظت لقطة لسطح المريخ المحمر؛ يرتبط لونه في كثير من الغبار والصخور بأكاسيد الحديد.",
+		"base_color": Color(0.76, 0.31, 0.19)
+	},
+	"saturn": {
+		"title": "زحل",
+		"caption": "وثّقنا زحل وحلقاته الواسعة في سجل المرصد.",
+		"base_color": Color(0.83, 0.69, 0.43)
+	}
+}
+
 const STATION_DATA := {
 	"bridge": {
 		"title": "جسر القيادة",
@@ -72,7 +104,7 @@ const STATION_DATA := {
 	"lulu_nook": {
 		"title": "ركن لولو",
 		"hint": "مكان صغير للأسرار والمرح.",
-		"description": "يحب لولو اكتشاف الزوايا الصغيرة وترتيب مقتنيات الرحلة. سنضيف هنا نشاط البحث عن النجوم المخفية في دفعة لاحقة."
+		"description": "يحب لولو اكتشاف الزوايا الصغيرة وترتيب مقتنيات الرحلة. ابحث معه عن النجوم الخمس المخفية في أرجاء السفينة."
 	}
 }
 
@@ -93,6 +125,14 @@ var _cubesat_progress_label: Label
 var _cubesat_feedback_label: Label
 var _cubesat_buttons: Array[Button] = []
 var _lulu_hunt_feedback_label: Label
+var _observatory_progress_label: Label
+var _observatory_feedback_label: Label
+var _observatory_preview: TextureRect
+var _observatory_buttons: Array[Button] = []
+var _observatory_feedback := ""
+var _observatory_active := false
+
+var _loaded_reused_prop_ids: Array[String] = []
 
 var _stations: Dictionary = {}
 var _secret_star_nodes: Dictionary = {}
@@ -110,6 +150,7 @@ var _relay_feedback := ""
 var _cubesat_display_added := false
 var _lulu_hunt_active := false
 var _state: Dictionary = {}
+var _simulate_save_failure_for_tests := false
 
 var _interaction_router
 var _gameplay_runtime
@@ -196,11 +237,87 @@ func get_station_ids() -> PackedStringArray:
 	return PackedStringArray(STATION_IDS)
 
 
+func set_save_failure_simulation_for_testing(enabled: bool) -> void:
+	_simulate_save_failure_for_tests = enabled
+
+
+func get_discovery_journal_snapshot() -> Dictionary:
+	return DiscoveryJournal.build_snapshot(_state)
+
+
 func get_visited_station_ids() -> PackedStringArray:
 	var result := PackedStringArray()
 	for station_id in _state.get("visited_station_ids", []):
 		result.append(str(station_id))
 	return result
+
+
+func get_reused_asset_model_count() -> int:
+	var available_count := 0
+	for model_path in KAYKIT_ASSET_PATHS.values():
+		if ResourceLoader.exists(str(model_path)):
+			available_count += 1
+	return available_count
+
+
+func get_loaded_reused_prop_ids() -> PackedStringArray:
+	return PackedStringArray(_loaded_reused_prop_ids)
+
+
+func get_observatory_target_ids() -> PackedStringArray:
+	return PackedStringArray(OBSERVATORY_TARGET_IDS)
+
+
+func get_observatory_photo_ids() -> PackedStringArray:
+	return PackedStringArray(_state.get("observatory_photo_ids", []))
+
+
+func get_observatory_progress() -> int:
+	return get_observatory_photo_ids().size()
+
+
+func is_observatory_complete() -> bool:
+	return get_observatory_progress() == OBSERVATORY_TARGET_IDS.size()
+
+
+func get_observatory_photo_path(target_id: String) -> String:
+	if not OBSERVATORY_TARGETS.has(target_id):
+		return ""
+	return ALBUM_DIR.path_join(target_id + ".png")
+
+
+func start_observatory_activity() -> bool:
+	_observatory_feedback = "اختر جرماً سماوياً لالتقاط صورة بأسلوب المرصد."
+	_show_observatory_panel()
+	return true
+
+
+func capture_observation(target_id: String) -> bool:
+	if not _observatory_active or not OBSERVATORY_TARGETS.has(target_id):
+		return false
+	var photos: Array = _state.get("observatory_photo_ids", [])
+	if photos.has(target_id):
+		_observatory_feedback = "هذه الصورة محفوظة بالفعل في ألبوم ريم."
+		_refresh_observatory_panel()
+		return false
+	if not _save_observatory_thumbnail(target_id):
+		_observatory_feedback = "تعذّر إنشاء الصورة. لم نحتسب هذه اللقطة."
+		_refresh_observatory_panel()
+		return false
+	photos.append(target_id)
+	_state["observatory_photo_ids"] = photos
+	if not _save_state():
+		photos.erase(target_id)
+		_state["observatory_photo_ids"] = photos
+		var photo_path := get_observatory_photo_path(target_id)
+		if FileAccess.file_exists(photo_path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(photo_path))
+		_observatory_feedback = "تعذّر حفظ التقدم. يمكنك المحاولة مجدداً."
+		_refresh_observatory_panel()
+		return false
+	_observatory_feedback = str(OBSERVATORY_TARGETS[target_id]["caption"])
+	_refresh_observatory_panel()
+	return true
 
 
 func get_relay_progress() -> int:
@@ -243,23 +360,31 @@ func start_lulu_hunt() -> bool:
 func collect_lulu_star(star_id: String) -> bool:
 	if not _lulu_hunt_active or not LULU_STAR_POSITIONS.has(star_id):
 		return false
-	var found_ids: Array = _state.get("lulu_found_star_ids", [])
+	var previous_state := _state.duplicate(true)
+	var found_ids: Array = _state.get("lulu_found_star_ids", []).duplicate()
 	if found_ids.has(star_id):
 		return false
 	found_ids.append(star_id)
 	_state["lulu_found_star_ids"] = found_ids
+	var completes_hunt := found_ids.size() >= LULU_STAR_POSITIONS.size()
+	if completes_hunt:
+		_state["lulu_hunt_completed"] = true
+	if not _persist_state_or_restore(previous_state):
+		if is_instance_valid(_lulu_hunt_feedback_label):
+			_lulu_hunt_feedback_label.text = "تعذّر حفظ النجمة. بقيت في مكانها؛ حاول جمعها مجدداً."
+		return false
+
+	# Remove the world object only after the progress is durably accepted.
 	if _secret_star_nodes.has(star_id):
 		var star: Node3D = _secret_star_nodes[star_id]
 		if is_instance_valid(star):
 			star.queue_free()
 		_secret_star_nodes.erase(star_id)
-	if found_ids.size() >= LULU_STAR_POSITIONS.size():
-		_state["lulu_hunt_completed"] = true
+	if completes_hunt:
 		_lulu_hunt_active = false
 		if is_instance_valid(_lulu_hunt_feedback_label):
 			_lulu_hunt_feedback_label.text = "وجدت كل النجوم! أحسنت يا مستكشف!"
-	_save_state()
-	if is_instance_valid(_lulu_hunt_feedback_label) and not is_lulu_hunt_completed():
+	elif is_instance_valid(_lulu_hunt_feedback_label):
 		_refresh_lulu_hunt_panel()
 	return true
 
@@ -287,11 +412,15 @@ func select_cubesat_part(part_id: String) -> bool:
 			_cubesat_feedback_label.text = "لنبدأ بالهيكل المركزي، ثم نضيف الطاقة والاتصال والكاميرا. لا مشكلة، جرّب مجدداً."
 		return false
 
+	var previous_state := _state.duplicate(true)
 	current_step += 1
 	_state["cubesat_step"] = current_step
 	if current_step >= CUBESAT_SEQUENCE.size():
 		_state["cubesat_built"] = true
-	_save_state()
+	if not _persist_state_or_restore(previous_state):
+		if is_instance_valid(_cubesat_feedback_label):
+			_cubesat_feedback_label.text = "تعذّر حفظ هذه الوحدة. بقيت القطعة كما كانت؛ حاول مجدداً."
+		return false
 	if is_cubesat_built():
 		_add_cubesat_display()
 	_refresh_cubesat_panel()
@@ -321,15 +450,23 @@ func submit_relay_node(relay_id: String) -> bool:
 		_refresh_relay_panel()
 		return false
 
+	var previous_state := _state.duplicate(true)
+	var previous_progress := _relay_progress
 	_relay_progress += 1
 	_state["relay_progress"] = _relay_progress
-	if _relay_progress >= RELAY_SEQUENCE.size():
+	var completes_relay := _relay_progress >= RELAY_SEQUENCE.size()
+	if completes_relay:
 		_state["relay_activity_completed"] = true
 		_relay_feedback = "وصلت الرسالة إلى الروفر! أحسنت تنظيم مسار الاتصال."
-		_publish_gameplay_event("signal.interacted", {"activity_id": "activity.relay_message"})
 	else:
 		_relay_feedback = "ممتاز! انتقلت الرسالة إلى المحطة التالية."
-	_save_state()
+	if not _persist_state_or_restore(previous_state):
+		_relay_progress = previous_progress
+		_relay_feedback = "تعذّر حفظ خطوة الاتصال. لم نتقدم؛ حاول مجدداً."
+		_refresh_relay_panel()
+		return false
+	if completes_relay:
+		_publish_gameplay_event("signal.interacted", {"activity_id": "activity.relay_message"})
 	_refresh_relay_panel()
 	return true
 
@@ -349,10 +486,12 @@ func interact_station(station_id: String) -> bool:
 	var visited: Array = _state.get("visited_station_ids", [])
 	var first_visit := not visited.has(station_id)
 	if first_visit:
+		var previous_state := _state.duplicate(true)
+		visited = visited.duplicate()
 		visited.append(station_id)
 		_state["visited_station_ids"] = visited
-		_save_state()
-		_publish_gameplay_event("ship.room.visited", {"station_id": station_id})
+		if _persist_state_or_restore(previous_state):
+			_publish_gameplay_event("ship.room.visited", {"station_id": station_id})
 
 	if station_id == "bridge":
 		start_relay_activity()
@@ -363,6 +502,8 @@ func interact_station(station_id: String) -> bool:
 	if station_id == "lulu_nook":
 		start_lulu_hunt()
 		return true
+	if station_id == "observatory":
+		return start_observatory_activity()
 	if station_id == "laboratory":
 		var scene_result := get_tree().change_scene_to_file("res://scenes/prototypes/mars_rover_survey.tscn")
 		if scene_result != OK:
@@ -454,6 +595,35 @@ func _build_world() -> void:
 	_create_station("observatory", Vector3(4.0, 0.0, -4.8), Color(0.63, 0.62, 1.0))
 	_create_station("lulu_nook", Vector3(8.0, 0.0, -2.5), Color(0.94, 0.72, 0.42))
 	_build_lulu_secret_stars()
+
+
+func _place_reusable_prop(
+	parent: Node3D,
+	prop_id: String,
+	asset_id: String,
+	local_position: Vector3,
+	uniform_scale: float,
+	rotation_y_degrees: float = 0.0
+) -> bool:
+	var model_path := str(KAYKIT_ASSET_PATHS.get(asset_id, ""))
+	if model_path.is_empty() or not ResourceLoader.exists(model_path):
+		return false
+	var packed_scene := ResourceLoader.load(model_path) as PackedScene
+	if packed_scene == null:
+		push_warning("Pinned KayKit model could not be loaded: " + model_path)
+		return false
+	var instance := packed_scene.instantiate() as Node3D
+	if instance == null:
+		push_warning("Pinned KayKit model root is not Node3D: " + model_path)
+		return false
+	instance.name = "Reused_" + prop_id
+	instance.position = local_position
+	instance.scale = Vector3.ONE * uniform_scale
+	instance.rotation_degrees.y = rotation_y_degrees
+	parent.add_child(instance)
+	if not _loaded_reused_prop_ids.has(prop_id):
+		_loaded_reused_prop_ids.append(prop_id)
+	return true
 
 
 func _build_lulu_secret_stars() -> void:
@@ -570,6 +740,26 @@ func _create_station(station_id: String, station_position: Vector3, accent: Colo
 			_add_telescope(station, accent)
 		"lulu_nook":
 			_add_lulu_shell(station, accent)
+
+	# Reuse the eight already-pinned CC0 KayKit models across the ship.
+	# They are small exhibits/props; the existing procedural station geometry
+	# continues to define navigation and acts as a safe fallback.
+	match station_id:
+		"bridge":
+			_place_reusable_prop(station, "bridge_module", "basemodule_A", Vector3(0.0, 0.16, -1.12), 0.22)
+			_place_reusable_prop(station, "bridge_relay_unit", "structure_low", Vector3(0.92, 0.10, -0.72), 0.28)
+		"workshop":
+			_place_reusable_prop(station, "workshop_rover", "spacetruck", Vector3(0.0, 0.18, -1.18), 0.30)
+			_place_reusable_prop(station, "workshop_solar_panel", "solarpanel", Vector3(0.90, 0.12, 0.58), 0.28)
+		"laboratory":
+			_place_reusable_prop(station, "lab_lander", "lander_A", Vector3(-0.76, 0.12, -0.82), 0.25)
+			_place_reusable_prop(station, "lab_sample_module", "basemodule_A", Vector3(0.82, 0.12, -0.82), 0.19)
+		"observatory":
+			_place_reusable_prop(station, "observatory_solar_array", "solarpanel", Vector3(0.82, 0.12, -0.62), 0.24)
+			_place_reusable_prop(station, "observatory_rock_sample", "rocks_A", Vector3(-0.82, 0.10, -0.65), 0.26)
+		"lulu_nook":
+			_place_reusable_prop(station, "lulu_rock_garden_a", "rocks_A", Vector3(-0.62, 0.10, -0.62), 0.24)
+			_place_reusable_prop(station, "lulu_rock_garden_b", "rocks_B", Vector3(0.62, 0.10, -0.62), 0.24)
 
 	if station_id == "workshop" and is_cubesat_built():
 		_add_cubesat_display()
@@ -803,13 +993,26 @@ func _build_hud() -> void:
 	var subtitle := _new_label("تجوّل بين المحطات الخمس، واقترب من أي محطة لتتفاعل معها.", 15, Color(0.68, 0.82, 0.94))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(subtitle)
+	var navigation_row := HBoxContainer.new()
+	navigation_row.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	navigation_row.add_theme_constant_override("separation", 8)
+	header_content.add_child(navigation_row)
+
+	var journal_button := _new_button(
+		"دفتر الرحلة",
+		Callable(self, "_show_discovery_journal"),
+		Vector2(0.0, 42.0)
+	)
+	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation_row.add_child(journal_button)
+
 	var return_button := _new_button(
 		"العودة إلى معرض التجارب",
 		Callable(self, "_return_to_solar_system"),
 		Vector2(0.0, 42.0)
 	)
-	return_button.size_flags_horizontal = Control.SIZE_SHRINK_END
-	header_content.add_child(return_button)
+	return_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation_row.add_child(return_button)
 
 	var status_panel := PanelContainer.new()
 	status_panel.anchor_left = 0.56
@@ -948,6 +1151,104 @@ func _update_nearby_station() -> void:
 		_interaction_button.text = "تفاعل"
 
 
+func _show_discovery_journal() -> void:
+	var snapshot := get_discovery_journal_snapshot()
+	_open_modal("دفتر اكتشافات الرحلة")
+
+	var introduction := _new_label(
+		"هنا تجتمع آثار رحلاتك في سفينة سَنا والمريخ والقمر. يمكنك متابعة ما أنجزته والعودة لأي نشاط لإكماله.",
+		17,
+		Color(0.82, 0.90, 0.97)
+	)
+	introduction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	introduction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(introduction)
+
+	var progress := int(snapshot.get("progress", 0))
+	var total := int(snapshot.get("total", 0))
+	var completed_entries := int(snapshot.get("completed_entries", 0))
+	var summary := _new_label(
+		"إنجازات الرحلة: %d / %d نقطة • مسارات مكتملة: %d / %d" % [
+			progress,
+			total,
+			completed_entries,
+			int(snapshot.get("entry_count", 0))
+		],
+		17,
+		Color(1.0, 0.79, 0.42),
+		true
+	)
+	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_modal_content.add_child(summary)
+
+	var overall_bar := ProgressBar.new()
+	overall_bar.min_value = 0.0
+	overall_bar.max_value = float(maxi(1, total))
+	overall_bar.value = progress
+	overall_bar.show_percentage = false
+	overall_bar.custom_minimum_size = Vector2(0.0, 16.0)
+	_modal_content.add_child(overall_bar)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0.0, 300.0)
+	_modal_content.add_child(scroll)
+
+	var entry_list := VBoxContainer.new()
+	entry_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entry_list.add_theme_constant_override("separation", 7)
+	scroll.add_child(entry_list)
+
+	for entry_value in snapshot.get("entries", []):
+		if typeof(entry_value) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entry_value
+		var entry_progress := int(entry.get("progress", 0))
+		var entry_total := int(entry.get("total", 1))
+		var entry_card := PanelContainer.new()
+		entry_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_card.add_theme_stylebox_override(
+			"panel",
+			_button_style(Color(0.025, 0.075, 0.12), Color(0.13, 0.34, 0.50))
+		)
+		entry_list.add_child(entry_card)
+
+		var card_content := VBoxContainer.new()
+		card_content.add_theme_constant_override("separation", 3)
+		entry_card.add_child(card_content)
+
+		var entry_header := HBoxContainer.new()
+		entry_header.layout_direction = Control.LAYOUT_DIRECTION_RTL
+		card_content.add_child(entry_header)
+
+		var entry_title := _new_label(str(entry.get("title", "")), 16, Color(0.92, 0.96, 1.0), true)
+		entry_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		entry_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		entry_header.add_child(entry_title)
+
+		var count_label := _new_label(
+			"%d / %d" % [entry_progress, entry_total],
+			14,
+			Color(0.55, 0.84, 0.96),
+			true
+		)
+		entry_header.add_child(count_label)
+
+		var entry_bar := ProgressBar.new()
+		entry_bar.min_value = 0.0
+		entry_bar.max_value = float(maxi(1, entry_total))
+		entry_bar.value = entry_progress
+		entry_bar.show_percentage = false
+		entry_bar.custom_minimum_size = Vector2(0.0, 10.0)
+		card_content.add_child(entry_bar)
+
+		if bool(entry.get("completed", false)):
+			count_label.add_theme_color_override("font_color", Color(0.55, 0.91, 0.69))
+
+	_add_close_button()
+
+
 func _show_info_panel(title_text: String, body_text: String, hint_text: String) -> void:
 	_open_modal(title_text)
 	var body := _new_label(body_text, 19, Color(0.82, 0.90, 0.97))
@@ -961,6 +1262,137 @@ func _show_info_panel(title_text: String, body_text: String, hint_text: String) 
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_modal_content.add_child(hint)
 	_add_close_button()
+
+
+func _show_observatory_panel() -> void:
+	_open_modal("مرصد ريم — ألبوم الصور")
+	_observatory_active = true
+	var introduction := _new_label(
+		"وجّه عدسة المرصد إلى جرم من القائمة، ثم احفظ لقطة رصد مرسومة داخل اللعبة. يمكنك العودة وإكمال الألبوم لاحقاً.",
+		17,
+		Color(0.82, 0.90, 0.97)
+	)
+	introduction.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	introduction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal_content.add_child(introduction)
+
+	_observatory_progress_label = _new_label("", 17, Color(1.0, 0.79, 0.42), true)
+	_observatory_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_modal_content.add_child(_observatory_progress_label)
+
+	_observatory_feedback_label = _new_label(_observatory_feedback, 15, Color(0.48, 0.85, 0.94))
+	_observatory_feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_observatory_feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_observatory_feedback_label.custom_minimum_size = Vector2(0.0, 46.0)
+	_modal_content.add_child(_observatory_feedback_label)
+
+	_observatory_preview = TextureRect.new()
+	_observatory_preview.custom_minimum_size = Vector2(0.0, 172.0)
+	_observatory_preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_observatory_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_modal_content.add_child(_observatory_preview)
+
+	_observatory_buttons.clear()
+	for target_id in OBSERVATORY_TARGET_IDS:
+		var selected_id := str(target_id)
+		var target_title := str(OBSERVATORY_TARGETS[selected_id]["title"])
+		var button := _new_button(
+			"التقط صورة: " + target_title,
+			func() -> void: capture_observation(selected_id),
+			Vector2(0.0, 48.0)
+		)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_modal_content.add_child(button)
+		_observatory_buttons.append(button)
+
+	_add_close_button()
+	_refresh_observatory_panel()
+
+
+func _refresh_observatory_panel() -> void:
+	if not is_instance_valid(_observatory_progress_label) or not is_instance_valid(_observatory_feedback_label):
+		return
+	var progress := get_observatory_progress()
+	_observatory_progress_label.text = "صور الألبوم: %d / %d" % [progress, OBSERVATORY_TARGET_IDS.size()]
+	if is_observatory_complete():
+		_observatory_progress_label.text = "اكتمل ألبوم المرصد!"
+		_observatory_feedback_label.text = "أحسنت! أصبحت الصور الثلاث محفوظة في دفتر اكتشافات ريم."
+	else:
+		_observatory_feedback_label.text = _observatory_feedback
+	var photo_ids := get_observatory_photo_ids()
+	for index in range(_observatory_buttons.size()):
+		var target_id: String = str(OBSERVATORY_TARGET_IDS[index])
+		_observatory_buttons[index].disabled = photo_ids.has(target_id)
+
+	if is_instance_valid(_observatory_preview):
+		_observatory_preview.texture = null
+		if not photo_ids.is_empty():
+			var photo_path := get_observatory_photo_path(str(photo_ids[photo_ids.size() - 1]))
+			if FileAccess.file_exists(photo_path):
+				var photo_image := Image.load_from_file(photo_path)
+				if photo_image != null and not photo_image.is_empty():
+					_observatory_preview.texture = ImageTexture.create_from_image(photo_image)
+
+
+func _save_observatory_thumbnail(target_id: String) -> bool:
+	if not OBSERVATORY_TARGETS.has(target_id):
+		return false
+	var directory_error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ALBUM_DIR))
+	if directory_error != OK and directory_error != ERR_ALREADY_EXISTS:
+		return false
+	var image := _render_observatory_thumbnail(target_id)
+	if image == null or image.is_empty():
+		return false
+	return image.save_png(ProjectSettings.globalize_path(get_observatory_photo_path(target_id))) == OK
+
+
+func _render_observatory_thumbnail(target_id: String) -> Image:
+	const IMAGE_SIZE := 256
+	var image := Image.create(IMAGE_SIZE, IMAGE_SIZE, false, Image.FORMAT_RGBA8)
+	var target: Dictionary = OBSERVATORY_TARGETS[target_id]
+	var base_color: Color = target["base_color"]
+	var target_seed := OBSERVATORY_TARGET_IDS.find(target_id) + 1
+	var moon_craters := [
+		Vector3(-0.42, -0.18, 0.15),
+		Vector3(0.31, -0.36, 0.12),
+		Vector3(0.16, 0.34, 0.10),
+		Vector3(-0.10, 0.06, 0.08)
+	]
+	for y in range(IMAGE_SIZE):
+		for x in range(IMAGE_SIZE):
+			var nx := (float(x) - 128.0) / 82.0
+			var ny := (float(y) - 128.0) / 82.0
+			var radius_squared := nx * nx + ny * ny
+			var pixel_color := Color(0.012, 0.025, 0.075)
+			var star_hash := (x * 73 + y * 151 + x * y * 7 + target_seed * 31) % 997
+			if star_hash < 5:
+				pixel_color = Color(0.68, 0.84, 1.0)
+			if target_id == "saturn":
+				var ring_radius := sqrt(nx * nx + (ny / 0.36) * (ny / 0.36))
+				if ring_radius > 0.94 and ring_radius < 1.62:
+					var band := sin(ring_radius * 58.0) * 0.045
+					pixel_color = Color(0.77 + band, 0.62 + band, 0.38 + band)
+			if radius_squared <= 1.0:
+				var light_depth := sqrt(maxf(0.0, 1.0 - radius_squared))
+				var light_amount := clampf(0.40 - nx * 0.24 - ny * 0.30 + light_depth * 0.62, 0.12, 1.0)
+				var surface_noise := sin(nx * 19.0 + float(target_seed)) * cos(ny * 23.0) * 0.035
+				var shade := clampf(light_amount + surface_noise, 0.08, 1.0)
+				pixel_color = Color(base_color.r * shade, base_color.g * shade, base_color.b * shade)
+				if target_id == "moon":
+					for crater in moon_craters:
+						var crater_distance := Vector2(nx - crater.x, ny - crater.y).length()
+						if crater_distance < crater.z:
+							var crater_shade := 0.72 + crater_distance * 0.9
+							pixel_color = Color(pixel_color.r * crater_shade, pixel_color.g * crater_shade, pixel_color.b * crater_shade)
+				elif target_id == "mars":
+					var ridge := sin(nx * 13.0 + ny * 5.0) * cos(ny * 17.0) * 0.10
+					pixel_color = Color(
+						clampf(pixel_color.r + ridge, 0.0, 1.0),
+						clampf(pixel_color.g + ridge * 0.30, 0.0, 1.0),
+						clampf(pixel_color.b + ridge * 0.14, 0.0, 1.0)
+					)
+			image.set_pixel(x, y, pixel_color)
+	return image
 
 
 func _show_relay_panel() -> void:
@@ -1102,10 +1534,10 @@ func _open_modal(title_text: String) -> void:
 	_close_modal()
 	_modal_active = true
 	_modal_panel = PanelContainer.new()
-	_modal_panel.anchor_left = 0.18
-	_modal_panel.anchor_top = 0.17
-	_modal_panel.anchor_right = 0.82
-	_modal_panel.anchor_bottom = 0.83
+	_modal_panel.anchor_left = 0.07
+	_modal_panel.anchor_top = 0.08
+	_modal_panel.anchor_right = 0.93
+	_modal_panel.anchor_bottom = 0.92
 	_modal_panel.add_theme_stylebox_override("panel", _panel_style())
 	_hud.add_child(_modal_panel)
 
@@ -1127,8 +1559,13 @@ func _add_close_button() -> void:
 
 func _close_modal() -> void:
 	_modal_active = false
+	_observatory_active = false
 	_touch_keys = {"up": false, "down": false, "left": false, "right": false}
 	_lulu_hunt_feedback_label = null
+	_observatory_progress_label = null
+	_observatory_feedback_label = null
+	_observatory_preview = null
+	_observatory_buttons.clear()
 	_relay_buttons.clear()
 	_relay_progress_label = null
 	_relay_feedback_label = null
@@ -1150,11 +1587,13 @@ func _update_status() -> void:
 	var relay_text := "رسالة مرقاب: مكتملة" if is_relay_completed() else "رسالة مرقاب: بانتظار التوصيل"
 	var cubesat_text := "القمر المصغّر: جاهز" if is_cubesat_built() else "القمر المصغّر: قيد البناء"
 	var lulu_text := "نجوم لولو: %d / %d" % [lulu_found_count, LULU_STAR_POSITIONS.size()]
-	_status_label.text = "المحطات: %d / %d   •   %s   •   %s   •   %s" % [
+	var photo_text := "صور ريم: %d / %d" % [get_observatory_progress(), OBSERVATORY_TARGET_IDS.size()]
+	_status_label.text = "المحطات: %d / %d • %s • %s • %s • %s" % [
 		visited_count,
 		STATION_IDS.size(),
 		relay_text,
 		cubesat_text,
+		photo_text,
 		lulu_text
 	]
 
@@ -1219,7 +1658,8 @@ func _load_state() -> Dictionary:
 		"cubesat_step": 0,
 		"cubesat_built": false,
 		"lulu_found_star_ids": [],
-		"lulu_hunt_completed": false
+		"lulu_hunt_completed": false,
+		"observatory_photo_ids": []
 	}
 	if not FileAccess.file_exists(SAVE_PATH):
 		return defaults
@@ -1229,9 +1669,13 @@ func _load_state() -> Dictionary:
 		return defaults
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	if not (parsed is Dictionary) or int(parsed.get("version", 0)) != SAVE_VERSION:
+	if not (parsed is Dictionary):
+		return defaults
+	var stored_version := int(parsed.get("version", 0))
+	if stored_version < 1 or stored_version > SAVE_VERSION:
 		return defaults
 
+	# Version 1 saves predate the observatory album. Preserve existing progress.
 	var result: Dictionary = defaults.duplicate(true)
 	var raw_visited: Variant = parsed.get("visited_station_ids", [])
 	if raw_visited is Array:
@@ -1250,16 +1694,46 @@ func _load_state() -> Dictionary:
 			if LULU_STAR_POSITIONS.has(str(star_id)) and not result["lulu_found_star_ids"].has(str(star_id)):
 				result["lulu_found_star_ids"].append(str(star_id))
 	result["lulu_hunt_completed"] = result["lulu_found_star_ids"].size() == LULU_STAR_POSITIONS.size()
+	var raw_observatory_photos: Variant = parsed.get("observatory_photo_ids", [])
+	if raw_observatory_photos is Array:
+		for target_id in raw_observatory_photos:
+			var normalized_id := str(target_id)
+			if OBSERVATORY_TARGETS.has(normalized_id) and not result["observatory_photo_ids"].has(normalized_id):
+				result["observatory_photo_ids"].append(normalized_id)
 	return result
 
 
+func _persist_state_or_restore(previous_state: Dictionary) -> bool:
+	if _save_state():
+		return true
+	_state = previous_state
+	_update_status()
+	_show_save_failure_feedback()
+	return false
+
+
+func _show_save_failure_feedback() -> void:
+	if is_instance_valid(_status_label):
+		_status_label.text = "تعذّر حفظ التقدم؛ لم نحتسب الخطوة. حاول مجدداً."
+
+
 func _save_state() -> bool:
+	if _simulate_save_failure_for_tests:
+		push_warning("Sana Hub save failure simulation is enabled.")
+		_show_save_failure_feedback()
+		return false
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		push_warning("Unable to save the Sana Hub prototype progress.")
+		push_warning("Unable to open the Sana Hub save file for writing.")
+		_show_save_failure_feedback()
 		return false
 	file.store_string(JSON.stringify(_state))
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK:
+		push_warning("Unable to write the Sana Hub prototype progress: error %d." % write_error)
+		_show_save_failure_feedback()
+		return false
 	_update_status()
 	return true
 

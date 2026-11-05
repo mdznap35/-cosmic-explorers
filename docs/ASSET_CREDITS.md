@@ -30,3 +30,4 @@ The planet shader's procedural treatment, Earth cloud and atmosphere layers, Sat
 ## Third-party project evaluation
 
 CelestialSim (MIT) was evaluated as a possible terrain engine: https://github.com/CelestialSim/CelestialSim. It is not integrated into the mobile app because its current documented path requires Vulkan (Forward+ or Mobile renderer), while this project targets Godot Compatibility/OpenGL ES; its own installation guide also describes Android as experimental and unsupported. It remains a research candidate, not a runtime dependency.
+

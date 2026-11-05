@@ -225,3 +225,83 @@ W0: جرد ومقارنة الفروع وPR #2 وPR #3 وتثبيت شجرة ت�
 - PR #6: https://github.com/mdznap35/-cosmic-explorers/pull/6 — draft, stacked on `sana-hub-vertical-slice-v1`, not merged.
 - Initial CI run #94 was in progress after staging both pinned texture and KayKit asset sources. Do not mark this increment CI-passed until the full workflow completes successfully.
 - No changes to `main`, `scenes/main.tscn`, or the solar-system scene. No device verification has been claimed.
+
+
+---
+
+## 5 November 2026 — WAVE 1: Sana Hub asset reuse + Reem observatory album
+
+**Branch:** `production-reuse-wave-1-v1`  
+**Base:** `906c2cc11032443221c06802c9b78e05bf7892dd`
+
+### Implemented in source
+
+- [x] Reuse the existing, pinned KayKit Space Base Bits CC0 subset (eight GLTF models) in Sana Hub instead of fetching another asset pack.
+- [x] Add reusable miniature props to the bridge, workshop, laboratory, observatory, and Lulu nook. Existing procedural station geometry remains the navigation/layout fallback.
+- [x] Convert Reem's observatory from an information-only panel into a photo activity with three generated, stylized PNG images (Moon, Mars, Saturn), an album preview, duplicate protection, and persistent progress.
+- [x] Upgrade Sana Hub save schema to v2 and preserve v1 Relay, CubeSat, Lulu and station-visit state during migration.
+- [x] Extend the Sana Hub test for asset availability/instantiation, PNG files, duplicate rejection, partial-album restoration, completion and v1 save migration.
+
+### Asset-source integrity note
+
+- The separate Kenney Space Station Kit remains a candidate, not an imported asset. Its official archive endpoint returned a 17,974-byte payload that failed the expected SHA-256 check; CI rejected it before extraction. The failed source is removed from this wave's workflow.
+- No new asset pack is downloaded to the user's phone. The KayKit source remains staged by the existing pinned CI checkout.
+
+### Verification state
+
+- Commit `05bfa61696777bb6a22c229ac11c346abb4aee85` had an initial CI run that stopped at the rejected Kenney archive before Godot import/tests/Android export. That run does **not** validate this wave.
+- The corrective commit removes that unverified source and reuses only the already-pinned KayKit pack. Exact-head CI must pass before this increment can be marked `CI_passed`.
+- Manual Android visual/touch/performance/thermal review remains pending.
+- No PR is merged. `main`, the solar-system main scene, and PR #9 remain untouched.
+
+
+---
+
+## 5 November 2026 — WAVE 1B: دفتر اكتشافات الرحلة الموحد
+
+**Branch:** production-reuse-wave-1-v1
+
+### التغييرات في هذه الدفعة
+
+- إضافة قارئ تقدم مستقل باسم discovery_journal.gd يجمع ثمانية مسارات قائمة دون تغيير ملكية ملفات الحفظ.
+- دمج زيارات محطات سَنا ورسالة مرقاب وCubeSat ونجوم لولو وألبوم ريم مع مسح المريخ وبناء القاعدة القمرية ومسارات الروفر.
+- عرض 30 نقطة تقدم عبر زر «دفتر الرحلة» في HUD، مع تقدم إجمالي وقائمة قابلة للتمرير.
+- توسعة مساحة النوافذ المنبثقة لتحسين قراءة الأنشطة على الشاشات الصغيرة، وتصحيح وصف ركن لولو الذي أصبح قديماً.
+- إضافة اختبار مستقل للدفتر وربطه بخط GitHub Actions.
+- توثيق الحقول وإصدارات الحفظ المقبولة في docs/DISCOVERY_JOURNAL.md.
+
+### حدود التحقق
+
+- الدفتر قارئ فقط؛ ملفات الحفظ الأصلية تبقى كما هي.
+- الملفات المفقودة أو الفاسدة أو ذات إصدار غير مدعوم لا تُحتسب.
+- لا يعني نجاح CI أن التمرير واللمس وحجم الخط قد جرى قبولها بصرياً على Android.
+- لا تعديل على المشهد الرئيسي للمجموعة الشمسية أو main أو PR #9.
+
+
+---
+
+## 5 November 2026 — WAVE 2: reliable Sana Hub progress commits
+
+**Branch:** `production-reuse-wave-1-v1`  
+**Starting head:** `fd2bdfe90128fedde5573309de4ada0f31fbeee5`
+
+### Why this increment was required
+
+The Relay, CubeSat, Lulu hunt, and first-visit paths previously changed in-memory progress and/or emitted world/gameplay side effects without requiring `_save_state()` to succeed. A storage failure could therefore make a step look accepted even though it would disappear after reopening the hub. Reem's observatory already had an explicit rollback path; the other activities needed the same guarantee.
+
+### Implemented
+
+- [x] Add one shared persist-or-restore path for Sana Hub state changes.
+- [x] Keep the previous deep state snapshot until the new state has been written successfully.
+- [x] Relay progress and completion roll back on failed persistence; the Relay gameplay event is published only after a successful save.
+- [x] CubeSat progress rolls back on failed persistence; the display model is added only after successful persistence.
+- [x] Lulu's star remains in the world and the collection is not counted until the save succeeds.
+- [x] Station visits are not retained and do not emit a visit event when persistence fails; station interaction itself remains available.
+- [x] Check the FileAccess write error after storing the save payload and display a child-facing retry message on failure.
+- [x] Add failure-simulation regression coverage plus retry and fresh-instance restoration checks.
+
+### Verification boundary
+
+The new regression test simulates a failed storage operation deterministically; it does not claim to reproduce every Android filesystem, sudden power loss, or low-storage condition. The save file still uses the existing direct-write format and is not yet an atomic temp-file replacement. Existing save schema v2 and the discovery-journal read contracts are unchanged.
+
+The exact-head CI result for this increment must be checked before marking it CI-passed. Device installation, touch review, frame-rate and thermal checks remain pending. No merge to `main`, no PR merge, and no edits to the original solar-system main scene are authorized by this work.

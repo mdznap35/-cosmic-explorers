@@ -83,3 +83,12 @@
 - المصدر والإصدار والرخصة هي نفسها المثبتة في القسم 7؛ لا يوجد تنزيل وقت التشغيل ولا نسخ كامل للحزمة.
 - يتم توفير الأصول مؤقتاً بواسطة خطوة CI المثبتة على commit محدد، ثم يفحص اختبار `validate_lunar_outpost_builder.gd` تحميل النماذج الثمانية واستعادة الحفظ.
 - الحالة: مضافة إلى مشهد مستقل؛ بانتظار نجاح CI على رأس هذا الفرع ثم اختبار APK على جهاز Android. لا ترفع الحالة إلى `device_verified` قبل التجربة الفعلية.
+
+
+## 9. Kenney Space Station Kit — candidate held after integrity rejection
+
+- Official asset page: https://kenney.nl/assets/space-station-kit
+- Published terms on the official page: 90 assets, CC0 1.0 Universal.
+- A CI attempt to fetch the official archive returned a 17,974-byte payload whose SHA-256 did not match the recorded reference digest. The payload was rejected before extraction/import. It is **not** part of the current game build.
+- The Sana Hub wave instead reuses the project's already-pinned KayKit Space Base Bits subset (8 GLTF models, commit `6dfbcac9927d06283752c4defd4882cfe0d29666`, CC0 1.0 Universal). Those are already downloaded/staged by the existing CI workflow and are used by the Mars and lunar outpost prototypes.
+- Kenney remains a candidate until a valid official archive or independently verifiable mirror can be obtained and its SHA-256 and selected filenames can be checked.

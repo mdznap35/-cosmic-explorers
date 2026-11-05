@@ -2,7 +2,7 @@ name: Quality Gate and Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, production-reuse-wave-1-v1]
   pull_request:
   workflow_dispatch:
 
@@ -236,6 +236,17 @@ jobs:
             echo "Sana Hub prototype validation failed." >&2
             exit 1
           fi
+      - name: Validate unified discovery journal
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_discovery_journal.gd 2>&1 | tee "$RUNNER_TEMP/discovery-journal-test.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/discovery-journal-test.log"; then
+            echo "Unified discovery journal validation failed." >&2
+            exit 1
+          fi
+
       - name: Validate Mars rover survey and staged open assets
         shell: bash
         timeout-minutes: 2
