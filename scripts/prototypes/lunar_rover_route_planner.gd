@@ -363,7 +363,7 @@ func _update_board() -> void:
 
 
 func _return_to_builder() -> void:
-	get_tree().change_scene_to_file("res://scenes/prototypes/showcase_app.tscn")
+	get_tree().change_scene_to_file("res://scenes/prototypes/lunar_outpost_builder.tscn")
 
 
 func _set_feedback(message: String) -> void:
