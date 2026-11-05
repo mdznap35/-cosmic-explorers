@@ -92,8 +92,12 @@ static func _read_versioned_state(directory: String, file_name: String, expected
     var file := FileAccess.open(save_path, FileAccess.READ)
     if file == null:
         return {}
-    var parsed: Variant = JSON.parse_string(file.get_as_text())
+    var parser := JSON.new()
+    var parse_error := parser.parse(file.get_as_text())
     file.close()
+    if parse_error != OK:
+        return {}
+    var parsed: Variant = parser.data
     if typeof(parsed) != TYPE_DICTIONARY:
         return {}
     if int(parsed.get("version", 0)) != expected_version:
