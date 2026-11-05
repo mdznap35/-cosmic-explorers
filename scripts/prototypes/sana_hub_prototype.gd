@@ -1178,7 +1178,7 @@ func _refresh_observatory_panel() -> void:
 		_observatory_feedback_label.text = _observatory_feedback
 	var photo_ids := get_observatory_photo_ids()
 	for index in range(_observatory_buttons.size()):
-		var target_id := OBSERVATORY_TARGET_IDS[index]
+		var target_id: String = str(OBSERVATORY_TARGET_IDS[index])
 		_observatory_buttons[index].disabled = photo_ids.has(target_id)
 
 	if is_instance_valid(_observatory_preview):

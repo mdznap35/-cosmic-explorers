@@ -20,6 +20,11 @@ func _initialize() -> void:
 func _run_sana_hub_tests() -> void:
 	_remove_test_save()
 	var hub = HubScene.instantiate()
+	if not hub.has_method("get_station_ids"):
+		_errors.append("The Sana Hub scene script must load before feature tests can continue.")
+		push_error(_errors[_errors.size() - 1])
+		quit(1)
+		return
 	hub.enable_gameplay_bridge = false
 	root.add_child(hub)
 	await process_frame
