@@ -3,7 +3,7 @@ config_version=5
 [application]
 config/name="مستكشفو الكون"
 config/description="رحلة فضائية تفاعلية باللغة العربية، مصممة للأطفال وتعمل دون اتصال."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/prototypes/showcase_app.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/version="0.1.0"
 config/icon="res://assets/branding/app_icon.svg"
