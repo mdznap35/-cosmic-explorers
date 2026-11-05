@@ -804,7 +804,7 @@ func _build_hud() -> void:
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(subtitle)
 	var return_button := _new_button(
-		"العودة إلى خريطة الكواكب",
+		"العودة إلى معرض التجارب",
 		Callable(self, "_return_to_solar_system"),
 		Vector2(0.0, 42.0)
 	)
@@ -905,7 +905,7 @@ func _on_interaction_button_pressed() -> void:
 
 
 func _return_to_solar_system() -> void:
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	get_tree().change_scene_to_file("res://scenes/prototypes/showcase_app.tscn")
 
 
 func _update_nearby_station() -> void:
