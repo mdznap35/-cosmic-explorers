@@ -2,6 +2,7 @@ extends SceneTree
 
 const ShowcaseScene = preload("res://scenes/prototypes/showcase_app.tscn")
 const EXPECTED := {
+	"echo_mars": "res://scenes/prototypes/echo_of_mars_vertical_slice.tscn",
 	"sana": "res://scenes/prototypes/sana_hub_prototype.tscn",
 	"mars": "res://scenes/prototypes/mars_rover_survey.tscn",
 	"lunar_builder": "res://scenes/prototypes/lunar_outpost_builder.tscn",

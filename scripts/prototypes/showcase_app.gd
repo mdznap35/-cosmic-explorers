@@ -3,6 +3,14 @@ extends Control
 
 const DEMOS := [
 	{
+		"id": "echo_mars",
+		"title": "صدى المريخ — التجربة الرئيسية",
+		"subtitle": "مغامرة مترابطة من الإشارة إلى إعادة الاتصال",
+		"details": "قيادة الروفر • تصوير من زاويتين • تبديل الشخصيات • تحليل النبضات • إصلاح محطة الترحيل",
+		"scene": "res://scenes/prototypes/echo_of_mars_vertical_slice.tscn",
+		"status": "تجربة رئيسية"
+	},
+	{
 		"id": "sana",
 		"title": "سفينة سَنا",
 		"subtitle": "خمسة مرافق وأنشطة داخل السفينة",

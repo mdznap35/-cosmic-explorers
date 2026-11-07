@@ -291,6 +291,17 @@ jobs:
             exit 1
           fi
 
+      - name: Validate Echo of Mars playable vertical slice
+        shell: bash
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          timeout 150s godot --headless --path . --script res://tests/validate_echo_of_mars_slice.gd 2>&1 | tee "$RUNNER_TEMP/echo-of-mars-slice.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/echo-of-mars-slice.log"; then
+            echo "Echo of Mars playable slice validation failed." >&2
+            exit 1
+          fi
+
       - name: Run main-scene smoke test
         shell: bash
         run: |
@@ -496,5 +507,84 @@ jobs:
         with:
           name: CosmicExplorers-SanaHub-Prototype
           path: build/CosmicExplorers-SanaHub-Prototype.apk
+          if-no-files-found: error
+          retention-days: 14
+      
+      - name: Export standalone Echo of Mars vertical-slice APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          ORIGINAL_PROJECT="$RUNNER_TEMP/project.godot.before-echo"
+          ORIGINAL_PRESETS="$RUNNER_TEMP/export_presets.before-echo"
+          cp project.godot "$ORIGINAL_PROJECT"
+          cp export_presets.cfg "$ORIGINAL_PRESETS"
+          restore_project_files() {
+            cp "$ORIGINAL_PROJECT" project.godot
+            cp "$ORIGINAL_PRESETS" export_presets.cfg
+          }
+          trap restore_project_files EXIT
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          project_path = Path("project.godot")
+          project = project_path.read_text(encoding="utf-8")
+          project, replacements = re.subn(
+              r'^run/main_scene="[^"]+"',
+              'run/main_scene="res://scenes/prototypes/echo_of_mars_vertical_slice.tscn"',
+              project,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if replacements != 1:
+              raise SystemExit("Expected exactly one main-scene setting to replace.")
+
+          presets_path = Path("export_presets.cfg")
+          presets = presets_path.read_text(encoding="utf-8")
+          changes = {
+              'package/unique_name="org.mdznap35.cosmicexplorers"': 'package/unique_name="org.mdznap35.cosmicexplorers.echomars"',
+              'package/name="مستكشفو الكون"': 'package/name="صدى المريخ — مستكشفو الكون"',
+              'version/name="0.1.0"': 'version/name="0.1.0-echo-mars"',
+          }
+          for old, new in changes.items():
+              if presets.count(old) != 1:
+                  raise SystemExit(f"Expected exactly one export setting: {old}")
+              presets = presets.replace(old, new, 1)
+          project_path.write_text(project, encoding="utf-8")
+          presets_path.write_text(presets, encoding="utf-8")
+          PY
+
+          godot --headless --editor --path . --quit 2>&1 | tee "$RUNNER_TEMP/echo-mars-import.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/echo-mars-import.log"; then
+            echo "Echo of Mars resource import failed." >&2
+            exit 1
+          fi
+
+          godot --headless --path . --export-debug "Android" build/CosmicExplorers-EchoOfMars-VerticalSlice.apk 2>&1 | tee "$RUNNER_TEMP/echo-mars-export.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/echo-mars-export.log"; then
+            echo "Echo of Mars Android export failed." >&2
+            exit 1
+          fi
+          test -s build/CosmicExplorers-EchoOfMars-VerticalSlice.apk
+          unzip -t build/CosmicExplorers-EchoOfMars-VerticalSlice.apk
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          "$AAPT" dump badging build/CosmicExplorers-EchoOfMars-VerticalSlice.apk | tee build/echo-mars-apk-badging.txt
+          grep -F "package: name='org.mdznap35.cosmicexplorers.echomars'" build/echo-mars-apk-badging.txt
+          "$AAPT" dump permissions build/CosmicExplorers-EchoOfMars-VerticalSlice.apk | tee build/echo-mars-apk-permissions.txt
+          if grep -q "android.permission.INTERNET" build/echo-mars-apk-permissions.txt; then
+            echo "Unexpected internet permission in the offline Echo of Mars preview." >&2
+            exit 1
+          fi
+          sha256sum build/CosmicExplorers-EchoOfMars-VerticalSlice.apk
+
+          restore_project_files
+          trap - EXIT
+
+      - name: Upload standalone Echo of Mars vertical-slice APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: CosmicExplorers-EchoOfMars-VerticalSlice
+          path: build/CosmicExplorers-EchoOfMars-VerticalSlice.apk
           if-no-files-found: error
           retention-days: 14
