@@ -977,6 +977,10 @@ func _apply_camera_pose(weight:float,start_transform:Transform3D,target_basis:Ba
 	_camera.global_transform = Transform3D(blended_basis,blended_origin)
 
 func _play_ui_sound(sound_id:String) -> void:
+	# Headless validation imports audio separately; avoid creating playback instances
+	# when no audio output device exists, which otherwise leaves engine-owned handles.
+	if DisplayServer.get_name() == "headless":
+		return
 	if not is_instance_valid(_ui_sfx_player) or not KENNEY_AUDIO_PATHS.has(sound_id):
 		return
 	if not _audio_stream_cache.has(sound_id):
