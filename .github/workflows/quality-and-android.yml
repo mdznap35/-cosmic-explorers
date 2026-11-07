@@ -359,7 +359,7 @@ jobs:
         timeout-minutes: 3
         run: |
           set -euo pipefail
-          timeout 150s godot --headless --path . --script res://tests/validate_echo_of_mars_slice.gd 2>&1 | tee "$RUNNER_TEMP/echo-of-mars-slice.log"
+          timeout 150s godot --headless --verbose --path . --script res://tests/validate_echo_of_mars_slice.gd 2>&1 | tee "$RUNNER_TEMP/echo-of-mars-slice.log"
           if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/echo-of-mars-slice.log"; then
             echo "Echo of Mars playable slice validation failed." >&2
             exit 1
