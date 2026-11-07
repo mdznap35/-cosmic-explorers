@@ -99,15 +99,6 @@ func _run() -> void:
 		_errors.append("The slice must expose all three character profiles.")
 	if slice.get_loaded_asset_ids().size() < 2:
 		_errors.append("The opening scene should instantiate the pinned KayKit subset.")
-	var team_root := slice.get_node_or_null("WorldRoot")
-	if team_root == null:
-		_errors.append("The story slice must expose its world root for visual validation.")
-	else:
-		for actor_name in ["ReemExplorer", "SalimExplorer", "LuluCompanion"]:
-			if team_root.get_node_or_null(actor_name) == null:
-				_errors.append("The team scene must instantiate its expressive character rig: " + actor_name)
-			elif team_root.get_node(actor_name).get_node_or_null("AnimatedBody") == null:
-				_errors.append("The character rig must contain a separately animated body: " + actor_name)
 	var loaded_scene_assets: PackedStringArray = slice.get_loaded_asset_ids()
 	for station_asset in ["kenney:floor", "kenney:computer", "kenney:table-display-planet"]:
 		if not loaded_scene_assets.has(station_asset):
@@ -153,9 +144,20 @@ func _run() -> void:
 	if not slice.perform_action("photo:angle_two"):
 		_errors.append("The second viewpoint photo should be recordable.")
 	slice.dismiss_current_dialogue()
-	for role_id in ["reem","salim","lulu"]:
+	for role_id in ["reem","salim"]:
 		if not slice.perform_action("role:" + role_id):
 			_errors.append("Character-specific action failed: " + role_id)
+	var team_root := slice.get_node_or_null("EchoWorld")
+	if team_root == null:
+		_errors.append("The story slice must expose its world root for visual validation.")
+	else:
+		for actor_name in ["ReemExplorer", "SalimExplorer", "LuluCompanion"]:
+			if team_root.get_node_or_null(actor_name) == null:
+				_errors.append("The team scene must instantiate its expressive character rig: " + actor_name)
+			elif team_root.get_node(actor_name).get_node_or_null("AnimatedBody") == null:
+				_errors.append("The character rig must contain a separately animated body: " + actor_name)
+	if not slice.perform_action("role:lulu"):
+		_errors.append("Character-specific action failed: lulu")
 	slice.dismiss_current_dialogue()
 	for packet_id in ["packet:one","packet:two","packet:three"]:
 		if not slice.perform_action(packet_id):
