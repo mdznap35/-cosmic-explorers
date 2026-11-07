@@ -114,6 +114,9 @@ func _run() -> void:
 	if slice.get_stage_index() != 3 or slice.get_rover_instance() == null:
 		_errors.append("Landing selection must instantiate the existing rover scene.")
 	else:
+		var active_world_environments := slice.find_children("*", "WorldEnvironment", true, false)
+		if active_world_environments.size() != 1:
+			_errors.append("The embedded rover must reuse the story's single WorldEnvironment.")
 		var rover_scene = slice.get_rover_instance()
 		var rover: CharacterBody3D = rover_scene.call("get_rover")
 		for site_id in ["layered_rock","sand_ripples","crater_rim"]:

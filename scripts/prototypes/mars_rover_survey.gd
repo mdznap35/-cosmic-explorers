@@ -14,6 +14,7 @@ const ASSET_ROOT := "res://assets/vendor/kaykit_space_base_bits"
 
 @export var persistence_enabled := true
 @export var allow_return_to_sana := true
+@export var create_local_world_environment := true
 @export var embedded_found_site_ids := PackedStringArray()
 
 const ASSET_PATHS := {
@@ -190,11 +191,12 @@ func scan_nearby_site() -> bool:
 
 
 func _build_environment() -> void:
-	var world := WorldEnvironment.new()
-	var environment := Environment.new()
-	MarsLandscapeBuilder.configure_atmosphere(environment)
-	world.environment = environment
-	add_child(world)
+	if create_local_world_environment:
+		var world := WorldEnvironment.new()
+		var environment := Environment.new()
+		MarsLandscapeBuilder.configure_atmosphere(environment)
+		world.environment = environment
+		add_child(world)
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-52.0, -28.0, 0.0)

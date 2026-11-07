@@ -601,7 +601,9 @@ func _mount_rover_scene() -> void:
 	_rover_instance = RoverScene.instantiate()
 	_rover_instance.set("persistence_enabled",false)
 	_rover_instance.set("allow_return_to_sana",false)
+	_rover_instance.set("create_local_world_environment",false)
 	_rover_instance.set("embedded_found_site_ids",PackedStringArray(_rover_scanned_ids))
+	MarsLandscapeBuilder.configure_atmosphere(_world_environment)
 	_rover_instance.name = "EmbeddedMarsRoverSurvey"
 	add_child(_rover_instance)
 	if _rover_instance.has_signal("site_scanned"):
