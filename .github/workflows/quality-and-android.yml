@@ -117,13 +117,13 @@ jobs:
           if [ -n "$license_file" ]; then
             cp "$license_file" "$destination/LICENSE.txt"
           else
-            cat > "$destination/LICENSE.txt" <<'LICENSE'
-Kenney Space Station Kit — version 1.0
-Official source: https://kenney.nl/assets/space-station-kit
-License stated on the official asset page: Creative Commons CC0 1.0 Universal.
-Official license guidance: https://kenney.nl/support
-Only the 18 GLB modules listed in SHA256SUMS are staged into this game build.
-LICENSE
+            printf '%s\n' \
+              'Kenney Space Station Kit — version 1.0' \
+              'Official source: https://kenney.nl/assets/space-station-kit' \
+              'License stated on the official asset page: Creative Commons CC0 1.0 Universal.' \
+              'Official license guidance: https://kenney.nl/support' \
+              'Only the 18 GLB modules listed in SHA256SUMS are staged into this game build.' \
+              > "$destination/LICENSE.txt"
           fi
           (cd "$destination" && sha256sum *.glb | sort -k2 > SHA256SUMS && cat SHA256SUMS)
           rm -rf "$staging" "$archive"
@@ -150,13 +150,13 @@ LICENSE
           if [ -n "$license_file" ]; then
             cp "$license_file" "$destination/LICENSE.txt"
           else
-            cat > "$destination/LICENSE.txt" <<'LICENSE'
-Kenney Interface Sounds — version 1.0
-Official source: https://kenney.nl/assets/interface-sounds
-License stated on the official asset page: Creative Commons CC0 1.0 Universal.
-Official license guidance: https://kenney.nl/support
-Only click_001.ogg, open_001.ogg and bong_001.ogg are staged for this game build.
-LICENSE
+            printf '%s\n' \
+              'Kenney Interface Sounds — version 1.0' \
+              'Official source: https://kenney.nl/assets/interface-sounds' \
+              'License stated on the official asset page: Creative Commons CC0 1.0 Universal.' \
+              'Official license guidance: https://kenney.nl/support' \
+              'Only click_001.ogg, open_001.ogg and bong_001.ogg are staged for this game build.' \
+              > "$destination/LICENSE.txt"
           fi
           (cd "$destination" && sha256sum click_001.ogg open_001.ogg bong_001.ogg > SHA256SUMS && cat SHA256SUMS)
           rm -rf "$staging" "$archive"
