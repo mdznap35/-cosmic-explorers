@@ -218,6 +218,14 @@ func _process(_delta: float) -> void:
 		if not _rover_scanned_ids.has(str(site_id)):
 			_on_rover_site_scanned(str(site_id))
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not _opening_cinematic_active or not (event is InputEventKey):
+		return
+	var key_event := event as InputEventKey
+	if key_event.pressed and not key_event.echo and key_event.keycode == KEY_ESCAPE:
+		if skip_opening_cinematic():
+			get_viewport().set_input_as_handled()
+
 func _fail_initialization(errors: Array[String]) -> void:
 	_initialization_errors.append_array(errors)
 	push_error("Echo of Mars initialization failed: " + "; ".join(errors))
@@ -1144,6 +1152,8 @@ func _set_opening_card(index: int) -> void:
 	if index < 0 or index >= OPENING_CARDS.size():
 		return
 	var card: Dictionary = OPENING_CARDS[index]
+	if index > 0:
+		_play_ui_sound("confirm")
 	_opening_eyebrow.text = str(card.get("eyebrow", ""))
 	_opening_title.text = str(card.get("title", ""))
 	_opening_copy.text = str(card.get("copy", ""))
@@ -1162,6 +1172,7 @@ func _start_opening_cinematic() -> void:
 	if not is_instance_valid(_opening_panel) or not is_instance_valid(_camera):
 		return
 	_opening_cinematic_active = true
+	_play_ui_sound("click")
 	var action_panel := _action_box.get_parent() as Control
 	if action_panel != null:
 		action_panel.visible = false
