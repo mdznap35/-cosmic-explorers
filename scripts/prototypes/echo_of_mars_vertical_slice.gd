@@ -694,7 +694,7 @@ func _open_dialogue(dialogue_id:String) -> void:
 
 func _render_dialogue_node() -> void:
 	for child in _dialogue_choices.get_children(): child.free()
-	var dialogue_id:=_dialogue_director.get_active_dialogue_id()
+	var dialogue_id: String = _dialogue_director.get_active_dialogue_id()
 	var speaker_id:="mirqab"
 	for entry in _bundle.get("dialogues",[]):
 		if str(entry.get("id",""))==dialogue_id:
