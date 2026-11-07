@@ -164,7 +164,7 @@ func _run() -> void:
 	if slice.perform_action("inspect_signal"):
 		_errors.append("The opening signal cannot be confirmed before all three pulses are inspected.")
 	for row in range(3):
-		var signal_id := ["one", "two", "three"][row]
+		var signal_id: String = str(["one", "two", "three"][row])
 		if not slice.get_action_ids().has("signal:" + signal_id):
 			_errors.append("Each uninspected pulse must expose its own action: " + signal_id)
 		var hit_area := slice.get_node_or_null("EchoWorld/EchoSignalWaveform/SignalRowHitArea_%02d" % (row + 1)) as Area3D
