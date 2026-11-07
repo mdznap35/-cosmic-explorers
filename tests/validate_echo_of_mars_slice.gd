@@ -99,6 +99,10 @@ func _run() -> void:
 		_errors.append("The slice must expose all three character profiles.")
 	if slice.get_loaded_asset_ids().size() < 2:
 		_errors.append("The opening scene should instantiate the pinned KayKit subset.")
+	var loaded_scene_assets := slice.get_loaded_asset_ids()
+	for station_asset in ["kenney:floor", "kenney:computer", "kenney:table-display-planet"]:
+		if not loaded_scene_assets.has(station_asset):
+			_errors.append("The Sana bridge must use staged Kenney modular assets: " + station_asset)
 	if slice.perform_action("not-a-real-action"):
 		_errors.append("Unknown actions must be rejected.")
 	if not slice.perform_action("inspect_signal"):

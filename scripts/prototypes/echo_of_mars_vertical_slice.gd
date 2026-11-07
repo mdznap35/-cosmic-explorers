@@ -27,6 +27,33 @@ const STAGE_DESCRIPTIONS := [
 	"اكتملت الرحلة. أُضيفت صفحة جديدة إلى أطلس الضوء."
 ]
 const KAYKIT_ROOT := "res://assets/vendor/kaykit_space_base_bits"
+const KENNEY_STATION_ROOT := "res://assets/vendor/kenney_space_station_kit"
+const KENNEY_AUDIO_ROOT := "res://assets/audio/kenney_interface_sounds"
+const KENNEY_STATION_MODELS := {
+	"floor": KENNEY_STATION_ROOT + "/floor.glb",
+	"floor-panel": KENNEY_STATION_ROOT + "/floor-panel.glb",
+	"wall": KENNEY_STATION_ROOT + "/wall.glb",
+	"wall-corner": KENNEY_STATION_ROOT + "/wall-corner.glb",
+	"wall-window": KENNEY_STATION_ROOT + "/wall-window.glb",
+	"wall-door": KENNEY_STATION_ROOT + "/wall-door.glb",
+	"door-single": KENNEY_STATION_ROOT + "/door-single.glb",
+	"computer": KENNEY_STATION_ROOT + "/computer.glb",
+	"display-wall-wide": KENNEY_STATION_ROOT + "/display-wall-wide.glb",
+	"table-display-planet": KENNEY_STATION_ROOT + "/table-display-planet.glb",
+	"table-inset": KENNEY_STATION_ROOT + "/table-inset.glb",
+	"chair": KENNEY_STATION_ROOT + "/chair.glb",
+	"rail": KENNEY_STATION_ROOT + "/rail.glb",
+	"pipe": KENNEY_STATION_ROOT + "/pipe.glb",
+	"structure": KENNEY_STATION_ROOT + "/structure.glb",
+	"container": KENNEY_STATION_ROOT + "/container.glb",
+	"wall-switch": KENNEY_STATION_ROOT + "/wall-switch.glb",
+	"wall-pillar": KENNEY_STATION_ROOT + "/wall-pillar.glb"
+}
+const KENNEY_AUDIO_PATHS := {
+	"click": KENNEY_AUDIO_ROOT + "/click_001.ogg",
+	"open": KENNEY_AUDIO_ROOT + "/open_001.ogg",
+	"confirm": KENNEY_AUDIO_ROOT + "/bong_001.ogg"
+}
 const KAYKIT_MODELS := {
 	"basemodule_A": KAYKIT_ROOT + "/basemodule_A.gltf",
 	"lander_A": KAYKIT_ROOT + "/lander_A.gltf",
@@ -71,6 +98,11 @@ var _loaded_asset_ids: Array[String] = []
 var _world_root: Node3D
 var _camera: Camera3D
 var _world_environment: Environment
+var _station_scene_cache: Dictionary = {}
+var _audio_stream_cache: Dictionary = {}
+var _ui_sfx_player: AudioStreamPlayer
+var _camera_tween: Tween
+var _has_camera_pose := false
 var _rover_instance
 var _hud_root: Control
 var _title_label: Label
@@ -208,6 +240,7 @@ func get_action_ids() -> PackedStringArray:
 	return result
 
 func perform_action(action_id: String) -> bool:
+	_play_ui_sound("click")
 	if not is_ready_for_play() or action_id.strip_edges().is_empty() or _dialogue_director_active:
 		return false
 	match _stage_index:
@@ -374,11 +407,13 @@ func _on_rover_site_scanned(site_id: String) -> void:
 	if not _commit_events([{"id":"echo.rover.site_scanned","amount":1}]):
 		_rover_scanned_ids.erase(site_id)
 		return
+	_play_ui_sound("confirm")
 	_feedback_label.text = "سُجلت ملاحظة ميدانية %d من 3." % _rover_scanned_ids.size()
 	_refresh_progress()
 	_refresh_actions()
 
 func _after_stage_change(dialogue_id: String) -> void:
+	_play_ui_sound("confirm")
 	_set_stage_visual(_stage_index)
 	_refresh_stage()
 	if not dialogue_id.is_empty():
@@ -479,6 +514,10 @@ func _build_world_shell() -> void:
 	_camera.current = true
 	_camera.fov = 52.0
 	add_child(_camera)
+	_ui_sfx_player = AudioStreamPlayer.new()
+	_ui_sfx_player.name = "KenneyInterfaceAudio"
+	_ui_sfx_player.volume_db = -9.0
+	add_child(_ui_sfx_player)
 
 func _configure_space_atmosphere() -> void:
 	if _world_environment == null:
@@ -513,26 +552,37 @@ func _build_stage_environment(stage_index: int) -> void:
 		_: _build_sana_environment()
 
 func _build_sana_environment() -> void:
-	_add_box(_world_root,Vector3(0,-0.35,0),Vector3(24,0.7,18),Color(0.045,0.085,0.14),0.4)
-	_add_box(_world_root,Vector3(0,3.8,-8.5),Vector3(24,7.6,0.45),Color(0.08,0.14,0.21),0.5)
-	_add_box(_world_root,Vector3(-11.7,2.8,0),Vector3(0.55,5.6,18),Color(0.07,0.12,0.19),0.45)
-	_add_box(_world_root,Vector3(11.7,2.8,0),Vector3(0.55,5.6,18),Color(0.07,0.12,0.19),0.45)
-	_add_box(_world_root,Vector3(0,1.5,-8.15),Vector3(13.4,4.4,0.12),Color(0.015,0.055,0.095),0.18)
-	_add_box(_world_root,Vector3(0,1.45,-8.02),Vector3(12.8,3.9,0.08),Color(0.04,0.12,0.20),0.1)
-	_add_box(_world_root,Vector3(0,0.05,0.3),Vector3(8.0,1.05,1.5),Color(0.09,0.19,0.28),0.3)
-	_add_box(_world_root,Vector3(0,0.68,-0.2),Vector3(6.0,0.12,0.9),Color(0.10,0.36,0.48),0.22)
-	_add_torus(_world_root,Vector3(0,2.2,-7.65),1.25,Color(0.20,0.72,0.92))
-	_add_torus(_world_root,Vector3(-4.4,1.4,-7.45),0.52,Color(0.95,0.70,0.36))
-	_add_torus(_world_root,Vector3(4.4,1.4,-7.45),0.52,Color(0.95,0.70,0.36))
-	_add_asset("basemodule_A",Vector3(-7.7,0,-5.0),Vector3.ONE*0.78)
-	_add_asset("structure_low",Vector3(7.2,0,-4.2),Vector3.ONE*0.9)
-	_add_asset("lander_A",Vector3(-8.0,0,4.6),Vector3.ONE*0.55)
-	_add_asset("solarpanel",Vector3(8.0,0,4.7),Vector3.ONE*0.8)
-	for i in range(14):
-		var x := -8.5 + float(i)*1.3
-		_add_sphere(_world_root,Vector3(x,4.2+sin(float(i))*0.3,-7.7),0.035+float(i%3)*0.018,Color(0.38,0.73,0.94,0.65))
-	_camera.position = Vector3(0,7.2,14.8)
-	_camera.look_at(Vector3(0,1.2,-1.2),Vector3.UP)
+	_add_box(_world_root,Vector3(0,-0.38,0),Vector3(24,0.5,18),Color(0.025,0.055,0.085),0.42)
+	for z_index in range(4):
+		for x_index in range(6):
+			_add_station_asset("floor",Vector3(-10.0+float(x_index)*4.0,-0.08,-6.0+float(z_index)*4.0),Vector3.ONE)
+	for x_index in range(6):
+		var wall_id := "wall-window" if x_index == 1 or x_index == 4 else "wall"
+		_add_station_asset(wall_id,Vector3(-10.0+float(x_index)*4.0,2.0,-8.0),Vector3.ONE)
+	for z_index in range(4):
+		var z := -6.0+float(z_index)*4.0
+		_add_station_asset("wall",Vector3(-12.0,2.0,z),Vector3.ONE,Vector3(0.0,90.0,0.0))
+		_add_station_asset("wall",Vector3(12.0,2.0,z),Vector3.ONE,Vector3(0.0,-90.0,0.0))
+	_add_station_asset("wall-corner",Vector3(-12.0,2.0,-8.0),Vector3.ONE)
+	_add_station_asset("wall-corner",Vector3(12.0,2.0,-8.0),Vector3.ONE,Vector3(0.0,-90.0,0.0))
+	_add_station_asset("display-wall-wide",Vector3(0.0,2.1,-7.35),Vector3(1.18,0.92,0.92))
+	_add_station_asset("table-display-planet",Vector3(0.0,0.02,-1.2),Vector3.ONE*0.92)
+	_add_station_asset("computer",Vector3(-7.2,0.0,-4.2),Vector3.ONE*0.82)
+	_add_station_asset("computer",Vector3(7.2,0.0,-4.2),Vector3.ONE*0.82,Vector3(0.0,180.0,0.0))
+	_add_station_asset("chair",Vector3(-7.2,0.0,-2.3),Vector3.ONE*0.86)
+	_add_station_asset("chair",Vector3(7.2,0.0,-2.3),Vector3.ONE*0.86,Vector3(0.0,180.0,0.0))
+	_add_station_asset("table-inset",Vector3(-7.2,0.0,3.5),Vector3.ONE*0.9)
+	_add_station_asset("container",Vector3(8.8,0.0,4.8),Vector3.ONE*0.78)
+	_add_station_asset("wall-switch",Vector3(-11.72,1.55,0.0),Vector3.ONE*0.82,Vector3(0.0,90.0,0.0))
+	_add_station_asset("pipe",Vector3(10.5,0.15,5.8),Vector3.ONE*0.88,Vector3(0.0,90.0,0.0))
+	_add_station_asset("rail",Vector3(0.0,0.02,6.7),Vector3(1.35,0.82,0.82))
+	_add_asset("basemodule_A",Vector3(-9.0,0.0,4.9),Vector3.ONE*0.55)
+	_add_asset("solarpanel",Vector3(9.6,0.0,4.2),Vector3.ONE*0.56)
+	_add_torus(_world_root,Vector3(0.0,1.15,-1.2),1.25,Color(0.20,0.72,0.92))
+	for index in range(18):
+		var x := -8.5+float(index)*1.0
+		_add_sphere(_world_root,Vector3(x,4.0+sin(float(index))*0.18,-7.65),0.028+float(index%3)*0.012,Color(0.38,0.73,0.94,0.62))
+	_set_camera_pose(Vector3(0.0,7.2,14.8),Vector3(0.0,1.2,-1.2),0.95)
 
 func _build_mars_canyon_environment() -> void:
 	MarsLandscapeBuilder.populate(_world_root, "cinematic")
@@ -546,8 +596,7 @@ func _build_mars_canyon_environment() -> void:
 	for value in LANDING_SITES.values():
 		var p: Vector3 = value["position"]
 		_add_torus(_world_root,p+Vector3(0,0.05,0),0.92,value["accent"])
-	_camera.position = Vector3(0,15.5,21)
-	_camera.look_at(Vector3(0,0.6,-2),Vector3.UP)
+	_set_camera_pose(Vector3(0.0,15.5,21.0),Vector3(0.0,0.6,-2.0),1.05)
 
 func _build_photo_markers() -> void:
 	_add_torus(_world_root,Vector3(-5,0.06,1.5),1.05,Color(0.98,0.78,0.43))
@@ -578,24 +627,25 @@ func _build_lulu_proxy(position: Vector3) -> void:
 	_add_torus(_world_root,position+Vector3(0,0.12,0),0.72,Color(0.66,0.80,0.52))
 
 func _build_signal_panels() -> void:
-	for i in range(3):
-		var x := -5.0+float(i)*5.0
-		_add_box(_world_root,Vector3(x,1.65,-4),Vector3(3.2,2.4,0.22),Color(0.025,0.10,0.16))
-		for j in range(3):
-			_add_torus(_world_root,Vector3(x-0.8+float(j)*0.8,1.7,-3.86),0.22,Color(0.27,0.75,0.92))
-		_add_sphere(_world_root,Vector3(x,2.7,-3.85),0.08,Color(0.95,0.77,0.40),0.3)
+	_add_station_asset("display-wall-wide",Vector3(0.0,1.65,-4.2),Vector3(1.4,1.05,0.9))
+	for index in range(3):
+		var x := -5.0+float(index)*5.0
+		_add_station_asset("computer",Vector3(x,0.0,0.8),Vector3.ONE*0.64,Vector3(0.0,180.0,0.0))
+		_add_torus(_world_root,Vector3(x,2.55,-3.76),0.48,Color(0.27,0.75,0.92))
+		_add_sphere(_world_root,Vector3(x,3.15,-3.78),0.09,Color(0.95,0.77,0.40),0.42)
 
 func _build_relay_environment() -> void:
 	_build_mars_canyon_environment()
-	_add_box(_world_root,Vector3(0,1.2,-2),Vector3(2.6,2.4,2),Color(0.12,0.20,0.25),0.5)
+	_add_station_asset("structure",Vector3(0.0,0.0,-2.2),Vector3.ONE*0.88)
+	_add_station_asset("display-wall-wide",Vector3(0.0,1.4,-3.6),Vector3(0.85,0.82,0.82))
+	_add_station_asset("computer",Vector3(-2.5,0.0,-1.6),Vector3.ONE*0.68)
+	_add_station_asset("computer",Vector3(2.5,0.0,-1.6),Vector3.ONE*0.68,Vector3(0.0,180.0,0.0))
+	_add_station_asset("table-inset",Vector3(0.0,0.0,0.7),Vector3.ONE*0.74)
 	_add_cylinder(_world_root,Vector3(0,3.1,-2),0.22,3.1,Color(0.62,0.69,0.72))
 	_add_torus(_world_root,Vector3(0,4.5,-2),1.55,Color(0.20,0.75,0.95))
-	_add_box(_world_root,Vector3(-2.1,0.85,-2),Vector3(1.7,1.5,1.2),Color(0.11,0.27,0.33),0.4)
-	_add_box(_world_root,Vector3(2.1,0.85,-2),Vector3(1.7,1.5,1.2),Color(0.11,0.27,0.33),0.4)
 	_add_asset("solarpanel",Vector3(-4.7,0,-2),Vector3.ONE*0.68)
 	_add_asset("structure_low",Vector3(4.5,0,-2),Vector3.ONE*0.72)
-	_camera.position = Vector3(0,10,17.5)
-	_camera.look_at(Vector3(0,2,-2),Vector3.UP)
+	_set_camera_pose(Vector3(0.0,10.0,17.5),Vector3(0.0,2.0,-2.0),0.9)
 
 func _mount_rover_scene() -> void:
 	if is_instance_valid(_rover_instance): return
@@ -697,6 +747,7 @@ func _build_hud() -> void:
 	_dialogue_panel.visible=false
 
 func _open_dialogue(dialogue_id:String) -> void:
+	_play_ui_sound("open")
 	if not _dialogue_director.start_dialogue(dialogue_id):
 		_feedback_label.text="تعذّر فتح الحوار. يمكنك متابعة المهمة."
 		return
@@ -860,6 +911,69 @@ func _add_asset(asset_id:String,position:Vector3,scale_value:Vector3) -> bool:
 	_world_root.add_child(instance)
 	if not _loaded_asset_ids.has(asset_id): _loaded_asset_ids.append(asset_id)
 	return true
+
+
+func _add_station_asset(asset_id:String,position:Vector3,scale_value:Vector3=Vector3.ONE,rotation_value:Vector3=Vector3.ZERO) -> bool:
+	if not KENNEY_STATION_MODELS.has(asset_id):
+		return false
+	var model_path := str(KENNEY_STATION_MODELS[asset_id])
+	if not _station_scene_cache.has(asset_id):
+		if not ResourceLoader.exists(model_path):
+			return false
+		var loaded := ResourceLoader.load(model_path) as PackedScene
+		if loaded == null:
+			return false
+		_station_scene_cache[asset_id] = loaded
+	var packed:PackedScene = _station_scene_cache[asset_id]
+	var instance:Node = packed.instantiate()
+	var spatial := instance as Node3D
+	if spatial == null:
+		instance.free()
+		return false
+	spatial.position = position
+	spatial.scale = scale_value
+	spatial.rotation_degrees = rotation_value
+	_world_root.add_child(spatial)
+	var loaded_id := "kenney:" + asset_id
+	if not _loaded_asset_ids.has(loaded_id):
+		_loaded_asset_ids.append(loaded_id)
+	return true
+
+func _set_camera_pose(target_position:Vector3,target_focus:Vector3,duration:float=0.9) -> void:
+	if not is_instance_valid(_camera):
+		return
+	var target_basis := Basis.looking_at(target_focus-target_position,Vector3.UP)
+	if not _has_camera_pose:
+		_camera.global_transform = Transform3D(target_basis,target_position)
+		_has_camera_pose = true
+		return
+	if _camera_tween != null and _camera_tween.is_running():
+		_camera_tween.kill()
+	var start_transform := _camera.global_transform
+	_camera_tween = create_tween()
+	_camera_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_camera_tween.tween_method(Callable(self,"_apply_camera_pose").bind(start_transform,target_basis,target_position),0.0,1.0,maxf(0.08,duration))
+
+func _apply_camera_pose(weight:float,start_transform:Transform3D,target_basis:Basis,target_position:Vector3) -> void:
+	if not is_instance_valid(_camera):
+		return
+	var blended_origin := start_transform.origin.lerp(target_position,weight)
+	var blended_basis := start_transform.basis.orthonormalized().slerp(target_basis,weight)
+	_camera.global_transform = Transform3D(blended_basis,blended_origin)
+
+func _play_ui_sound(sound_id:String) -> void:
+	if not is_instance_valid(_ui_sfx_player) or not KENNEY_AUDIO_PATHS.has(sound_id):
+		return
+	if not _audio_stream_cache.has(sound_id):
+		var stream_path := str(KENNEY_AUDIO_PATHS[sound_id])
+		if not ResourceLoader.exists(stream_path):
+			return
+		var loaded_stream := ResourceLoader.load(stream_path) as AudioStream
+		if loaded_stream == null:
+			return
+		_audio_stream_cache[sound_id] = loaded_stream
+	_ui_sfx_player.stream = _audio_stream_cache[sound_id]
+	_ui_sfx_player.play()
 
 func _make_material(color:Color,emission:Color,roughness:float) -> StandardMaterial3D:
 	var material:=StandardMaterial3D.new()

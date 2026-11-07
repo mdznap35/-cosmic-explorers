@@ -92,6 +92,75 @@ jobs:
           cat "$DEST/SHA256SUMS"
           rm -rf .asset-source/kaykit-space-base-bits
 
+      - name: Download and stage selected Kenney Space Station Kit CC0 modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/kenney_space-station-kit.zip"
+          staging="$RUNNER_TEMP/kenney-space-station-kit"
+          destination="assets/vendor/kenney_space_station_kit"
+          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 -o "$archive" "https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip"
+          unzip -tq "$archive"
+          echo "Official Kenney Space Station Kit archive:"
+          sha256sum "$archive"
+          mkdir -p "$staging" "$destination"
+          unzip -q "$archive" -d "$staging"
+          model_file="$(find "$staging" -type f -name 'floor.glb' -print -quit)"
+          test -n "$model_file"
+          model_root="$(dirname "$model_file")"
+          for model in floor floor-panel wall wall-corner wall-window wall-door door-single computer display-wall-wide table-display-planet table-inset chair rail pipe structure container wall-switch wall-pillar; do
+            test -s "$model_root/$model.glb"
+            cp "$model_root/$model.glb" "$destination/$model.glb"
+          done
+          test "$(find "$destination" -maxdepth 1 -name '*.glb' | wc -l)" -eq 18
+          license_file="$(find "$staging" -type f -iname 'license.txt' -print -quit)"
+          if [ -n "$license_file" ]; then
+            cp "$license_file" "$destination/LICENSE.txt"
+          else
+            cat > "$destination/LICENSE.txt" <<'LICENSE'
+Kenney Space Station Kit — version 1.0
+Official source: https://kenney.nl/assets/space-station-kit
+License stated on the official asset page: Creative Commons CC0 1.0 Universal.
+Official license guidance: https://kenney.nl/support
+Only the 18 GLB modules listed in SHA256SUMS are staged into this game build.
+LICENSE
+          fi
+          (cd "$destination" && sha256sum *.glb | sort -k2 > SHA256SUMS && cat SHA256SUMS)
+          rm -rf "$staging" "$archive"
+
+      - name: Download and stage selected Kenney Interface Sounds CC0 effects
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/kenney_interface-sounds.zip"
+          staging="$RUNNER_TEMP/kenney-interface-sounds"
+          destination="assets/audio/kenney_interface_sounds"
+          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 -o "$archive" "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip"
+          unzip -tq "$archive"
+          echo "Official Kenney Interface Sounds archive:"
+          sha256sum "$archive"
+          mkdir -p "$staging" "$destination"
+          unzip -q "$archive" -d "$staging"
+          for sound in click_001.ogg open_001.ogg bong_001.ogg; do
+            source_file="$(find "$staging" -type f -name "$sound" -print -quit)"
+            test -n "$source_file"
+            cp "$source_file" "$destination/$sound"
+          done
+          license_file="$(find "$staging" -type f -iname 'license.txt' -print -quit)"
+          if [ -n "$license_file" ]; then
+            cp "$license_file" "$destination/LICENSE.txt"
+          else
+            cat > "$destination/LICENSE.txt" <<'LICENSE'
+Kenney Interface Sounds — version 1.0
+Official source: https://kenney.nl/assets/interface-sounds
+License stated on the official asset page: Creative Commons CC0 1.0 Universal.
+Official license guidance: https://kenney.nl/support
+Only click_001.ogg, open_001.ogg and bong_001.ogg are staged for this game build.
+LICENSE
+          fi
+          (cd "$destination" && sha256sum click_001.ogg open_001.ogg bong_001.ogg > SHA256SUMS && cat SHA256SUMS)
+          rm -rf "$staging" "$archive"
+
       - name: Install Godot 4.7.2 and matching export templates
         uses: SolarLabyrinth/Action-Setup-Godot@d9f6c080367bc8e35dd623433be29e9f59f53a87 # v3
         with:
@@ -310,6 +379,16 @@ jobs:
           timeout 90s godot --headless --path . --script res://tests/validate_mars_landscape_builder.gd 2>&1 | tee "$RUNNER_TEMP/mars-landscape-builder.log"
           if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/mars-landscape-builder.log"; then
             echo "Shared Mars landscape builder validation failed." >&2
+            exit 1
+          fi
+      - name: Validate staged Kenney station modules and interface audio
+        shell: bash
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout 90s godot --headless --path . --script res://tests/validate_kenney_open_assets.gd 2>&1 | tee "$RUNNER_TEMP/kenney-open-assets.log"
+          if grep -E 'SCRIPT ERROR:|^ERROR:|Parse Error:' "$RUNNER_TEMP/kenney-open-assets.log"; then
+            echo "Kenney open-asset validation failed." >&2
             exit 1
           fi
       - name: Run main-scene smoke test

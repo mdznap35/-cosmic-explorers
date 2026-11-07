@@ -92,3 +92,22 @@
 - A CI attempt to fetch the official archive returned a 17,974-byte payload whose SHA-256 did not match the recorded reference digest. The payload was rejected before extraction/import. It is **not** part of the current game build.
 - The Sana Hub wave instead reuses the project's already-pinned KayKit Space Base Bits subset (8 GLTF models, commit `6dfbcac9927d06283752c4defd4882cfe0d29666`, CC0 1.0 Universal). Those are already downloaded/staged by the existing CI workflow and are used by the Mars and lunar outpost prototypes.
 - Kenney remains a candidate until a valid official archive or independently verifiable mirror can be obtained and its SHA-256 and selected filenames can be checked.
+
+
+## 10. Kenney Space Station Kit — selected modules staged for the flagship slice
+
+- Official asset page: https://kenney.nl/assets/space-station-kit
+- Official source archive: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
+- The official page lists 90 assets and CC0. Kenney's support page confirms its asset-page packs are CC0 and attribution is optional.
+- The build stages only 18 GLB modules: floor, floor-panel, wall, wall-corner, wall-window, wall-door, door-single, computer, display-wall-wide, table-display-planet, table-inset, chair, rail, pipe, structure, container, wall-switch, and wall-pillar.
+- SHA-256 values are generated for the staged files in CI. The dedicated Godot test instantiates every selected model and confirms each has visible mesh content.
+- The assets are used to construct the Sana command bridge, the signal-analysis room, and relay-station props. No web access is needed at runtime.
+
+## 11. Kenney Interface Sounds — selected offline UI feedback
+
+- Official asset page: https://kenney.nl/assets/interface-sounds
+- Official source archive: https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip
+- The official page lists 100 audio files under CC0. Only click_001.ogg, open_001.ogg, and bong_001.ogg are staged for the current slice.
+- SHA-256 values are generated in CI. The dedicated Godot test checks that all three files import as AudioStream.
+- Audio is local and optional at runtime: a missing stream cannot block mission progression. Device loudness and accessibility review remain open.
+
