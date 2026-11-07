@@ -279,7 +279,7 @@ func perform_action(action_id: String) -> bool:
 				var signal_id := action_id.trim_prefix("signal:")
 				if not ["one", "two", "three"].has(signal_id) or _signal_pulses_inspected.has(signal_id):
 					return false
-			_signal_pulses_inspected.append(signal_id)
+				_signal_pulses_inspected.append(signal_id)
 				if not _save_snapshot():
 					_signal_pulses_inspected.erase(signal_id)
 					_feedback_label.text = "تعذّر حفظ هذه العينة. حاول فحصها مرة أخرى."
