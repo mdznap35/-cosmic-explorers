@@ -1,4 +1,6 @@
 extends Node3D
+
+signal site_scanned(site_id: String)
 ## Child-friendly Mars surface survey prototype.
 ## Uses a small, pinned CC0 asset subset when staged by CI; procedural fallbacks
 ## keep the scene runnable in a source checkout without the optional asset pack.
@@ -8,6 +10,10 @@ const SAVE_VERSION := 1
 const MOVE_SPEED := 3.4
 const SCAN_DISTANCE := 2.45
 const ASSET_ROOT := "res://assets/vendor/kaykit_space_base_bits"
+
+@export var persistence_enabled := true
+@export var allow_return_to_sana := true
+@export var embedded_found_site_ids := PackedStringArray()
 
 const ASSET_PATHS := {
 	"basemodule_A": ASSET_ROOT + "/basemodule_A.gltf",
@@ -57,7 +63,7 @@ var _loaded_assets: Dictionary = {}
 
 
 func _ready() -> void:
-	_state = _load_state()
+	_state = _load_state() if persistence_enabled else {"version": SAVE_VERSION, "found_site_ids": Array(embedded_found_site_ids)}
 	_build_environment()
 	_build_outpost()
 	_build_survey_sites()
@@ -161,13 +167,14 @@ func scan_site(site_id: String) -> bool:
 
 	found.append(site_id)
 	_state["found_site_ids"] = found
-	if not _save_state():
+	if persistence_enabled and not _save_state():
 		found.erase(site_id)
 		_state["found_site_ids"] = found
 		_feedback_label.text = "تعذّر حفظ الملاحظة. لم نحتسبها، ويمكنك المحاولة مجدداً."
 		_update_status()
 		return false
 
+	site_scanned.emit(site_id)
 	_feedback_label.text = str(site["observation"])
 	if is_survey_completed():
 		_feedback_label.text += "\nاكتملت المواقع الثلاثة! يمكنك العودة إلى سفينة سَنا وعرض سجل الملاحظات."
@@ -416,9 +423,10 @@ func _build_hud() -> void:
 	var instruction := _new_label("تجوّل بين مواقع الملاحظة الثلاثة وسجّل ما تراه.", 15, Color(0.86, 0.83, 0.78))
 	instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_content.add_child(instruction)
-	var back_button := _new_button("العودة إلى سفينة سَنا", Callable(self, "_return_to_sana"), Vector2(0.0, 40.0))
-	back_button.size_flags_horizontal = Control.SIZE_SHRINK_END
-	header_content.add_child(back_button)
+	if allow_return_to_sana:
+		var back_button := _new_button("العودة إلى سفينة سَنا", Callable(self, "_return_to_sana"), Vector2(0.0, 40.0))
+		back_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+		header_content.add_child(back_button)
 
 	var status_panel := PanelContainer.new()
 	status_panel.anchor_left = 0.62

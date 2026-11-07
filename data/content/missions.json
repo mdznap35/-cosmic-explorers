@@ -9,12 +9,26 @@
       "summary_ar": "تتبّع الإشارة القديمة وتعرّف إلى دفتر أُفُق-1.",
       "primary_character_id": "reem",
       "objectives": [
-        {"id": "objective.signal.touch", "title_ar": "المس الإشارة المضيئة", "required": true, "event_id": "signal.interacted"},
-        {"id": "objective.ship.visit", "title_ar": "تفقّد غرفة في سَنا", "required": false, "event_id": "ship.room.visited"}
+        {
+          "id": "objective.signal.touch",
+          "title_ar": "المس الإشارة المضيئة",
+          "required": true,
+          "event_id": "signal.interacted"
+        },
+        {
+          "id": "objective.ship.visit",
+          "title_ar": "تفقّد غرفة في سَنا",
+          "required": false,
+          "event_id": "ship.room.visited"
+        }
       ],
-      "dialogue_ids": ["dialogue.prologue.signal"],
+      "dialogue_ids": [
+        "dialogue.prologue.signal"
+      ],
       "science_card_ids": [],
-      "reward_ids": ["reward.sticker.first_signal"],
+      "reward_ids": [
+        "reward.sticker.first_signal"
+      ],
       "replayable": true
     },
     {
@@ -25,12 +39,26 @@
       "summary_ar": "حرّك الضوء والكرة لترى الجزء الذي يصل إليه ضوء الشمس.",
       "primary_character_id": "reem",
       "objectives": [
-        {"id": "objective.moon.rotate_light", "title_ar": "حرّك مصدر الضوء", "required": true, "event_id": "moon.light_source_moved"},
-        {"id": "objective.moon.view_phase", "title_ar": "شاهد الجزء المضيء", "required": true, "event_id": "moon.illuminated_side_observed"}
+        {
+          "id": "objective.moon.rotate_light",
+          "title_ar": "حرّك مصدر الضوء",
+          "required": true,
+          "event_id": "moon.light_source_moved"
+        },
+        {
+          "id": "objective.moon.view_phase",
+          "title_ar": "شاهد الجزء المضيء",
+          "required": true,
+          "event_id": "moon.illuminated_side_observed"
+        }
       ],
       "dialogue_ids": [],
-      "science_card_ids": ["science.moon.reflected_light"],
-      "reward_ids": ["reward.badge.moon_friend"],
+      "science_card_ids": [
+        "science.moon.reflected_light"
+      ],
+      "reward_ids": [
+        "reward.badge.moon_friend"
+      ],
       "replayable": true
     },
     {
@@ -41,13 +69,35 @@
       "summary_ar": "اختر منطقة مسح، ووجّه الروفر، وسجّل ملاحظات عن الصخور.",
       "primary_character_id": "reem",
       "objectives": [
-        {"id": "objective.mars.choose_site", "title_ar": "اختر منطقة للمسح", "required": true, "event_id": "mars.site.selected"},
-        {"id": "objective.mars.scan_samples", "title_ar": "افحص عينتين", "required": true, "event_id": "scanner.sample_recorded", "target_count": 2},
-        {"id": "objective.mars.photo", "title_ar": "التقط صورة للمشهد", "required": false, "event_id": "photo.captured"}
+        {
+          "id": "objective.mars.choose_site",
+          "title_ar": "اختر منطقة للمسح",
+          "required": true,
+          "event_id": "mars.site.selected"
+        },
+        {
+          "id": "objective.mars.scan_samples",
+          "title_ar": "افحص عينتين",
+          "required": true,
+          "event_id": "scanner.sample_recorded",
+          "target_count": 2
+        },
+        {
+          "id": "objective.mars.photo",
+          "title_ar": "التقط صورة للمشهد",
+          "required": false,
+          "event_id": "photo.captured"
+        }
       ],
-      "dialogue_ids": ["dialogue.mars.first_sample"],
-      "science_card_ids": ["science.mars.iron_oxide"],
-      "reward_ids": ["reward.badge.mars_field_detective"],
+      "dialogue_ids": [
+        "dialogue.mars.first_sample"
+      ],
+      "science_card_ids": [
+        "science.mars.iron_oxide"
+      ],
+      "reward_ids": [
+        "reward.badge.mars_field_detective"
+      ],
       "replayable": true
     },
     {
@@ -58,13 +108,125 @@
       "summary_ar": "فرّق بين ما نراه في الصور وما نستنتجه وما لا نعرفه بعد.",
       "primary_character_id": "salim",
       "objectives": [
-        {"id": "objective.mars.sort_observations", "title_ar": "رتّب بطاقات الملاحظة", "required": true, "event_id": "evidence.cards_sorted"},
-        {"id": "objective.mars.review_water", "title_ar": "راجع دليل الماء القديم", "required": true, "event_id": "science.card.reviewed"},
-        {"id": "objective.mars.find_hidden", "title_ar": "اعثر على علامة لولو", "required": false, "event_id": "discovery.hidden_mark_found"}
+        {
+          "id": "objective.mars.sort_observations",
+          "title_ar": "رتّب بطاقات الملاحظة",
+          "required": true,
+          "event_id": "evidence.cards_sorted"
+        },
+        {
+          "id": "objective.mars.review_water",
+          "title_ar": "راجع دليل الماء القديم",
+          "required": true,
+          "event_id": "science.card.reviewed"
+        },
+        {
+          "id": "objective.mars.find_hidden",
+          "title_ar": "اعثر على علامة لولو",
+          "required": false,
+          "event_id": "discovery.hidden_mark_found"
+        }
       ],
       "dialogue_ids": [],
-      "science_card_ids": ["science.mars.water_evidence"],
-      "reward_ids": ["reward.sticker.evidence_detective"],
+      "science_card_ids": [
+        "science.mars.water_evidence"
+      ],
+      "reward_ids": [
+        "reward.sticker.evidence_detective"
+      ],
+      "replayable": true
+    },
+    {
+      "id": "mission.mars.echo_of_mars",
+      "chapter_id": "chapter.mars",
+      "kind": "story",
+      "title_ar": "صدى المريخ",
+      "summary_ar": "اتبع النبضات المتكررة، واستكشف الوادي، وأعد محطة الترحيل إلى العمل دون محو سجل أُفُق-1.",
+      "primary_character_id": "reem",
+      "objectives": [
+        {
+          "id": "objective.echo.inspect_signal",
+          "title_ar": "افحص الإشارة الغامضة",
+          "required": true,
+          "event_id": "echo.signal.inspected"
+        },
+        {
+          "id": "objective.echo.calibrate_tools",
+          "title_ar": "جهّز أدوات الرحلة",
+          "required": true,
+          "event_id": "echo.tools.calibrated"
+        },
+        {
+          "id": "objective.echo.choose_landing",
+          "title_ar": "اختر موقع الهبوط",
+          "required": true,
+          "event_id": "echo.landing.chosen"
+        },
+        {
+          "id": "objective.echo.rover_survey",
+          "title_ar": "سجّل ثلاث ملاحظات ميدانية",
+          "required": true,
+          "event_id": "echo.rover.site_scanned",
+          "target_count": 3
+        },
+        {
+          "id": "objective.echo.photo_angle_one",
+          "title_ar": "التقط الصورة الأولى",
+          "required": true,
+          "event_id": "echo.photo.angle_one"
+        },
+        {
+          "id": "objective.echo.photo_angle_two",
+          "title_ar": "التقط صورة من زاوية ثانية",
+          "required": true,
+          "event_id": "echo.photo.angle_two"
+        },
+        {
+          "id": "objective.echo.team_roles",
+          "title_ar": "استفد من قدرات أعضاء الفريق",
+          "required": true,
+          "event_id": "echo.team.role_action",
+          "target_count": 3
+        },
+        {
+          "id": "objective.echo.lulu_trace",
+          "title_ar": "اكتشف علامة لولو الصغيرة",
+          "required": true,
+          "event_id": "echo.lulu.mark_found"
+        },
+        {
+          "id": "objective.echo.packet_match",
+          "title_ar": "اكتشف أن النبضات تحمل الحزمة نفسها",
+          "required": true,
+          "event_id": "echo.signal.packet_matched"
+        },
+        {
+          "id": "objective.echo.relay_components",
+          "title_ar": "أصلح أجزاء محطة الترحيل الثلاثة",
+          "required": true,
+          "event_id": "echo.relay.component_ready",
+          "target_count": 3
+        },
+        {
+          "id": "objective.echo.acknowledgement",
+          "title_ar": "أرسل تأكيد استلام الرسالة",
+          "required": true,
+          "event_id": "echo.acknowledgement.sent"
+        }
+      ],
+      "dialogue_ids": [
+        "dialogue.echo.signal",
+        "dialogue.echo.photo",
+        "dialogue.echo.lulu",
+        "dialogue.echo.relay",
+        "dialogue.echo.closure"
+      ],
+      "science_card_ids": [
+        "science.mars.water_evidence"
+      ],
+      "reward_ids": [
+        "reward.badge.echo_signal_detective"
+      ],
       "replayable": true
     }
   ]

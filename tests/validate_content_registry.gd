@@ -2,6 +2,40 @@ extends SceneTree
 
 const ContentRegistry = preload("res://scripts/content_registry.gd")
 
+const REQUIRED_CONTENT_IDS := {
+	"characters": ["reem", "salim", "lulu"],
+	"chapters": ["chapter.prologue", "chapter.moon", "chapter.mars"],
+	"missions": [
+		"mission.prologue.signal",
+		"mission.moon.light_reflection",
+		"mission.mars.rover_survey",
+		"mission.mars.evidence_sort",
+		"mission.mars.echo_of_mars"
+	],
+	"science_cards": [
+		"science.moon.reflected_light",
+		"science.moon.phases",
+		"science.mars.iron_oxide",
+		"science.mars.water_evidence"
+	],
+	"dialogues": [
+		"dialogue.prologue.signal",
+		"dialogue.mars.first_sample",
+		"dialogue.echo.signal",
+		"dialogue.echo.photo",
+		"dialogue.echo.lulu",
+		"dialogue.echo.relay",
+		"dialogue.echo.closure"
+	],
+	"rewards": [
+		"reward.sticker.first_signal",
+		"reward.badge.moon_friend",
+		"reward.badge.mars_field_detective",
+		"reward.sticker.evidence_detective",
+		"reward.badge.echo_signal_detective"
+	]
+}
+
 
 func _initialize() -> void:
 	call_deferred("_run_content_registry_tests")
@@ -13,24 +47,19 @@ func _run_content_registry_tests() -> void:
 
 	if int(bundle.get("schema_version", 0)) != ContentRegistry.SCHEMA_VERSION:
 		errors.append("The content bundle schema version is incorrect.")
-	var chapter_entries: Variant = bundle.get("chapters", [])
-	var character_entries: Variant = bundle.get("characters", [])
-	var mission_entries: Variant = bundle.get("missions", [])
-	var science_entries: Variant = bundle.get("science_cards", [])
-	var dialogue_entries: Variant = bundle.get("dialogues", [])
-	var reward_entries: Variant = bundle.get("rewards", [])
-	if not (character_entries is Array) or character_entries.size() != 3:
-		errors.append("Expected three playable core character profiles.")
-	if not (chapter_entries is Array) or chapter_entries.size() != 3:
-		errors.append("Expected the prologue, Moon, and Mars chapters.")
-	if not (mission_entries is Array) or mission_entries.size() != 4:
-		errors.append("Expected four first-slice missions.")
-	if not (science_entries is Array) or science_entries.size() != 4:
-		errors.append("Expected four source-backed science cards.")
-	if not (dialogue_entries is Array) or dialogue_entries.size() != 2:
-		errors.append("Expected two scripted dialogue sequences.")
-	if not (reward_entries is Array) or reward_entries.size() != 4:
-		errors.append("Expected four first-slice rewards.")
+
+	for content_kind in REQUIRED_CONTENT_IDS:
+		var entries: Variant = bundle.get(content_kind, [])
+		if not (entries is Array):
+			errors.append("The " + content_kind + " content must be an array.")
+			continue
+		var available_ids := {}
+		for entry in entries:
+			if entry is Dictionary:
+				available_ids[str(entry.get("id", ""))] = true
+		for required_id in REQUIRED_CONTENT_IDS[content_kind]:
+			if not available_ids.has(required_id):
+				errors.append("The " + content_kind + " content is missing required id: " + required_id)
 
 	var duplicate_bundle: Dictionary = bundle.duplicate(true)
 	var duplicate_mission: Dictionary = duplicate_bundle["missions"][0].duplicate(true)
@@ -63,7 +92,7 @@ func _run_content_registry_tests() -> void:
 		quit(1)
 		return
 
-	print("PASS: content bundle loading, schema, IDs, references, science provenance, dialogue graph, and negative cases.")
+	print("PASS: content bundle loading, required content IDs, schema, references, science provenance, dialogue graph, and negative cases.")
 	quit(0)
 
 

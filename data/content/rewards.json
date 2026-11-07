@@ -6,7 +6,10 @@
       "kind": "sticker",
       "title_ar": "أول إشارة",
       "description_ar": "بدأت رحلتك وسجلت أول صفحة في الأطلس.",
-      "unlock": {"mission_id": "mission.prologue.signal", "event_id": "mission.completed"},
+      "unlock": {
+        "mission_id": "mission.prologue.signal",
+        "event_id": "mission.completed"
+      },
       "repeatable": false
     },
     {
@@ -14,7 +17,10 @@
       "kind": "badge",
       "title_ar": "صديق القمر",
       "description_ar": "جربت كيف ينعكس ضوء الشمس عن القمر.",
-      "unlock": {"mission_id": "mission.moon.light_reflection", "event_id": "mission.completed"},
+      "unlock": {
+        "mission_id": "mission.moon.light_reflection",
+        "event_id": "mission.completed"
+      },
       "repeatable": false
     },
     {
@@ -22,7 +28,10 @@
       "kind": "badge",
       "title_ar": "محقق المريخ",
       "description_ar": "سجلت ملاحظات جديدة في رحلة المريخ.",
-      "unlock": {"mission_id": "mission.mars.rover_survey", "event_id": "mission.completed"},
+      "unlock": {
+        "mission_id": "mission.mars.rover_survey",
+        "event_id": "mission.completed"
+      },
       "repeatable": false
     },
     {
@@ -30,7 +39,21 @@
       "kind": "sticker",
       "title_ar": "محقق الأدلة",
       "description_ar": "فرّقت بين الملاحظة والاستنتاج والسؤال المفتوح.",
-      "unlock": {"mission_id": "mission.mars.evidence_sort", "event_id": "mission.completed"},
+      "unlock": {
+        "mission_id": "mission.mars.evidence_sort",
+        "event_id": "mission.completed"
+      },
+      "repeatable": false
+    },
+    {
+      "id": "reward.badge.echo_signal_detective",
+      "kind": "badge",
+      "title_ar": "محقق صدى المريخ",
+      "description_ar": "قارنت الأدلة، وحفظت السجل، وأعدت الاتصال من دون استعجال الاستنتاج.",
+      "unlock": {
+        "mission_id": "mission.mars.echo_of_mars",
+        "event_id": "mission.completed"
+      },
       "repeatable": false
     }
   ]

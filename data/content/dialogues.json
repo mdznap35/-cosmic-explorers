@@ -9,8 +9,14 @@
         "notice": {
           "text_ar": "كل ليلة أراقب السماء، لكن هذه الإشارة مختلفة.",
           "choices": [
-            {"text_ar": "المس الإشارة", "next": "identify"},
-            {"text_ar": "اسأل مرقاب", "next": "identify"}
+            {
+              "text_ar": "المس الإشارة",
+              "next": "identify"
+            },
+            {
+              "text_ar": "اسأل مرقاب",
+              "next": "identify"
+            }
           ]
         },
         "identify": {
@@ -31,8 +37,14 @@
         "observe": {
           "text_ar": "لاحظ لون هذه العينة. ماذا ترى؟",
           "choices": [
-            {"text_ar": "لون أحمر صدئ", "next": "iron"},
-            {"text_ar": "أريد تكبير الصورة", "next": "magnify"}
+            {
+              "text_ar": "لون أحمر صدئ",
+              "next": "iron"
+            },
+            {
+              "text_ar": "أريد تكبير الصورة",
+              "next": "magnify"
+            }
           ]
         },
         "magnify": {
@@ -45,6 +57,74 @@
         },
         "evidence": {
           "text_ar": "الصورة دليل يساعدنا، لكننا نحتاج إلى أكثر من أداة لفهم العينة.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.echo.signal",
+      "speaker_id": "mirqab",
+      "start_node": "pulse",
+      "nodes": {
+        "pulse": {
+          "text_ar": "وصلتنا ثلاث نبضات. صنّفتها أولياً كاستغاثة، لكنني لا أملك دليلاً كافياً على ذلك.",
+          "choices": [
+            {
+              "text_ar": "هل تعني ثلاث رسائل؟",
+              "next": "check"
+            },
+            {
+              "text_ar": "لنقارن شكل النبضات أولاً.",
+              "next": "check"
+            }
+          ]
+        },
+        "check": {
+          "text_ar": "سأعرض البيانات كما هي، وأترك التفسير مفتوحاً حتى نفحصها.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.echo.photo",
+      "speaker_id": "reem",
+      "start_node": "angle",
+      "nodes": {
+        "angle": {
+          "text_ar": "الصورة الأولى واضحة، لكنها لا تكشف كل شيء. نحتاج زاوية ثانية قبل أن نصف ما نراه.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.echo.lulu",
+      "speaker_id": "lulu",
+      "start_node": "mark",
+      "nodes": {
+        "mark": {
+          "text_ar": "وجدتها! هذا الخدش الصغير يشبه العلامة التي رأيناها في كل نبضة. أحياناً تساعدنا التفاصيل الهادئة.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.echo.relay",
+      "speaker_id": "salim",
+      "start_node": "repair",
+      "nodes": {
+        "repair": {
+          "text_ar": "الطاقة جاهزة، والطبق مضبوط، والمشبك في مكانه. لنرسل تأكيداً من دون أن نمسح السجل القديم.",
+          "terminal": true
+        }
+      }
+    },
+    {
+      "id": "dialogue.echo.closure",
+      "speaker_id": "reem",
+      "start_node": "end",
+      "nodes": {
+        "end": {
+          "text_ar": "لم نجد جواباً لكل شيء، لكننا حفظنا الدليل وعرفنا السؤال التالي. هذه صفحة جديدة في أطلس الضوء.",
           "terminal": true
         }
       }
