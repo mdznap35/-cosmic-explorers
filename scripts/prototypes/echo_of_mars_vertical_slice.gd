@@ -8,6 +8,7 @@ const CharacterRoster = preload("res://scripts/character_roster.gd")
 const InteractionRouter = preload("res://scripts/interaction_router.gd")
 const RewardService = preload("res://scripts/reward_service.gd")
 const RoverScene = preload("res://scenes/prototypes/mars_rover_survey.tscn")
+const MarsLandscapeBuilder = preload("res://scripts/prototypes/mars_landscape_builder.gd")
 
 const MISSION_ID := "mission.mars.echo_of_mars"
 const SAVE_PATH := "user://echo_of_mars_vertical_slice_v1.json"
@@ -69,6 +70,7 @@ var _selected_character_id := "reem"
 var _loaded_asset_ids: Array[String] = []
 var _world_root: Node3D
 var _camera: Camera3D
+var _world_environment: Environment
 var _rover_instance
 var _hud_root: Control
 var _title_label: Label
@@ -459,13 +461,10 @@ func _refresh_actions() -> void:
 
 func _build_world_shell() -> void:
 	var world_environment := WorldEnvironment.new()
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.012,0.022,0.052)
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.48,0.55,0.68)
-	environment.ambient_light_energy = 0.8
-	world_environment.environment = environment
+	world_environment.name = "EchoWorldEnvironment"
+	_world_environment = Environment.new()
+	_configure_space_atmosphere()
+	world_environment.environment = _world_environment
 	add_child(world_environment)
 	var key_light := DirectionalLight3D.new()
 	key_light.rotation_degrees = Vector3(-48.0,-28.0,0.0)
@@ -481,7 +480,22 @@ func _build_world_shell() -> void:
 	_camera.fov = 52.0
 	add_child(_camera)
 
+func _configure_space_atmosphere() -> void:
+	if _world_environment == null:
+		return
+	_world_environment.background_mode = Environment.BG_COLOR
+	_world_environment.background_color = Color(0.012, 0.022, 0.052, 1.0)
+	_world_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_world_environment.ambient_light_color = Color(0.48, 0.55, 0.68, 1.0)
+	_world_environment.ambient_light_energy = 0.8
+	_world_environment.fog_enabled = false
+	_world_environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+
 func _build_stage_environment(stage_index: int) -> void:
+	if stage_index >= 4 and stage_index <= 8:
+		MarsLandscapeBuilder.configure_atmosphere(_world_environment)
+	else:
+		_configure_space_atmosphere()
 	for child in _world_root.get_children(): child.free()
 	_loaded_asset_ids.clear()
 	match stage_index:
@@ -521,11 +535,7 @@ func _build_sana_environment() -> void:
 	_camera.look_at(Vector3(0,1.2,-1.2),Vector3.UP)
 
 func _build_mars_canyon_environment() -> void:
-	_add_box(_world_root,Vector3(0,-0.45,0),Vector3(42,0.9,42),Color(0.40,0.17,0.105),0.9)
-	_add_box(_world_root,Vector3(-17,4.5,-2),Vector3(7,9,38),Color(0.34,0.13,0.085),0.96)
-	_add_box(_world_root,Vector3(17,5,-4),Vector3(7,10,34),Color(0.50,0.21,0.12),0.92)
-	_add_box(_world_root,Vector3(-4,2.8,-15),Vector3(10,5.6,6),Color(0.55,0.24,0.14),0.95)
-	_add_box(_world_root,Vector3(5.5,3.4,-17),Vector3(9,6.8,5),Color(0.30,0.12,0.085),0.96)
+	MarsLandscapeBuilder.populate(_world_root, "cinematic")
 	for i in range(16):
 		var angle := TAU*float(i)/16.0
 		var radius := 5.5+float(i%4)*2.0
@@ -592,7 +602,9 @@ func _mount_rover_scene() -> void:
 	_rover_instance = RoverScene.instantiate()
 	_rover_instance.set("persistence_enabled",false)
 	_rover_instance.set("allow_return_to_sana",false)
+	_rover_instance.set("create_local_world_environment",false)
 	_rover_instance.set("embedded_found_site_ids",PackedStringArray(_rover_scanned_ids))
+	MarsLandscapeBuilder.configure_atmosphere(_world_environment)
 	_rover_instance.name = "EmbeddedMarsRoverSurvey"
 	add_child(_rover_instance)
 	if _rover_instance.has_signal("site_scanned"):

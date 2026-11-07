@@ -6,6 +6,7 @@ signal site_scanned(site_id: String)
 ## keep the scene runnable in a source checkout without the optional asset pack.
 
 const SAVE_PATH := "user://mars_rover_survey_prototype.json"
+const MarsLandscapeBuilder = preload("res://scripts/prototypes/mars_landscape_builder.gd")
 const SAVE_VERSION := 1
 const MOVE_SPEED := 3.4
 const SCAN_DISTANCE := 2.45
@@ -13,6 +14,7 @@ const ASSET_ROOT := "res://assets/vendor/kaykit_space_base_bits"
 
 @export var persistence_enabled := true
 @export var allow_return_to_sana := true
+@export var create_local_world_environment := true
 @export var embedded_found_site_ids := PackedStringArray()
 
 const ASSET_PATHS := {
@@ -189,15 +191,12 @@ func scan_nearby_site() -> bool:
 
 
 func _build_environment() -> void:
-	var world := WorldEnvironment.new()
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.20, 0.105, 0.075)
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.88, 0.62, 0.43)
-	environment.ambient_light_energy = 0.8
-	world.environment = environment
-	add_child(world)
+	if create_local_world_environment:
+		var world := WorldEnvironment.new()
+		var environment := Environment.new()
+		MarsLandscapeBuilder.configure_atmosphere(environment)
+		world.environment = environment
+		add_child(world)
 
 	var sunlight := DirectionalLight3D.new()
 	sunlight.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
@@ -205,25 +204,7 @@ func _build_environment() -> void:
 	sunlight.shadow_enabled = false
 	add_child(sunlight)
 
-	var floor := MeshInstance3D.new()
-	var floor_mesh := PlaneMesh.new()
-	floor_mesh.size = Vector2(28.0, 22.0)
-	floor.mesh = floor_mesh
-	floor.material_override = _make_material(Color(0.43, 0.22, 0.14), Color(0.10, 0.035, 0.02), 0.95)
-	floor.position.y = -0.04
-	add_child(floor)
-
-	# Low-cost distant ridges provide a horizon without costly terrain geometry.
-	for index in range(7):
-		var ridge := MeshInstance3D.new()
-		var ridge_mesh := SphereMesh.new()
-		ridge_mesh.radius = 1.0
-		ridge_mesh.height = 2.0
-		ridge.mesh = ridge_mesh
-		ridge.scale = Vector3(2.2 + float(index % 3) * 0.8, 1.3 + float(index % 2) * 0.4, 0.75)
-		ridge.position = Vector3(-12.0 + float(index) * 4.0, 0.15, -10.5)
-		ridge.material_override = _make_material(Color(0.31, 0.15, 0.12), Color(0.0, 0.0, 0.0), 1.0)
-		add_child(ridge)
+	MarsLandscapeBuilder.populate(self, "rover")
 
 
 func _build_outpost() -> void:
