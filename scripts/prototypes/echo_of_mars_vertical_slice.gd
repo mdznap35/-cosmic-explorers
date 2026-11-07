@@ -805,7 +805,7 @@ func _build_echo_signal_waveform() -> void:
 		)
 		trace_marker.name = "EchoTraceMarker_%02d" % (row + 1)
 
-		var signal_id := ["one", "two", "three"][row]
+		var signal_id: String = str(["one", "two", "three"][row])
 		var hit_area := Area3D.new()
 		hit_area.name = "SignalRowHitArea_%02d" % (row + 1)
 		hit_area.input_ray_pickable = true
