@@ -155,8 +155,12 @@ func _run() -> void:
 			if not hit_area.input_ray_pickable or hit_area.collision_layer == 0:
 				_errors.append("Signal row %d must be ray-pickable on an active collision layer." % (row + 1))
 			var hit_shape := hit_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
-			if hit_shape == null or not (hit_shape.shape is BoxShape3D):
-				_errors.append("Signal row %d must provide a box hit target." % (row + 1))
+			if hit_shape == null:
+				_errors.append("Signal row %d is missing its CollisionShape3D child." % (row + 1))
+			elif hit_shape.shape == null:
+				_errors.append("Signal row %d CollisionShape3D has no shape resource." % (row + 1))
+			elif hit_shape.shape.get_class() != "BoxShape3D":
+				_errors.append("Signal row %d uses %s instead of BoxShape3D." % [row + 1, hit_shape.shape.get_class()])
 			if hit_area.get_signal_connection_list("input_event").size() != 1:
 				_errors.append("Signal row %d must route input to its own inspection action." % (row + 1))
 	if slice.perform_action("not-a-real-action"):
@@ -299,6 +303,10 @@ func _run() -> void:
 			_errors.append("A version-1 save without pulse data must still initialize.")
 		elif not migrated_slice.get_signal_pulses_inspected().is_empty():
 			_errors.append("A legacy save without pulse data must default to an empty inspection list.")
+		elif not migrated_slice.skip_opening_cinematic():
+			_errors.append("A legacy save must allow the opening cinematic to be skipped.")
+		elif not migrated_slice.dismiss_current_dialogue():
+			_errors.append("A migrated session must be able to dismiss the prologue dialogue.")
 		elif not migrated_slice.perform_action("signal:one"):
 			_errors.append("A migrated legacy save must accept and persist its first pulse inspection.")
 		migrated_slice.free()
