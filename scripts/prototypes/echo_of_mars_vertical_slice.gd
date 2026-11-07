@@ -769,6 +769,21 @@ func _build_echo_signal_waveform() -> void:
 			0.24
 		)
 		trace_marker.name = "EchoTraceMarker_%02d" % (row + 1)
+
+		var signal_id := ["one", "two", "three"][row]
+		var hit_area := Area3D.new()
+		hit_area.name = "SignalRowHitArea_%02d" % (row + 1)
+		hit_area.input_ray_pickable = true
+		hit_area.collision_layer = 1
+		hit_area.collision_mask = 0
+		hit_area.position = Vector3(0.0, -float(row) * 0.54 + 0.23, 0.0)
+		var hit_shape := CollisionShape3D.new()
+		var hit_box := BoxShape3D.new()
+		hit_box.size = Vector3(7.25, 0.44, 0.42)
+		hit_shape.shape = hit_box
+		hit_area.add_child(hit_shape)
+		hit_area.input_event.connect(_on_signal_row_input.bind(signal_id))
+		waveform.add_child(hit_area)
 	waveform.multimesh = multimesh
 	var waveform_material := StandardMaterial3D.new()
 	waveform_material.vertex_color_use_as_albedo = true
@@ -798,6 +813,15 @@ func _highlight_signal_trace(signal_id: String, animate_marker: bool = true) -> 
 		pulse.tween_property(marker, "scale", Vector3.ONE, 0.28)
 	else:
 		marker.scale = Vector3.ONE * 1.35
+
+func _on_signal_row_input(_camera: Camera3D, event: InputEvent, _event_position: Vector3, _normal: Vector3, _shape_idx: int, signal_id: String) -> void:
+	var activate := false
+	if event is InputEventScreenTouch:
+		activate = event.pressed
+	elif event is InputEventMouseButton:
+		activate = event.pressed and event.button_index == MOUSE_BUTTON_LEFT
+	if activate:
+		perform_action("signal:" + signal_id)
 
 func _build_mars_canyon_environment() -> void:
 	MarsLandscapeBuilder.populate(_world_root, "cinematic")

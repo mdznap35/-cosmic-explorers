@@ -120,24 +120,55 @@ func _run() -> void:
 	var signal_waveform := slice.get_node_or_null("EchoWorld/EchoSignalWaveform") as MultiMeshInstance3D
 	if signal_waveform == null or signal_waveform.multimesh == null:
 		_errors.append("The opening display must include the repeated signal waveform.")
-	elif signal_waveform.multimesh.instance_count != 96:
-		_errors.append("The repeated signal waveform must render three 32-bar traces in one MultiMesh.")
 	else:
+		if signal_waveform.multimesh.instance_count != 96:
+			_errors.append("The repeated signal waveform must render three 32-bar traces in one MultiMesh.")
 		var waveform_mesh := signal_waveform.multimesh
 		var first_trace := waveform_mesh.get_instance_transform(5).basis.y.length()
 		var second_trace := waveform_mesh.get_instance_transform(37).basis.y.length()
 		var third_trace := waveform_mesh.get_instance_transform(69).basis.y.length()
 		if not (is_equal_approx(first_trace, second_trace) and is_equal_approx(second_trace, third_trace)):
 			_errors.append("All three echo traces must carry the same waveform pattern.")
+		var hit_areas := signal_waveform.find_children("SignalRowHitArea_*", "Area3D", true, false)
+		if hit_areas.size() != 3:
+			_errors.append("Each echo trace must expose its own 3D touch target.")
+		for row in range(3):
+			var hit_area := signal_waveform.get_node_or_null("SignalRowHitArea_%02d" % (row + 1)) as Area3D
+			if hit_area == null:
+				_errors.append("Missing 3D touch target for signal row %d." % (row + 1))
+				continue
+			if not hit_area.input_ray_pickable or hit_area.collision_layer == 0:
+				_errors.append("Signal row %d must be ray-pickable on an active collision layer." % (row + 1))
+			var hit_shape := hit_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			if hit_shape == null or not (hit_shape.shape is BoxShape3D):
+				_errors.append("Signal row %d must provide a box hit target." % (row + 1))
+			if hit_area.get_signal_connection_list("input_event").size() != 1:
+				_errors.append("Signal row %d must route input to its own inspection action." % (row + 1))
 	if slice.perform_action("not-a-real-action"):
 		_errors.append("Unknown actions must be rejected.")
 	if slice.perform_action("inspect_signal"):
 		_errors.append("The opening signal cannot be confirmed before all three pulses are inspected.")
-	for signal_id in ["one", "two", "three"]:
+	for row in range(3):
+		var signal_id := ["one", "two", "three"][row]
 		if not slice.get_action_ids().has("signal:" + signal_id):
 			_errors.append("Each uninspected pulse must expose its own action: " + signal_id)
-		if not slice.perform_action("signal:" + signal_id):
-			_errors.append("The player must be able to inspect pulse " + signal_id)
+		var hit_area := slice.get_node_or_null("EchoWorld/EchoSignalWaveform/SignalRowHitArea_%02d" % (row + 1)) as Area3D
+		if hit_area != null:
+			var input_event: InputEvent
+			if row == 1:
+				var mouse_click := InputEventMouseButton.new()
+				mouse_click.button_index = MOUSE_BUTTON_LEFT
+				mouse_click.pressed = true
+				input_event = mouse_click
+			else:
+				var screen_touch := InputEventScreenTouch.new()
+				screen_touch.pressed = true
+				input_event = screen_touch
+			hit_area.input_event.emit(null, input_event, Vector3.ZERO, Vector3.UP, 0)
+		else:
+			_errors.append("The signal row hit target must be present before it can be touched.")
+		if not slice.get_signal_pulses_inspected().has(signal_id):
+			_errors.append("Touching signal row must inspect " + signal_id)
 		if slice.get_stage_index() != 0:
 			_errors.append("Inspecting an individual pulse must not skip the comparison stage.")
 		if not slice.get_signal_pulses_inspected().has(signal_id):
