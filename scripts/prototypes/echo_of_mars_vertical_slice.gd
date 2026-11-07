@@ -813,6 +813,7 @@ func _build_echo_signal_waveform() -> void:
 		hit_area.collision_mask = 0
 		hit_area.position = Vector3(0.0, -float(row) * 0.54 + 0.23, 0.0)
 		var hit_shape := CollisionShape3D.new()
+		hit_shape.name = "CollisionShape3D"
 		var hit_box := BoxShape3D.new()
 		hit_box.size = Vector3(7.25, 0.44, 0.42)
 		hit_shape.shape = hit_box
