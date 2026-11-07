@@ -623,6 +623,7 @@ func _build_team_figures() -> void:
 	_build_explorer_character("ReemExplorer", Vector3(-5.0, 0.0, 2.0), Color(0.22, 0.61, 0.76), Color(0.91, 0.72, 0.43), "reem")
 	_build_explorer_character("SalimExplorer", Vector3(0.0, 0.0, 2.0), Color(0.82, 0.55, 0.24), Color(0.35, 0.76, 0.70), "salim")
 	_build_lulu_companion(Vector3(5.0, 0.0, 2.0))
+	_set_camera_pose(Vector3(0.0, 4.7, 8.6), Vector3(0.0, 1.25, 2.0), 1.25)
 
 func _build_explorer_character(node_name: String, position: Vector3, suit_color: Color, trim_color: Color, character_id: String) -> void:
 	var actor := Node3D.new()
@@ -637,9 +638,21 @@ func _build_explorer_character(node_name: String, position: Vector3, suit_color:
 	_add_capsule(body, Vector3(0.0, 1.12, 0.0), 0.37, 1.08, suit_color)
 	_add_box(body, Vector3(0.0, 1.10, 0.365), Vector3(0.43, 0.26, 0.08), trim_color, 0.32)
 	_add_box(body, Vector3(0.0, 0.78, -0.31), Vector3(0.48, 0.52, 0.22), Color(0.12, 0.19, 0.25), 0.62)
-	_add_sphere(body, Vector3(0.0, 1.93, 0.0), 0.34, Color(0.91, 0.77, 0.64), 0.0, 0.42)
-	_add_sphere(body, Vector3(0.0, 1.96, 0.275), 0.235, Color(0.12, 0.25, 0.34), 0.16, 0.18)
-	_add_box(body, Vector3(0.0, 1.72, 0.26), Vector3(0.27, 0.055, 0.045), trim_color, 0.25)
+	_add_box(body, Vector3(0.0, 1.10, -0.40), Vector3(0.58, 0.68, 0.24), Color(0.10, 0.17, 0.23), 0.68)
+	_add_box(body, Vector3(0.0, 1.12, 0.414), Vector3(0.25, 0.19, 0.055), Color(0.07, 0.14, 0.19), 0.28)
+	var chest_status := _add_sphere(body, Vector3(0.0, 1.12, 0.45), 0.055, trim_color, 0.38, 0.22)
+	chest_status.name = "SuitStatusLight"
+	var head_pivot := Node3D.new()
+	head_pivot.name = "HeadPivot"
+	head_pivot.position = Vector3(0.0, 1.76, 0.0)
+	body.add_child(head_pivot)
+	_add_sphere(head_pivot, Vector3(0.0, 0.17, 0.0), 0.34, Color(0.91, 0.77, 0.64), 0.0, 0.42)
+	_add_sphere(head_pivot, Vector3(0.0, 0.20, 0.275), 0.235, Color(0.12, 0.25, 0.34), 0.16, 0.18)
+	_add_box(head_pivot, Vector3(0.0, -0.07, 0.26), Vector3(0.27, 0.055, 0.045), trim_color, 0.25)
+	_add_box(body, Vector3(-0.43, 1.48, 0.0), Vector3(0.20, 0.24, 0.22), trim_color, 0.34)
+	_add_box(body, Vector3(0.43, 1.48, 0.0), Vector3(0.20, 0.24, 0.22), trim_color, 0.34)
+	_add_box(body, Vector3(-0.22, 0.72, 0.31), Vector3(0.16, 0.13, 0.08), Color(0.20, 0.30, 0.36), 0.38)
+	_add_box(body, Vector3(0.22, 0.72, 0.31), Vector3(0.16, 0.13, 0.08), Color(0.20, 0.30, 0.36), 0.38)
 	for side in [-1.0, 1.0]:
 		var arm := Node3D.new()
 		arm.name = "ArmLeft" if side < 0.0 else "ArmRight"
@@ -647,6 +660,7 @@ func _build_explorer_character(node_name: String, position: Vector3, suit_color:
 		body.add_child(arm)
 		_add_capsule(arm, Vector3(0.0, -0.31, 0.0), 0.105, 0.68, suit_color)
 		_add_sphere(arm, Vector3(0.0, -0.66, 0.02), 0.12, trim_color)
+		_add_box(arm, Vector3(0.0, -0.48, 0.11), Vector3(0.18, 0.16, 0.09), Color(0.09, 0.17, 0.22), 0.28)
 		var boot := _add_capsule(body, Vector3(side * 0.19, 0.36, 0.035), 0.13, 0.55, Color(0.12, 0.19, 0.25))
 		boot.rotation_degrees.z = side * -4.0
 	var badge := _add_sphere(body, Vector3(0.24, 1.25, 0.37), 0.085, trim_color, 0.18, 0.24)
@@ -664,11 +678,14 @@ func _build_explorer_character(node_name: String, position: Vector3, suit_color:
 	gesture.tween_interval(0.35)
 	gesture.tween_property(right_arm, "rotation:z", deg_to_rad(9.0), 1.8).from(0.0)
 	gesture.tween_property(right_arm, "rotation:z", 0.0, 1.8)
-	if character_id == "reem":
-		var head := body.create_tween().set_loops()
-		head.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		head.tween_property(body, "rotation:y", deg_to_rad(3.0), 2.2).from(0.0)
-		head.tween_property(body, "rotation:y", deg_to_rad(-3.0), 2.2)
+	var head_tween := actor.create_tween().set_loops()
+	head_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	head_tween.tween_property(head_pivot, "rotation:y", deg_to_rad(4.0 if character_id == "reem" else -3.0), 2.1).from(0.0)
+	head_tween.tween_property(head_pivot, "rotation:y", deg_to_rad(-4.0 if character_id == "reem" else 3.0), 2.1)
+	var status_tween := actor.create_tween().set_loops()
+	status_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	status_tween.tween_property(chest_status, "scale", Vector3.ONE * 1.18, 0.85).from(Vector3.ONE)
+	status_tween.tween_property(chest_status, "scale", Vector3.ONE, 0.85)
 
 func _build_lulu_companion(position: Vector3) -> void:
 	var actor := Node3D.new()
