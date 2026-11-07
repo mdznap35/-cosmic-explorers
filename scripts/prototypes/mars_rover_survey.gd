@@ -76,13 +76,13 @@ func _ready() -> void:
 	_update_status()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if is_instance_valid(_rover) and is_instance_valid(_camera):
-		_update_camera()
+		_update_camera(delta)
 		_update_nearby_site()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_rover):
 		return
 
@@ -110,7 +110,8 @@ func _physics_process(_delta: float) -> void:
 	if direction.length_squared() > 1.0:
 		direction = direction.normalized()
 
-	_rover.velocity = Vector3(direction.x * MOVE_SPEED, 0.0, direction.z * MOVE_SPEED)
+	var target_velocity := Vector3(direction.x * MOVE_SPEED, 0.0, direction.z * MOVE_SPEED)
+	_rover.velocity = _rover.velocity.move_toward(target_velocity,10.5*delta)
 	_rover.move_and_slide()
 	_rover.global_position.x = clampf(_rover.global_position.x, -11.0, 11.0)
 	_rover.global_position.z = clampf(_rover.global_position.z, -8.0, 8.0)
@@ -335,6 +336,9 @@ func _build_rover() -> void:
 	_add_rover_box(_rover, Vector3(0.0, 0.74, -0.12), Vector3(0.66, 0.08, 0.78), Color(0.10, 0.25, 0.38))
 	_add_rover_box(_rover, Vector3(0.0, 1.03, -0.42), Vector3(0.12, 0.56, 0.12), Color(0.68, 0.73, 0.75))
 	_add_rover_box(_rover, Vector3(0.0, 1.34, -0.42), Vector3(0.34, 0.23, 0.24), Color(0.82, 0.65, 0.35))
+	_add_rover_box(_rover, Vector3(-0.78, 0.70, 0.0), Vector3(0.66, 0.07, 0.86), Color(0.10, 0.25, 0.38))
+	_add_rover_box(_rover, Vector3(0.78, 0.70, 0.0), Vector3(0.66, 0.07, 0.86), Color(0.10, 0.25, 0.38))
+	_add_rover_box(_rover, Vector3(0.0, 1.52, -0.42), Vector3(0.44, 0.07, 0.34), Color(0.91, 0.72, 0.43))
 	for side in [-1.0, 1.0]:
 		for axle in [-0.43, 0.0, 0.43]:
 			var wheel := MeshInstance3D.new()
@@ -366,14 +370,17 @@ func _build_camera() -> void:
 	_camera.current = true
 	_camera.fov = 52.0
 	add_child(_camera)
-	_update_camera()
+	_update_camera(1.0)
 
 
-func _update_camera() -> void:
+func _update_camera(delta:float) -> void:
 	if not is_instance_valid(_rover):
 		return
-	_camera.global_position = _rover.global_position + Vector3(0.0, 11.5, 10.5)
-	_camera.look_at(_rover.global_position + Vector3(0.0, 0.35, -0.5), Vector3.UP)
+	var desired_position := _rover.global_position+Vector3(0.0,10.8,10.2)
+	var follow_weight := 1.0-exp(-7.5*maxf(delta,0.0))
+	_camera.global_position = _camera.global_position.lerp(desired_position,follow_weight)
+	var focus := _rover.global_position+Vector3(0.0,0.35,-0.55)
+	_camera.look_at(focus,Vector3.UP)
 
 
 func _build_hud() -> void:

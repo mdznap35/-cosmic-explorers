@@ -90,6 +90,32 @@ func _run() -> void:
 		return
 	if slice.get_stage_index() != 0:
 		_errors.append("A fresh slice must begin at the signal stage.")
+	if not slice.is_opening_cinematic_active():
+		_errors.append("A fresh signal-stage visit must begin with the skippable cinematic prologue.")
+	var opening_panel := slice.find_child("OpeningCinematicPanel", true, false) as PanelContainer
+	if opening_panel == null or not opening_panel.visible:
+		_errors.append("The cinematic prologue must expose its visible story panel.")
+	if slice.perform_action("signal:one"):
+		_errors.append("Gameplay actions must stay gated during the cinematic prologue.")
+	var escape_release := InputEventKey.new()
+	escape_release.keycode = KEY_ESCAPE
+	escape_release.pressed = false
+	slice._unhandled_input(escape_release)
+	if not slice.is_opening_cinematic_active():
+		_errors.append("Releasing Escape must not skip the cinematic prologue.")
+	var escape_press := InputEventKey.new()
+	escape_press.keycode = KEY_ESCAPE
+	escape_press.pressed = true
+	escape_press.echo = false
+	slice._unhandled_input(escape_press)
+	if slice.is_opening_cinematic_active():
+		_errors.append("Pressing Escape must skip the cinematic prologue on desktop.")
+	if slice.is_opening_cinematic_active():
+		_errors.append("Skipping the prologue must immediately release the scene.")
+	if not slice.dismiss_current_dialogue():
+		_errors.append("Skipping the cinematic must enter the authored prologue dialogue.")
+	if not slice.get_action_ids().has("signal:one"):
+		_errors.append("The first signal inspection must become available after the prologue.")
 	var world_environment_node := slice.get_node_or_null("EchoWorldEnvironment") as WorldEnvironment
 	if world_environment_node == null or world_environment_node.environment == null:
 		_errors.append("The story slice must expose its shared world environment.")
@@ -99,10 +125,90 @@ func _run() -> void:
 		_errors.append("The slice must expose all three character profiles.")
 	if slice.get_loaded_asset_ids().size() < 2:
 		_errors.append("The opening scene should instantiate the pinned KayKit subset.")
+	var loaded_scene_assets: PackedStringArray = slice.get_loaded_asset_ids()
+	for station_asset in ["kenney:floor", "kenney:computer", "kenney:table-display-planet"]:
+		if not loaded_scene_assets.has(station_asset):
+			_errors.append("The Sana bridge must use staged Kenney modular assets: " + station_asset)
+	var signal_display := slice.get_node_or_null("EchoWorld/EchoSignalDisplay") as Node3D
+	if signal_display == null:
+		_errors.append("The opening bridge must build the dedicated Echo signal hologram.")
+	else:
+		var mars_globe := signal_display.get_node_or_null("MarsGlobe") as MeshInstance3D
+		if mars_globe == null:
+			_errors.append("The opening hologram must include a Mars globe.")
+		else:
+			var globe_material := mars_globe.material_override as StandardMaterial3D
+			if globe_material == null or globe_material.albedo_texture == null:
+				_errors.append("The Mars hologram must use the staged, attributed Mars surface texture.")
+		var pulse_rings := signal_display.find_children("EchoPulseRing_*", "MeshInstance3D", true, false)
+		if pulse_rings.size() != 3:
+			_errors.append("The opening signal must visualize exactly three synchronized echo rings.")
+	var signal_waveform := slice.get_node_or_null("EchoWorld/EchoSignalWaveform") as MultiMeshInstance3D
+	if signal_waveform == null or signal_waveform.multimesh == null:
+		_errors.append("The opening display must include the repeated signal waveform.")
+	else:
+		if signal_waveform.multimesh.instance_count != 96:
+			_errors.append("The repeated signal waveform must render three 32-bar traces in one MultiMesh.")
+		var waveform_mesh := signal_waveform.multimesh
+		var first_trace := waveform_mesh.get_instance_transform(5).basis.y.length()
+		var second_trace := waveform_mesh.get_instance_transform(37).basis.y.length()
+		var third_trace := waveform_mesh.get_instance_transform(69).basis.y.length()
+		if not (is_equal_approx(first_trace, second_trace) and is_equal_approx(second_trace, third_trace)):
+			_errors.append("All three echo traces must carry the same waveform pattern.")
+		var hit_areas := signal_waveform.find_children("SignalRowHitArea_*", "Area3D", true, false)
+		if hit_areas.size() != 3:
+			_errors.append("Each echo trace must expose its own 3D touch target.")
+		for row in range(3):
+			var hit_area := signal_waveform.get_node_or_null("SignalRowHitArea_%02d" % (row + 1)) as Area3D
+			if hit_area == null:
+				_errors.append("Missing 3D touch target for signal row %d." % (row + 1))
+				continue
+			if not hit_area.input_ray_pickable or hit_area.collision_layer == 0:
+				_errors.append("Signal row %d must be ray-pickable on an active collision layer." % (row + 1))
+			var hit_shape := hit_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			if hit_shape == null:
+				_errors.append("Signal row %d is missing its CollisionShape3D child." % (row + 1))
+			elif hit_shape.shape == null:
+				_errors.append("Signal row %d CollisionShape3D has no shape resource." % (row + 1))
+			elif hit_shape.shape.get_class() != "BoxShape3D":
+				_errors.append("Signal row %d uses %s instead of BoxShape3D." % [row + 1, hit_shape.shape.get_class()])
+			if hit_area.get_signal_connection_list("input_event").size() != 1:
+				_errors.append("Signal row %d must route input to its own inspection action." % (row + 1))
 	if slice.perform_action("not-a-real-action"):
 		_errors.append("Unknown actions must be rejected.")
+	if slice.perform_action("inspect_signal"):
+		_errors.append("The opening signal cannot be confirmed before all three pulses are inspected.")
+	for row in range(3):
+		var signal_id: String = str(["one", "two", "three"][row])
+		if not slice.get_action_ids().has("signal:" + signal_id):
+			_errors.append("Each uninspected pulse must expose its own action: " + signal_id)
+		var hit_area := slice.get_node_or_null("EchoWorld/EchoSignalWaveform/SignalRowHitArea_%02d" % (row + 1)) as Area3D
+		if hit_area != null:
+			var input_event: InputEvent
+			if row == 1:
+				var mouse_click := InputEventMouseButton.new()
+				mouse_click.button_index = MOUSE_BUTTON_LEFT
+				mouse_click.pressed = true
+				input_event = mouse_click
+			else:
+				var screen_touch := InputEventScreenTouch.new()
+				screen_touch.pressed = true
+				input_event = screen_touch
+			hit_area.input_event.emit(null, input_event, Vector3.ZERO, Vector3.UP, 0)
+		else:
+			_errors.append("The signal row hit target must be present before it can be touched.")
+		if not slice.get_signal_pulses_inspected().has(signal_id):
+			_errors.append("Touching signal row must inspect " + signal_id)
+		if slice.get_stage_index() != 0:
+			_errors.append("Inspecting an individual pulse must not skip the comparison stage.")
+		if not slice.get_signal_pulses_inspected().has(signal_id):
+			_errors.append("The inspected pulse must be recorded: " + signal_id)
+	if not slice.get_action_ids().has("inspect_signal"):
+		_errors.append("The comparison action must unlock only after all three pulses.")
+	if slice.get_action_ids().has("signal:one") or slice.get_action_ids().has("signal:two") or slice.get_action_ids().has("signal:three"):
+		_errors.append("Already-inspected pulses must disappear from the pending actions.")
 	if not slice.perform_action("inspect_signal"):
-		_errors.append("The player must be able to inspect the opening signal.")
+		_errors.append("The player must be able to compare the three inspected pulses.")
 	slice.dismiss_current_dialogue()
 	if slice.get_stage_index() != 1:
 		_errors.append("Inspecting the signal should advance to the laboratory.")
@@ -140,9 +246,22 @@ func _run() -> void:
 	if not slice.perform_action("photo:angle_two"):
 		_errors.append("The second viewpoint photo should be recordable.")
 	slice.dismiss_current_dialogue()
-	for role_id in ["reem","salim","lulu"]:
+	for role_id in ["reem","salim"]:
 		if not slice.perform_action("role:" + role_id):
 			_errors.append("Character-specific action failed: " + role_id)
+	var team_root := slice.get_node_or_null("EchoWorld")
+	if team_root == null:
+		_errors.append("The story slice must expose its world root for visual validation.")
+	else:
+		for actor_name in ["ReemExplorer", "SalimExplorer", "LuluCompanion"]:
+			if team_root.get_node_or_null(actor_name) == null:
+				_errors.append("The team scene must instantiate its expressive character rig: " + actor_name)
+			elif team_root.get_node(actor_name).get_node_or_null("AnimatedBody") == null:
+				_errors.append("The character rig must contain a separately animated body: " + actor_name)
+			elif actor_name != "LuluCompanion" and team_root.get_node(actor_name).get_node("AnimatedBody").get_node_or_null("HeadPivot") == null:
+				_errors.append("The explorer rig must have an independently animated head pivot: " + actor_name)
+	if not slice.perform_action("role:lulu"):
+		_errors.append("Character-specific action failed: lulu")
 	slice.dismiss_current_dialogue()
 	for packet_id in ["packet:one","packet:two","packet:three"]:
 		if not slice.perform_action(packet_id):
@@ -164,6 +283,62 @@ func _run() -> void:
 		_errors.append("Returning to Sana must clear the Mars terrain from the story stage.")
 
 	slice.free()
+	await process_frame
+
+	# Exercise the version-1 migration path: older saves do not contain the
+	# signal_pulses_inspected field, while new inspections must survive reload.
+	var migration_save_path := "user://echo_of_mars_vertical_slice_v1.json"
+	var migration_save_absolute := ProjectSettings.globalize_path(migration_save_path)
+	var migration_backup_absolute := ProjectSettings.globalize_path(migration_save_path + ".bak")
+	if FileAccess.file_exists(migration_save_path):
+		DirAccess.remove_absolute(migration_save_absolute)
+	if FileAccess.file_exists(migration_save_path + ".bak"):
+		DirAccess.remove_absolute(migration_backup_absolute)
+	var legacy_save := FileAccess.open(migration_save_path, FileAccess.WRITE)
+	if legacy_save == null:
+		_errors.append("The save migration test could not create its isolated legacy fixture.")
+	else:
+		legacy_save.store_string(JSON.stringify({
+			"version": 1,
+			"mission_state": {},
+			"reward_state": {},
+			"stage_index": 0,
+			"landing_site_id": "rocky"
+		}))
+		legacy_save.close()
+		var migrated_slice = SliceScene.instantiate()
+		migrated_slice.use_persistent_save = true
+		root.add_child(migrated_slice)
+		await process_frame
+		if not migrated_slice.is_ready_for_play():
+			_errors.append("A version-1 save without pulse data must still initialize.")
+		elif not migrated_slice.get_signal_pulses_inspected().is_empty():
+			_errors.append("A legacy save without pulse data must default to an empty inspection list.")
+		elif not migrated_slice.skip_opening_cinematic():
+			_errors.append("A legacy save must allow the opening cinematic to be skipped.")
+		elif not migrated_slice.dismiss_current_dialogue():
+			_errors.append("A migrated session must be able to dismiss the prologue dialogue.")
+		elif not migrated_slice.perform_action("signal:one"):
+			_errors.append("A migrated legacy save must accept and persist its first pulse inspection.")
+		migrated_slice.free()
+		await process_frame
+		var resumed_slice = SliceScene.instantiate()
+		resumed_slice.use_persistent_save = true
+		root.add_child(resumed_slice)
+		await process_frame
+		if not resumed_slice.is_ready_for_play():
+			_errors.append("The updated version-1 save must initialize after reload.")
+		elif not resumed_slice.get_signal_pulses_inspected().has("one"):
+			_errors.append("The newly inspected pulse must survive save/reload.")
+		elif resumed_slice.get_action_ids().has("signal:one"):
+			_errors.append("A pulse already saved as inspected must not reappear as pending after reload.")
+		resumed_slice.free()
+		await process_frame
+	if FileAccess.file_exists(migration_save_path):
+		DirAccess.remove_absolute(migration_save_absolute)
+	if FileAccess.file_exists(migration_save_path + ".bak"):
+		DirAccess.remove_absolute(migration_backup_absolute)
+
 	if _errors.is_empty():
 		print("PASS: Echo of Mars content, event routing, roster, embedded rover, dialogue, relay puzzle, completion and reward.")
 		quit(0)
