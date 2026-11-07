@@ -99,6 +99,15 @@ func _run() -> void:
 		_errors.append("The slice must expose all three character profiles.")
 	if slice.get_loaded_asset_ids().size() < 2:
 		_errors.append("The opening scene should instantiate the pinned KayKit subset.")
+	var team_root := slice.get_node_or_null("WorldRoot")
+	if team_root == null:
+		_errors.append("The story slice must expose its world root for visual validation.")
+	else:
+		for actor_name in ["ReemExplorer", "SalimExplorer", "LuluCompanion"]:
+			if team_root.get_node_or_null(actor_name) == null:
+				_errors.append("The team scene must instantiate its expressive character rig: " + actor_name)
+			elif team_root.get_node(actor_name).get_node_or_null("AnimatedBody") == null:
+				_errors.append("The character rig must contain a separately animated body: " + actor_name)
 	var loaded_scene_assets: PackedStringArray = slice.get_loaded_asset_ids()
 	for station_asset in ["kenney:floor", "kenney:computer", "kenney:table-display-planet"]:
 		if not loaded_scene_assets.has(station_asset):
