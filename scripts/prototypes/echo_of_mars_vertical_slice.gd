@@ -620,26 +620,97 @@ func _build_photo_markers() -> void:
 	_add_box(_world_root,Vector3(5,1,-1.5),Vector3(0.35,1.7,0.35),Color(0.12,0.24,0.31))
 
 func _build_team_figures() -> void:
-	_build_humanoid_proxy(Vector3(-5,0,2),Color(0.22,0.61,0.76))
-	_build_humanoid_proxy(Vector3(0,0,2),Color(0.82,0.55,0.24))
-	_build_lulu_proxy(Vector3(5,0,2))
+	_build_explorer_character("ReemExplorer", Vector3(-5.0, 0.0, 2.0), Color(0.22, 0.61, 0.76), Color(0.91, 0.72, 0.43), "reem")
+	_build_explorer_character("SalimExplorer", Vector3(0.0, 0.0, 2.0), Color(0.82, 0.55, 0.24), Color(0.35, 0.76, 0.70), "salim")
+	_build_lulu_companion(Vector3(5.0, 0.0, 2.0))
 
-func _build_humanoid_proxy(position: Vector3, accent: Color) -> void:
-	_add_cylinder(_world_root,position+Vector3(0,0.13,0),0.95,0.22,Color(0.08,0.15,0.21))
-	_add_cylinder(_world_root,position+Vector3(0,1.05,0),0.39,1.0,accent)
-	_add_sphere(_world_root,position+Vector3(0,1.82,0),0.34,Color(0.92,0.77,0.62))
-	_add_box(_world_root,position+Vector3(0,1.15,-0.08),Vector3(0.62,0.2,0.24),Color(0.10,0.19,0.27))
-	_add_torus(_world_root,position+Vector3(0,0.12,0),0.72,accent)
+func _build_explorer_character(node_name: String, position: Vector3, suit_color: Color, trim_color: Color, character_id: String) -> void:
+	var actor := Node3D.new()
+	actor.name = node_name
+	actor.position = position
+	_world_root.add_child(actor)
+	_add_cylinder(actor, Vector3(0.0, 0.13, 0.0), 0.98, 0.20, Color(0.035, 0.075, 0.105))
+	_add_torus(actor, Vector3(0.0, 0.12, 0.0), 0.72, trim_color)
+	var body := Node3D.new()
+	body.name = "AnimatedBody"
+	actor.add_child(body)
+	_add_capsule(body, Vector3(0.0, 1.12, 0.0), 0.37, 1.08, suit_color)
+	_add_box(body, Vector3(0.0, 1.10, 0.365), Vector3(0.43, 0.26, 0.08), trim_color, 0.32)
+	_add_box(body, Vector3(0.0, 0.78, -0.31), Vector3(0.48, 0.52, 0.22), Color(0.12, 0.19, 0.25), 0.62)
+	_add_sphere(body, Vector3(0.0, 1.93, 0.0), 0.34, Color(0.91, 0.77, 0.64), 0.0, 0.42)
+	_add_sphere(body, Vector3(0.0, 1.96, 0.275), 0.235, Color(0.12, 0.25, 0.34), 0.16, 0.18)
+	_add_box(body, Vector3(0.0, 1.72, 0.26), Vector3(0.27, 0.055, 0.045), trim_color, 0.25)
+	for side in [-1.0, 1.0]:
+		var arm := Node3D.new()
+		arm.name = "ArmLeft" if side < 0.0 else "ArmRight"
+		arm.position = Vector3(side * 0.43, 1.48, 0.0)
+		body.add_child(arm)
+		_add_capsule(arm, Vector3(0.0, -0.31, 0.0), 0.105, 0.68, suit_color)
+		_add_sphere(arm, Vector3(0.0, -0.66, 0.02), 0.12, trim_color)
+		var boot := _add_capsule(body, Vector3(side * 0.19, 0.36, 0.035), 0.13, 0.55, Color(0.12, 0.19, 0.25))
+		boot.rotation_degrees.z = side * -4.0
+	var badge := _add_sphere(body, Vector3(0.24, 1.25, 0.37), 0.085, trim_color, 0.18, 0.24)
+	badge.name = "MissionBadge"
+	var idle := actor.create_tween().set_loops()
+	idle.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	idle.tween_property(body, "position:y", 0.045, 1.35).from(0.0)
+	idle.tween_property(body, "position:y", 0.0, 1.35)
+	var left_arm := body.get_node("ArmLeft") as Node3D
+	var right_arm := body.get_node("ArmRight") as Node3D
+	var gesture := actor.create_tween().set_loops()
+	gesture.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	gesture.tween_property(left_arm, "rotation:z", deg_to_rad(-9.0), 1.8).from(0.0)
+	gesture.tween_property(left_arm, "rotation:z", 0.0, 1.8)
+	gesture.tween_interval(0.35)
+	gesture.tween_property(right_arm, "rotation:z", deg_to_rad(9.0), 1.8).from(0.0)
+	gesture.tween_property(right_arm, "rotation:z", 0.0, 1.8)
+	if character_id == "reem":
+		var head := body.create_tween().set_loops()
+		head.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		head.tween_property(body, "rotation:y", deg_to_rad(3.0), 2.2).from(0.0)
+		head.tween_property(body, "rotation:y", deg_to_rad(-3.0), 2.2)
 
-func _build_lulu_proxy(position: Vector3) -> void:
-	_add_cylinder(_world_root,position+Vector3(0,0.13,0),0.95,0.22,Color(0.08,0.15,0.21))
-	_add_sphere(_world_root,position+Vector3(0,0.48,0),0.62,Color(0.55,0.70,0.54))
-	_add_sphere(_world_root,position+Vector3(-0.22,0.72,-0.12),0.62,Color(0.65,0.42,0.25))
-	_add_cylinder(_world_root,position+Vector3(-0.20,1.30,-0.10),0.055,0.64,Color(0.72,0.82,0.67))
-	_add_cylinder(_world_root,position+Vector3(0.22,1.30,-0.10),0.055,0.64,Color(0.72,0.82,0.67))
-	_add_sphere(_world_root,position+Vector3(-0.20,1.66,-0.10),0.11,Color(0.98,0.96,0.85))
-	_add_sphere(_world_root,position+Vector3(0.22,1.66,-0.10),0.11,Color(0.98,0.96,0.85))
-	_add_torus(_world_root,position+Vector3(0,0.12,0),0.72,Color(0.66,0.80,0.52))
+func _build_lulu_companion(position: Vector3) -> void:
+	var actor := Node3D.new()
+	actor.name = "LuluCompanion"
+	actor.position = position
+	_world_root.add_child(actor)
+	_add_torus(actor, Vector3(0.0, 0.12, 0.0), 0.72, Color(0.66, 0.80, 0.52))
+	var body := Node3D.new()
+	body.name = "AnimatedBody"
+	actor.add_child(body)
+	_add_sphere(body, Vector3(0.0, 0.62, 0.0), 0.58, Color(0.55, 0.70, 0.54), 0.0, 0.72)
+	_add_sphere(body, Vector3(0.0, 0.92, 0.16), 0.46, Color(0.65, 0.42, 0.25), 0.0, 0.58)
+	for side in [-1.0, 1.0]:
+		var ear := _add_capsule(body, Vector3(side * 0.22, 1.34, 0.05), 0.065, 0.54, Color(0.72, 0.82, 0.67))
+		ear.rotation_degrees.z = side * -13.0
+		_add_sphere(body, Vector3(side * 0.18, 1.03, 0.55), 0.105, Color(0.98, 0.96, 0.85))
+		_add_sphere(body, Vector3(side * 0.18, 1.03, 0.635), 0.045, Color(0.10, 0.20, 0.24))
+	_add_sphere(body, Vector3(0.0, 0.80, 0.56), 0.075, Color(0.20, 0.29, 0.31))
+	for side in [-1.0, 1.0]:
+		for offset in [-0.28, 0.28]:
+			_add_capsule(body, Vector3(side * 0.31, 0.22, offset), 0.075, 0.36, Color(0.39, 0.54, 0.40))
+	var sensor := _add_sphere(body, Vector3(0.0, 1.48, 0.05), 0.12, Color(0.45, 0.86, 0.95), 0.7, 0.2)
+	sensor.name = "SignalSensor"
+	var idle := actor.create_tween().set_loops()
+	idle.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	idle.tween_property(body, "position:y", 0.055, 1.05).from(0.0)
+	idle.tween_property(body, "position:y", 0.0, 1.05)
+	var scan := actor.create_tween().set_loops()
+	scan.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	scan.tween_property(sensor, "scale", Vector3.ONE * 1.22, 0.7).from(Vector3.ONE)
+	scan.tween_property(sensor, "scale", Vector3.ONE, 0.7)
+
+func _add_capsule(parent: Node3D, position: Vector3, radius: float, height: float, color: Color) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	var mesh := CapsuleMesh.new()
+	mesh.radius = radius
+	mesh.height = height
+	part.mesh = mesh
+	part.position = position
+	part.material_override = _make_material(color, Color.BLACK, 0.48)
+	parent.add_child(part)
+	return part
 
 func _build_signal_panels() -> void:
 	_add_station_asset("display-wall-wide",Vector3(0.0,1.65,-4.2),Vector3(1.4,1.05,0.9))
