@@ -14,6 +14,23 @@ const MISSION_ID := "mission.mars.echo_of_mars"
 const SAVE_PATH := "user://echo_of_mars_vertical_slice_v1.json"
 const SAVE_VERSION := 1
 const STAGE_NAMES := ["الإشارة الغامضة","مختبر سَنا","اختيار موقع الهبوط","استكشاف سطح المريخ","الصورة الثانية","قدرات الفريق","مقارنة النبضات","محطة الترحيل","تأكيد الاستلام","صفحة جديدة في الأطلس"]
+const OPENING_CARDS := [
+	{
+		"eyebrow": "مهمة استكشاف جديدة  /  أُفُق-1",
+		"title": "إشارة عبر الصمت",
+		"copy": "في هدوء المدار، التقطت سفينة سَنا إشارة قديمة عادت بثلاث نبضات."
+	},
+	{
+		"eyebrow": "تحليل أولي  /  مرقاب",
+		"title": "ثلاث نبضات، ودليل واحد",
+		"copy": "لا نملك تفسيراً مؤكداً بعد. سنحفظ كل عينة ونفحص تفاصيلها قبل أن نستنتج."
+	},
+	{
+		"eyebrow": "مهمتك تبدأ الآن",
+		"title": "استمع إلى الإشارة",
+		"copy": "افحص النبضات واحدةً تلو الأخرى، ثم قارنها مع الفريق. كل اكتشاف سيبقى محفوظاً."
+	}
+]
 const STAGE_DESCRIPTIONS := [
 	"وصلت ثلاث نبضات من أُفُق-1. افحصها قبل أن نقرر ماذا تعني.",
 	"جهّز أدوات الرصد والتحليل والخريطة، واترك الاستنتاج مفتوحاً.",
@@ -123,6 +140,11 @@ var _dialogue_speaker: Label
 var _dialogue_text: Label
 var _dialogue_choices: VBoxContainer
 var _dialogue_director_active := false
+var _opening_cinematic_active := false
+var _opening_panel: PanelContainer
+var _opening_eyebrow: Label
+var _opening_title: Label
+var _opening_copy: Label
 
 func _exit_tree() -> void:
 	# Release scene-owned runtime resources explicitly during scene teardown.
@@ -183,6 +205,8 @@ func _ready() -> void:
 	_build_hud()
 	_initialized = true
 	_set_stage_visual(_stage_index)
+	if _stage_index == 0 and _signal_pulses_inspected.is_empty():
+		_start_opening_cinematic()
 	if use_persistent_save and not FileAccess.file_exists(SAVE_PATH):
 		_save_snapshot()
 
@@ -207,6 +231,17 @@ func get_initialization_errors() -> Array[String]:
 
 func get_stage_index() -> int:
 	return _stage_index
+
+func is_opening_cinematic_active() -> bool:
+	return _opening_cinematic_active
+
+func skip_opening_cinematic() -> bool:
+	if not _opening_cinematic_active:
+		return false
+	if _camera_tween != null and is_instance_valid(_camera_tween) and _camera_tween.is_running():
+		_camera_tween.kill()
+	_finish_opening_cinematic()
+	return true
 
 func get_stage_id() -> String:
 	return STAGE_NAMES[_stage_index] if _stage_index >= 0 and _stage_index < STAGE_NAMES.size() else ""
@@ -270,7 +305,7 @@ func get_action_ids() -> PackedStringArray:
 	return result
 
 func perform_action(action_id: String) -> bool:
-	if not is_ready_for_play() or action_id.strip_edges().is_empty() or _dialogue_director_active:
+	if not is_ready_for_play() or action_id.strip_edges().is_empty() or _dialogue_director_active or _opening_cinematic_active:
 		return false
 	_play_ui_sound("click")
 	match _stage_index:
@@ -1072,6 +1107,108 @@ func _build_hud() -> void:
 	_dialogue_choices.layout_direction=Control.LAYOUT_DIRECTION_RTL
 	dc.add_child(_dialogue_choices)
 	_dialogue_panel.visible=false
+	_build_opening_panel()
+
+func _build_opening_panel() -> void:
+	_opening_panel = PanelContainer.new()
+	_opening_panel.name = "OpeningCinematicPanel"
+	_opening_panel.anchor_left = 0.16
+	_opening_panel.anchor_top = 0.70
+	_opening_panel.anchor_right = 0.84
+	_opening_panel.anchor_bottom = 0.975
+	_opening_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.012, 0.035, 0.064, 0.97), Color(0.30, 0.76, 0.91)))
+	_hud_root.add_child(_opening_panel)
+	var content := VBoxContainer.new()
+	content.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	content.add_theme_constant_override("separation", 4)
+	_opening_panel.add_child(content)
+	_opening_eyebrow = _new_label("", 11, Color(0.38, 0.83, 0.96), true)
+	content.add_child(_opening_eyebrow)
+	_opening_title = _new_label("", 23, Color(0.98, 0.94, 0.83), true)
+	content.add_child(_opening_title)
+	_opening_copy = _new_label("", 15, Color(0.80, 0.89, 0.96))
+	_opening_copy.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(_opening_copy)
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 2)
+	content.add_child(spacer)
+	var skip_button := _new_button("تجاوز المقدمة", 36)
+	skip_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	skip_button.pressed.connect(skip_opening_cinematic)
+	content.add_child(skip_button)
+	_opening_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_opening_panel.visible = false
+
+func _set_opening_card(index: int) -> void:
+	if index < 0 or index >= OPENING_CARDS.size():
+		return
+	var card: Dictionary = OPENING_CARDS[index]
+	_opening_eyebrow.text = str(card.get("eyebrow", ""))
+	_opening_title.text = str(card.get("title", ""))
+	_opening_copy.text = str(card.get("copy", ""))
+
+func _camera_transform(position: Vector3, focus: Vector3) -> Transform3D:
+	return Transform3D(Basis.looking_at(focus - position, Vector3.UP), position)
+
+func _apply_camera_transition(weight: float, start_transform: Transform3D, end_transform: Transform3D) -> void:
+	if not is_instance_valid(_camera):
+		return
+	var origin := start_transform.origin.lerp(end_transform.origin, weight)
+	var basis := start_transform.basis.orthonormalized().slerp(end_transform.basis.orthonormalized(), weight)
+	_camera.global_transform = Transform3D(basis, origin)
+
+func _start_opening_cinematic() -> void:
+	if not is_instance_valid(_opening_panel) or not is_instance_valid(_camera):
+		return
+	_opening_cinematic_active = true
+	var action_panel := _action_box.get_parent() as Control
+	if action_panel != null:
+		action_panel.visible = false
+	_set_opening_card(0)
+	_opening_panel.visible = true
+	_opening_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	var wide := _camera_transform(Vector3(-8.8, 8.0, 17.2), Vector3(0.0, 1.5, -1.2))
+	var reveal := _camera_transform(Vector3(-3.8, 5.8, 11.6), Vector3(0.0, 2.55, -1.2))
+	var close := _camera_transform(Vector3(0.0, 4.9, 8.7), Vector3(0.0, 2.65, -1.2))
+	var settle := _camera_transform(Vector3(0.0, 6.2, 12.8), Vector3(0.0, 2.25, -3.3))
+	_camera.global_transform = wide
+	_camera.make_current()
+	if _camera_tween != null and is_instance_valid(_camera_tween) and _camera_tween.is_running():
+		_camera_tween.kill()
+	_camera_tween = create_tween()
+	_camera_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_camera_tween.tween_property(_opening_panel, "modulate", Color.WHITE, 0.45)
+	_camera_tween.tween_method(Callable(self, "_apply_camera_transition").bind(wide, reveal), 0.0, 1.0, 1.7)
+	_camera_tween.tween_interval(0.85)
+	_camera_tween.tween_property(_opening_panel, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.22)
+	_camera_tween.tween_callback(Callable(self, "_set_opening_card").bind(1))
+	_camera_tween.tween_property(_opening_panel, "modulate", Color.WHITE, 0.32)
+	_camera_tween.tween_method(Callable(self, "_apply_camera_transition").bind(reveal, close), 0.0, 1.0, 1.65)
+	_camera_tween.tween_interval(0.85)
+	_camera_tween.tween_property(_opening_panel, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.22)
+	_camera_tween.tween_callback(Callable(self, "_set_opening_card").bind(2))
+	_camera_tween.tween_property(_opening_panel, "modulate", Color.WHITE, 0.32)
+	_camera_tween.tween_method(Callable(self, "_apply_camera_transition").bind(close, settle), 0.0, 1.0, 1.2)
+	_camera_tween.tween_interval(0.65)
+	_camera_tween.tween_property(_opening_panel, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.28)
+	_camera_tween.tween_callback(_finish_opening_cinematic)
+
+func _finish_opening_cinematic() -> void:
+	if not _opening_cinematic_active:
+		return
+	_opening_cinematic_active = false
+	_camera_tween = null
+	if is_instance_valid(_opening_panel):
+		_opening_panel.visible = false
+		_opening_panel.modulate = Color.WHITE
+	if is_instance_valid(_action_box):
+		var action_panel := _action_box.get_parent() as Control
+		if action_panel != null:
+			action_panel.visible = true
+	_feedback_label.text = "وصلت الإشارة من أُفُق-1. افحص النبضات الثلاث قبل المقارنة."
+	_refresh_actions()
+	if _stage_index == 0 and _signal_pulses_inspected.is_empty():
+		_open_dialogue("dialogue.prologue.signal")
 
 func _open_dialogue(dialogue_id:String) -> void:
 	_play_ui_sound("open")
