@@ -103,6 +103,32 @@ func _run() -> void:
 	for station_asset in ["kenney:floor", "kenney:computer", "kenney:table-display-planet"]:
 		if not loaded_scene_assets.has(station_asset):
 			_errors.append("The Sana bridge must use staged Kenney modular assets: " + station_asset)
+	var signal_display := slice.get_node_or_null("EchoWorld/EchoSignalDisplay") as Node3D
+	if signal_display == null:
+		_errors.append("The opening bridge must build the dedicated Echo signal hologram.")
+	else:
+		var mars_globe := signal_display.get_node_or_null("MarsGlobe") as MeshInstance3D
+		if mars_globe == null:
+			_errors.append("The opening hologram must include a Mars globe.")
+		else:
+			var globe_material := mars_globe.material_override as StandardMaterial3D
+			if globe_material == null or globe_material.albedo_texture == null:
+				_errors.append("The Mars hologram must use the staged, attributed Mars surface texture.")
+		var pulse_rings := signal_display.find_children("EchoPulseRing_*", "MeshInstance3D", true, false)
+		if pulse_rings.size() != 3:
+			_errors.append("The opening signal must visualize exactly three synchronized echo rings.")
+	var signal_waveform := slice.get_node_or_null("EchoWorld/EchoSignalWaveform") as MultiMeshInstance3D
+	if signal_waveform == null or signal_waveform.multimesh == null:
+		_errors.append("The opening display must include the repeated signal waveform.")
+	elif signal_waveform.multimesh.instance_count != 96:
+		_errors.append("The repeated signal waveform must render three 32-bar traces in one MultiMesh.")
+	else:
+		var waveform_mesh := signal_waveform.multimesh
+		var first_trace := waveform_mesh.get_instance_transform(5).basis.y.length()
+		var second_trace := waveform_mesh.get_instance_transform(37).basis.y.length()
+		var third_trace := waveform_mesh.get_instance_transform(69).basis.y.length()
+		if not (is_equal_approx(first_trace, second_trace) and is_equal_approx(second_trace, third_trace)):
+			_errors.append("All three echo traces must carry the same waveform pattern.")
 	if slice.perform_action("not-a-real-action"):
 		_errors.append("Unknown actions must be rejected.")
 	if not slice.perform_action("inspect_signal"):

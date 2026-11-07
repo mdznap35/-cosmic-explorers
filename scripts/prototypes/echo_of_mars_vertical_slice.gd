@@ -553,7 +553,10 @@ func _build_stage_environment(stage_index: int) -> void:
 	for child in _world_root.get_children(): child.free()
 	_loaded_asset_ids.clear()
 	match stage_index:
-		0,1,2,9: _build_sana_environment()
+		0:
+			_build_sana_environment()
+			_build_echo_signal_display()
+		1,2,9: _build_sana_environment()
 		4:
 			_build_mars_canyon_environment()
 			_build_photo_markers()
@@ -598,6 +601,144 @@ func _build_sana_environment() -> void:
 		var x := -8.5+float(index)*1.0
 		_add_sphere(_world_root,Vector3(x,4.0+sin(float(index))*0.18,-7.65),0.028+float(index%3)*0.012,Color(0.38,0.73,0.94,0.62))
 	_set_camera_pose(Vector3(0.0,7.2,14.8),Vector3(0.0,1.2,-1.2),0.95)
+
+func _build_echo_signal_display() -> void:
+	var display_root := Node3D.new()
+	display_root.name = "EchoSignalDisplay"
+	display_root.position = Vector3(0.0, 0.0, -1.2)
+	_world_root.add_child(display_root)
+
+	_add_cylinder(display_root, Vector3(0.0, 1.47, 0.0), 0.62, 0.12, Color(0.035, 0.12, 0.17))
+	_add_torus(display_root, Vector3(0.0, 1.56, 0.0), 0.68, Color(0.16, 0.72, 0.88))
+	var globe := MeshInstance3D.new()
+	globe.name = "MarsGlobe"
+	var globe_mesh := SphereMesh.new()
+	globe_mesh.radius = 0.91
+	globe_mesh.height = 1.82
+	globe_mesh.radial_segments = 48
+	globe_mesh.rings = 24
+	globe.mesh = globe_mesh
+	globe.position = Vector3(0.0, 2.63, 0.0)
+	var globe_material := StandardMaterial3D.new()
+	globe_material.albedo_color = Color(0.82, 0.72, 0.64)
+	globe_material.roughness = 0.82
+	globe_material.emission_enabled = true
+	globe_material.emission = Color(0.12, 0.035, 0.018)
+	var mars_texture := ResourceLoader.load("res://assets/planetary_textures/mars.jpg") as Texture2D
+	if mars_texture != null:
+		globe_material.albedo_texture = mars_texture
+	globe.material_override = globe_material
+	display_root.add_child(globe)
+
+	var orbit_colors := [
+		Color(0.20, 0.82, 0.96),
+		Color(0.98, 0.69, 0.39),
+		Color(0.48, 0.69, 0.98)
+	]
+	var orbit_radii := [1.18, 1.37, 1.56]
+	for index in range(3):
+		var pulse_ring := MeshInstance3D.new()
+		pulse_ring.name = "EchoPulseRing_%02d" % (index + 1)
+		var ring_mesh := TorusMesh.new()
+		ring_mesh.inner_radius = float(orbit_radii[index]) * 0.985
+		ring_mesh.outer_radius = float(orbit_radii[index])
+		pulse_ring.mesh = ring_mesh
+		pulse_ring.position = Vector3(0.0, 2.63, 0.0)
+		pulse_ring.rotation = Vector3(
+			deg_to_rad(58.0 + float(index) * 17.0),
+			deg_to_rad(float(index) * 41.0),
+			deg_to_rad(16.0 - float(index) * 13.0)
+		)
+		pulse_ring.material_override = _make_material(
+			orbit_colors[index],
+			orbit_colors[index] * 0.72,
+			0.24
+		)
+		display_root.add_child(pulse_ring)
+		var pulse_tween := pulse_ring.create_tween().set_loops()
+		pulse_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		pulse_tween.tween_interval(float(index) * 0.19)
+		pulse_tween.tween_property(pulse_ring, "scale", Vector3.ONE * 1.10, 1.35 + float(index) * 0.18)
+		pulse_tween.tween_property(pulse_ring, "scale", Vector3.ONE, 1.35 + float(index) * 0.18)
+
+	var orbit_pivot := Node3D.new()
+	orbit_pivot.name = "SignalOrbitPivot"
+	orbit_pivot.position = Vector3(0.0, 2.63, 0.0)
+	display_root.add_child(orbit_pivot)
+	var signal_beacon := _add_sphere(
+		orbit_pivot,
+		Vector3(1.12, 0.0, 0.0),
+		0.075,
+		Color(0.98, 0.82, 0.49),
+		1.8,
+		0.18
+	)
+	signal_beacon.name = "SignalBeacon"
+	var orbit_tween := orbit_pivot.create_tween().set_loops()
+	orbit_tween.set_trans(Tween.TRANS_LINEAR)
+	orbit_tween.tween_property(orbit_pivot, "rotation:y", TAU, 8.5).from(0.0)
+
+	var globe_spin := globe.create_tween().set_loops()
+	globe_spin.set_trans(Tween.TRANS_LINEAR)
+	globe_spin.tween_property(globe, "rotation:y", TAU, 28.0).from(0.0)
+
+	_build_echo_signal_waveform()
+	_set_camera_pose(Vector3(0.0, 6.2, 12.8), Vector3(0.0, 2.25, -3.3), 1.45)
+
+func _build_echo_signal_waveform() -> void:
+	# Three identical traces make the repeated transmission legible before the reveal.
+	var waveform := MultiMeshInstance3D.new()
+	waveform.name = "EchoSignalWaveform"
+	waveform.position = Vector3(0.0, 2.62, -6.68)
+	waveform.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var bars := BoxMesh.new()
+	bars.size = Vector3(0.085, 0.46, 0.045)
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.use_colors = true
+	multimesh.mesh = bars
+	multimesh.instance_count = 96
+	var heights := [
+		0.18, 0.22, 0.30, 0.46, 0.76, 0.91, 0.68, 0.39,
+		0.24, 0.18, 0.22, 0.34, 0.59, 0.86, 0.73, 0.42,
+		0.25, 0.18, 0.20, 0.29, 0.48, 0.77, 0.94, 0.66,
+		0.38, 0.23, 0.18, 0.20, 0.27, 0.19, 0.15, 0.12
+	]
+	var trace_colors := [
+		Color(0.25, 0.84, 0.96),
+		Color(0.39, 0.67, 0.98),
+		Color(0.98, 0.72, 0.43)
+	]
+	for row in range(3):
+		for column in range(32):
+			var bar_height := float(heights[column])
+			var bar_x := -3.12 + float(column) * 0.201
+			var row_base := -float(row) * 0.54
+			var transform_basis := Basis.IDENTITY.scaled(Vector3(1.0, bar_height, 1.0))
+			var bar_transform := Transform3D(
+				transform_basis,
+				Vector3(bar_x, row_base + 0.23 * bar_height, 0.0)
+			)
+			var instance_id := row * 32 + column
+			multimesh.set_instance_transform(instance_id, bar_transform)
+			multimesh.set_instance_color(instance_id, trace_colors[row])
+		var trace_marker := _add_sphere(
+			waveform,
+			Vector3(3.42, -float(row) * 0.54, 0.0),
+			0.045,
+			trace_colors[row],
+			0.8,
+			0.24
+		)
+		trace_marker.name = "EchoTraceMarker_%02d" % (row + 1)
+	waveform.multimesh = multimesh
+	var waveform_material := StandardMaterial3D.new()
+	waveform_material.vertex_color_use_as_albedo = true
+	waveform_material.emission_enabled = true
+	waveform_material.emission = Color(0.12, 0.22, 0.28)
+	waveform_material.roughness = 0.28
+	waveform.material_override = waveform_material
+	_world_root.add_child(waveform)
 
 func _build_mars_canyon_environment() -> void:
 	MarsLandscapeBuilder.populate(_world_root, "cinematic")
