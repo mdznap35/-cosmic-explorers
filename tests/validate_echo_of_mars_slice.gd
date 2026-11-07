@@ -223,6 +223,57 @@ func _run() -> void:
 
 	slice.free()
 	await process_frame
+
+	# Exercise the version-1 migration path: older saves do not contain the
+	# signal_pulses_inspected field, while new inspections must survive reload.
+	var migration_save_path := "user://echo_of_mars_vertical_slice_v1.json"
+	var migration_save_absolute := ProjectSettings.globalize_path(migration_save_path)
+	var migration_backup_absolute := ProjectSettings.globalize_path(migration_save_path + ".bak")
+	if FileAccess.file_exists(migration_save_path):
+		DirAccess.remove_absolute(migration_save_absolute)
+	if FileAccess.file_exists(migration_save_path + ".bak"):
+		DirAccess.remove_absolute(migration_backup_absolute)
+	var legacy_save := FileAccess.open(migration_save_path, FileAccess.WRITE)
+	if legacy_save == null:
+		_errors.append("The save migration test could not create its isolated legacy fixture.")
+	else:
+		legacy_save.store_string(JSON.stringify({
+			"version": 1,
+			"mission_state": {},
+			"reward_state": {},
+			"stage_index": 0,
+			"landing_site_id": "rocky"
+		}))
+		legacy_save.close()
+		var migrated_slice = SliceScene.instantiate()
+		migrated_slice.use_persistent_save = true
+		root.add_child(migrated_slice)
+		await process_frame
+		if not migrated_slice.is_ready_for_play():
+			_errors.append("A version-1 save without pulse data must still initialize.")
+		elif not migrated_slice.get_signal_pulses_inspected().is_empty():
+			_errors.append("A legacy save without pulse data must default to an empty inspection list.")
+		elif not migrated_slice.perform_action("signal:one"):
+			_errors.append("A migrated legacy save must accept and persist its first pulse inspection.")
+		migrated_slice.free()
+		await process_frame
+		var resumed_slice = SliceScene.instantiate()
+		resumed_slice.use_persistent_save = true
+		root.add_child(resumed_slice)
+		await process_frame
+		if not resumed_slice.is_ready_for_play():
+			_errors.append("The updated version-1 save must initialize after reload.")
+		elif not resumed_slice.get_signal_pulses_inspected().has("one"):
+			_errors.append("The newly inspected pulse must survive save/reload.")
+		elif resumed_slice.get_action_ids().has("signal:one"):
+			_errors.append("A pulse already saved as inspected must not reappear as pending after reload.")
+		resumed_slice.free()
+		await process_frame
+	if FileAccess.file_exists(migration_save_path):
+		DirAccess.remove_absolute(migration_save_absolute)
+	if FileAccess.file_exists(migration_save_path + ".bak"):
+		DirAccess.remove_absolute(migration_backup_absolute)
+
 	if _errors.is_empty():
 		print("PASS: Echo of Mars content, event routing, roster, embedded rover, dialogue, relay puzzle, completion and reward.")
 		quit(0)
