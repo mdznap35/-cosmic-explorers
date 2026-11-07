@@ -156,6 +156,8 @@ func _run() -> void:
 				_errors.append("The team scene must instantiate its expressive character rig: " + actor_name)
 			elif team_root.get_node(actor_name).get_node_or_null("AnimatedBody") == null:
 				_errors.append("The character rig must contain a separately animated body: " + actor_name)
+			elif actor_name != "LuluCompanion" and team_root.get_node(actor_name).get_node("AnimatedBody").get_node_or_null("HeadPivot") == null:
+				_errors.append("The explorer rig must have an independently animated head pivot: " + actor_name)
 	if not slice.perform_action("role:lulu"):
 		_errors.append("Character-specific action failed: lulu")
 	slice.dismiss_current_dialogue()
