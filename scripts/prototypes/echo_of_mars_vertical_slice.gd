@@ -70,6 +70,7 @@ var _selected_character_id := "reem"
 var _loaded_asset_ids: Array[String] = []
 var _world_root: Node3D
 var _camera: Camera3D
+var _world_environment: Environment
 var _rover_instance
 var _hud_root: Control
 var _title_label: Label
@@ -460,9 +461,9 @@ func _refresh_actions() -> void:
 
 func _build_world_shell() -> void:
 	var world_environment := WorldEnvironment.new()
-	var environment := Environment.new()
-	MarsLandscapeBuilder.configure_atmosphere(environment)
-	world_environment.environment = environment
+	_world_environment = Environment.new()
+	_configure_space_atmosphere()
+	world_environment.environment = _world_environment
 	add_child(world_environment)
 	var key_light := DirectionalLight3D.new()
 	key_light.rotation_degrees = Vector3(-48.0,-28.0,0.0)
@@ -478,7 +479,22 @@ func _build_world_shell() -> void:
 	_camera.fov = 52.0
 	add_child(_camera)
 
+func _configure_space_atmosphere() -> void:
+	if _world_environment == null:
+		return
+	_world_environment.background_mode = Environment.BG_COLOR
+	_world_environment.background_color = Color(0.012, 0.022, 0.052, 1.0)
+	_world_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_world_environment.ambient_light_color = Color(0.48, 0.55, 0.68, 1.0)
+	_world_environment.ambient_light_energy = 0.8
+	_world_environment.fog_enabled = false
+	_world_environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+
 func _build_stage_environment(stage_index: int) -> void:
+	if stage_index >= 4 and stage_index <= 8:
+		MarsLandscapeBuilder.configure_atmosphere(_world_environment)
+	else:
+		_configure_space_atmosphere()
 	for child in _world_root.get_children(): child.free()
 	_loaded_asset_ids.clear()
 	match stage_index:
