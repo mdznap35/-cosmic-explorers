@@ -71,6 +71,12 @@ const LANDING_SITES := {
 }
 const ROLE_ABILITIES := {"reem":"photo_documentation","salim":"device_repair","lulu":"hidden_trace_detection"}
 const ROLE_LABELS := {"reem":"ريم — ثبتي الصورة","salim":"سليم — افحص وحدة الاتصال","lulu":"لولو — اكشف العلامة الصغيرة"}
+const SIGNAL_ACTION_LABELS := {"one":"افحص النبضة الأولى","two":"افحص النبضة الثانية","three":"افحص النبضة الثالثة"}
+const SIGNAL_FEEDBACK := {
+	"one":"سُجّلت النبضة الأولى. احتفظنا بشكلها ووقت وصولها للمقارنة.",
+	"two":"سُجّلت النبضة الثانية. لاحظ موضع العلامة الصغيرة قبل الاستنتاج.",
+	"three":"اكتملت العينات الثلاث. أصبحت المقارنة متاحة الآن."
+}
 const RELAY_LABELS := {"power":"توصيل الطاقة — سليم","align":"توجيه الطبق — ريم","clip":"تثبيت المشبك — لولو"}
 
 @export var use_persistent_save := true
@@ -87,6 +93,7 @@ var _initialization_errors: Array[String] = []
 var _stage_index := 0
 var _landing_site_id := "rocky"
 var _rover_scanned_ids: Array[String] = []
+var _signal_pulses_inspected: Array[String] = []
 var _photo_one_done := false
 var _photo_two_done := false
 var _role_actions_done: Array[String] = []
@@ -216,6 +223,9 @@ func get_rover_scanned_ids() -> PackedStringArray:
 func get_loaded_asset_ids() -> PackedStringArray:
 	return PackedStringArray(_loaded_asset_ids)
 
+func get_signal_pulses_inspected() -> PackedStringArray:
+	return PackedStringArray(_signal_pulses_inspected)
+
 func get_character_ids() -> Array[String]:
 	return _character_roster.get_character_ids() if _character_roster != null else []
 
@@ -234,7 +244,12 @@ func get_mission_progress() -> Dictionary:
 func get_action_ids() -> PackedStringArray:
 	var result := PackedStringArray()
 	match _stage_index:
-		0: result.append("inspect_signal")
+		0:
+			for signal_id in ["one", "two", "three"]:
+				if not _signal_pulses_inspected.has(signal_id):
+					result.append("signal:" + signal_id)
+			if _signal_pulses_inspected.size() == 3:
+				result.append("inspect_signal")
 		1: result.append("calibrate_tools")
 		2: result.append_array(["landing:plateau","landing:rocky","landing:low_ridge"])
 		3:
@@ -260,7 +275,22 @@ func perform_action(action_id: String) -> bool:
 	_play_ui_sound("click")
 	match _stage_index:
 		0:
-			if action_id != "inspect_signal": return false
+			if action_id.begins_with("signal:"):
+				var signal_id := action_id.trim_prefix("signal:")
+				if not ["one", "two", "three"].has(signal_id) or _signal_pulses_inspected.has(signal_id):
+					return false
+			_signal_pulses_inspected.append(signal_id)
+				if not _save_snapshot():
+					_signal_pulses_inspected.erase(signal_id)
+					_feedback_label.text = "تعذّر حفظ هذه العينة. حاول فحصها مرة أخرى."
+					return false
+				_highlight_signal_trace(signal_id)
+				_feedback_label.text = SIGNAL_FEEDBACK[signal_id]
+				_play_ui_sound("open")
+				_refresh_actions()
+				return true
+			if action_id != "inspect_signal" or _signal_pulses_inspected.size() != 3:
+				return false
 			if not _commit_events([{"id":"echo.signal.inspected","amount":1}],1): return false
 			_after_stage_change("dialogue.echo.signal")
 			return true
@@ -487,7 +517,13 @@ func _refresh_actions() -> void:
 		return
 	_action_box.visible = true
 	match _stage_index:
-		0: _add_action_button("افحص النبضات الثلاث","inspect_signal")
+		0:
+			for signal_id in ["one", "two", "three"]:
+				if not _signal_pulses_inspected.has(signal_id):
+					_add_action_button(SIGNAL_ACTION_LABELS[signal_id], "signal:" + signal_id)
+			if _signal_pulses_inspected.size() == 3:
+				_add_action_button("قارن النبضات وتابع", "inspect_signal")
+			_selected_label.text = "نبضات فُحصت: %d / 3" % _signal_pulses_inspected.size()
 		1: _add_action_button("عاير أدوات المختبر","calibrate_tools")
 		2:
 			_add_action_button("الهضبة الهادئة","landing:plateau")
@@ -683,6 +719,8 @@ func _build_echo_signal_display() -> void:
 	globe_spin.tween_property(globe, "rotation:y", TAU, 28.0).from(0.0)
 
 	_build_echo_signal_waveform()
+	for signal_id in _signal_pulses_inspected:
+		_highlight_signal_trace(signal_id, false)
 	_set_camera_pose(Vector3(0.0, 6.2, 12.8), Vector3(0.0, 2.25, -3.3), 1.45)
 
 func _build_echo_signal_waveform() -> void:
@@ -739,6 +777,27 @@ func _build_echo_signal_waveform() -> void:
 	waveform_material.roughness = 0.28
 	waveform.material_override = waveform_material
 	_world_root.add_child(waveform)
+
+func _highlight_signal_trace(signal_id: String, animate_marker: bool = true) -> void:
+	var row_lookup := {"one": 0, "two": 1, "three": 2}
+	if not row_lookup.has(signal_id):
+		return
+	var waveform := _world_root.get_node_or_null("EchoSignalWaveform") as MultiMeshInstance3D
+	if waveform == null or waveform.multimesh == null:
+		return
+	var row := int(row_lookup[signal_id])
+	for column in range(32):
+		waveform.multimesh.set_instance_color(row * 32 + column, Color(0.98, 0.91, 0.68))
+	var marker := waveform.get_node_or_null("EchoTraceMarker_%02d" % (row + 1)) as MeshInstance3D
+	if marker == null:
+		return
+	if animate_marker:
+		var pulse := marker.create_tween()
+		pulse.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		pulse.tween_property(marker, "scale", Vector3.ONE * 1.9, 0.17)
+		pulse.tween_property(marker, "scale", Vector3.ONE, 0.28)
+	else:
+		marker.scale = Vector3.ONE * 1.35
 
 func _build_mars_canyon_environment() -> void:
 	MarsLandscapeBuilder.populate(_world_root, "cinematic")
@@ -1233,7 +1292,7 @@ func _make_material(color:Color,emission:Color,roughness:float) -> StandardMater
 	return material
 
 func _default_snapshot() -> Dictionary:
-	return {"version":SAVE_VERSION,"mission_state":{},"reward_state":{},"stage_index":0,"landing_site_id":"rocky","rover_scanned_ids":[],"photo_one_done":false,"photo_two_done":false,"role_actions_done":[],"lulu_mark_found":false,"matched_packets":[],"relay_components":[],"selected_character_id":"reem"}
+	return {"version":SAVE_VERSION,"mission_state":{},"reward_state":{},"stage_index":0,"landing_site_id":"rocky","rover_scanned_ids":[],"signal_pulses_inspected":[],"photo_one_done":false,"photo_two_done":false,"role_actions_done":[],"lulu_mark_found":false,"matched_packets":[],"relay_components":[],"selected_character_id":"reem"}
 
 func _load_snapshot() -> Dictionary:
 	var defaults:=_default_snapshot()
@@ -1251,6 +1310,7 @@ func _load_snapshot() -> Dictionary:
 	var landing:=str(parsed.get("landing_site_id","rocky"))
 	snapshot["landing_site_id"]=landing if LANDING_SITES.has(landing) else "rocky"
 	snapshot["rover_scanned_ids"]=_clean_ids(parsed.get("rover_scanned_ids",[]),["layered_rock","sand_ripples","crater_rim"])
+	snapshot["signal_pulses_inspected"]=_clean_ids(parsed.get("signal_pulses_inspected",[]),["one","two","three"])
 	snapshot["photo_one_done"]=bool(parsed.get("photo_one_done",false))
 	snapshot["photo_two_done"]=bool(parsed.get("photo_two_done",false))
 	snapshot["role_actions_done"]=_clean_ids(parsed.get("role_actions_done",[]),["reem","salim","lulu"])
@@ -1266,6 +1326,7 @@ func _restore_extra_state(snapshot:Dictionary) -> void:
 	var landing:=str(snapshot.get("landing_site_id","rocky"))
 	_landing_site_id=landing if LANDING_SITES.has(landing) else "rocky"
 	_rover_scanned_ids=_clean_ids(snapshot.get("rover_scanned_ids",[]),["layered_rock","sand_ripples","crater_rim"])
+	_signal_pulses_inspected=_clean_ids(snapshot.get("signal_pulses_inspected",[]),["one","two","three"])
 	_photo_one_done=bool(snapshot.get("photo_one_done",false))
 	_photo_two_done=bool(snapshot.get("photo_two_done",false))
 	_role_actions_done=_clean_ids(snapshot.get("role_actions_done",[]),["reem","salim","lulu"])
@@ -1291,6 +1352,7 @@ func _save_snapshot() -> bool:
 		"stage_index":_stage_index,
 		"landing_site_id":_landing_site_id,
 		"rover_scanned_ids":_rover_scanned_ids.duplicate(),
+		"signal_pulses_inspected":_signal_pulses_inspected.duplicate(),
 		"photo_one_done":_photo_one_done,
 		"photo_two_done":_photo_two_done,
 		"role_actions_done":_role_actions_done.duplicate(),

@@ -131,8 +131,23 @@ func _run() -> void:
 			_errors.append("All three echo traces must carry the same waveform pattern.")
 	if slice.perform_action("not-a-real-action"):
 		_errors.append("Unknown actions must be rejected.")
+	if slice.perform_action("inspect_signal"):
+		_errors.append("The opening signal cannot be confirmed before all three pulses are inspected.")
+	for signal_id in ["one", "two", "three"]:
+		if not slice.get_action_ids().has("signal:" + signal_id):
+			_errors.append("Each uninspected pulse must expose its own action: " + signal_id)
+		if not slice.perform_action("signal:" + signal_id):
+			_errors.append("The player must be able to inspect pulse " + signal_id)
+		if slice.get_stage_index() != 0:
+			_errors.append("Inspecting an individual pulse must not skip the comparison stage.")
+		if not slice.get_signal_pulses_inspected().has(signal_id):
+			_errors.append("The inspected pulse must be recorded: " + signal_id)
+	if not slice.get_action_ids().has("inspect_signal"):
+		_errors.append("The comparison action must unlock only after all three pulses.")
+	if slice.get_action_ids().has("signal:one") or slice.get_action_ids().has("signal:two") or slice.get_action_ids().has("signal:three"):
+		_errors.append("Already-inspected pulses must disappear from the pending actions.")
 	if not slice.perform_action("inspect_signal"):
-		_errors.append("The player must be able to inspect the opening signal.")
+		_errors.append("The player must be able to compare the three inspected pulses.")
 	slice.dismiss_current_dialogue()
 	if slice.get_stage_index() != 1:
 		_errors.append("Inspecting the signal should advance to the laboratory.")

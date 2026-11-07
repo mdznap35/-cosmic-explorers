@@ -33,6 +33,14 @@ This increment moves the flagship slice away from placeholder-only construction 
 
 - The Sana bridge opening now presents an illuminated Mars globe using the already-staged Mars surface map, with three independently pulsing orbital rings and a slow-moving signal marker.
 - A wall display renders three identical 32-bar traces using one Godot MultiMesh (96 instances, one batched mesh), so players can visually notice that the three received pulses share the same pattern before the story names the explanation.
+- The player now inspects the first, second and third pulse independently. Each inspection highlights its own trace and is saved immediately; the comparison action remains locked until all three have been examined.
+- Re-entering the first stage restores the highlighted traces from the local save. Existing version-1 saves safely default to an empty inspection list; the save version and mission event contract remain unchanged.
+- The globe texture is sourced from the existing Solar System Scope planetary-map staging step. Its upstream attribution/license notice is carried into the exported project; the texture is not downloaded at runtime.
+- The hologram exists only in the first signal stage. The subsequent Sana scenes keep their existing layout, mission stages and reward behavior.
+- The integration test checks the texture binding, all three pulse rings, the 96-instance waveform, equality of the repeated signal traces, per-pulse actions, progression lock and save-facing inspection state.
+
+- The Sana bridge opening now presents an illuminated Mars globe using the already-staged Mars surface map, with three independently pulsing orbital rings and a slow-moving signal marker.
+- A wall display renders three identical 32-bar traces using one Godot MultiMesh (96 instances, one batched mesh), so players can visually notice that the three received pulses share the same pattern before the story names the explanation.
 - The globe texture is sourced from the existing Solar System Scope planetary-map staging step. Its upstream attribution/license notice is carried into the exported project; the texture is not downloaded at runtime.
 - The hologram exists only in the first signal stage. The subsequent Sana scenes keep their existing layout, mission stages, event IDs and persistence behavior.
 - The integration test checks the texture binding, all three pulse rings, the 96-instance waveform and equality of the repeated signal traces.
