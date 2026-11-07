@@ -8,7 +8,7 @@ const STATION_MODELS := [
 	"table-inset", "chair", "rail", "pipe", "structure", "container",
 	"wall-switch", "wall-pillar"
 ]
-const INTERFACE_AUDIO := ["click_001.ogg", "open_001.ogg", "bong_001.ogg"]
+const INTERFACE_AUDIO := ["click_001.wav", "open_001.wav", "bong_001.wav"]
 
 var _errors: Array[String] = []
 

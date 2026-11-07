@@ -50,9 +50,9 @@ const KENNEY_STATION_MODELS := {
 	"wall-pillar": KENNEY_STATION_ROOT + "/wall-pillar.glb"
 }
 const KENNEY_AUDIO_PATHS := {
-	"click": KENNEY_AUDIO_ROOT + "/click_001.ogg",
-	"open": KENNEY_AUDIO_ROOT + "/open_001.ogg",
-	"confirm": KENNEY_AUDIO_ROOT + "/bong_001.ogg"
+	"click": KENNEY_AUDIO_ROOT + "/click_001.wav",
+	"open": KENNEY_AUDIO_ROOT + "/open_001.wav",
+	"confirm": KENNEY_AUDIO_ROOT + "/bong_001.wav"
 }
 const KAYKIT_MODELS := {
 	"basemodule_A": KAYKIT_ROOT + "/basemodule_A.gltf",

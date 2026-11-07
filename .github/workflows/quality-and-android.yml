@@ -92,17 +92,21 @@ jobs:
           cat "$DEST/SHA256SUMS"
           rm -rf .asset-source/kaykit-space-base-bits
 
-      - name: Download and stage selected Kenney Space Station Kit CC0 modules
+      - name: Fetch the pinned Kenney Space Station Kit archive and stage selected CC0 models
         shell: bash
         run: |
           set -euo pipefail
           archive="$RUNNER_TEMP/kenney_space-station-kit.zip"
           staging="$RUNNER_TEMP/kenney-space-station-kit"
           destination="assets/vendor/kenney_space_station_kit"
-          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 -o "$archive" "https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip"
+          source_commit="891b4ea3bffc94bdec1401be3acacbac0b4483d3"
+          source_url="https://raw.githubusercontent.com/FOXSGX/Lost-in-Space/$source_commit/art-source/third-party/kenney/space-station-kit/kenney_space-station-kit.zip"
+          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 -o "$archive" "$source_url"
+          actual_blob="$(git hash-object "$archive")"
+          test "$actual_blob" = "7c597f55b831249ede0467e9c72ef0899b777af8"
           unzip -tq "$archive"
-          echo "Official Kenney Space Station Kit archive:"
-          sha256sum "$archive"
+          echo "Pinned source commit: $source_commit"
+          echo "Verified archive Git blob: $actual_blob"
           mkdir -p "$staging" "$destination"
           unzip -q "$archive" -d "$staging"
           model_file="$(find "$staging" -type f -name 'floor.glb' -print -quit)"
@@ -113,53 +117,38 @@ jobs:
             cp "$model_root/$model.glb" "$destination/$model.glb"
           done
           test "$(find "$destination" -maxdepth 1 -name '*.glb' | wc -l)" -eq 18
-          license_file="$(find "$staging" -type f -iname 'license.txt' -print -quit)"
-          if [ -n "$license_file" ]; then
-            cp "$license_file" "$destination/LICENSE.txt"
-          else
-            printf '%s\n' \
-              'Kenney Space Station Kit — version 1.0' \
-              'Official source: https://kenney.nl/assets/space-station-kit' \
-              'License stated on the official asset page: Creative Commons CC0 1.0 Universal.' \
-              'Official license guidance: https://kenney.nl/support' \
-              'Only the 18 GLB modules listed in SHA256SUMS are staged into this game build.' \
-              > "$destination/LICENSE.txt"
-          fi
-          (cd "$destination" && sha256sum *.glb | sort -k2 > SHA256SUMS && cat SHA256SUMS)
+          license_file="$(find "$staging" -type f -iname 'License.txt' -print -quit)"
+          test -n "$license_file"
+          cp "$license_file" "$destination/LICENSE.txt"
+          (
+            cd "$destination"
+            sha256sum *.glb | sort -k2 > SHA256SUMS
+            cat SHA256SUMS
+          )
           rm -rf "$staging" "$archive"
 
-      - name: Download and stage selected Kenney Interface Sounds CC0 effects
+      - name: Fetch pinned Kenney Interface Sounds WAV files with CC0 evidence
         shell: bash
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/kenney_interface-sounds.zip"
-          staging="$RUNNER_TEMP/kenney-interface-sounds"
           destination="assets/audio/kenney_interface_sounds"
-          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 120 -o "$archive" "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip"
-          unzip -tq "$archive"
-          echo "Official Kenney Interface Sounds archive:"
-          sha256sum "$archive"
-          mkdir -p "$staging" "$destination"
-          unzip -q "$archive" -d "$staging"
-          for sound in click_001.ogg open_001.ogg bong_001.ogg; do
-            source_file="$(find "$staging" -type f -name "$sound" -print -quit)"
-            test -n "$source_file"
-            cp "$source_file" "$destination/$sound"
+          source_commit="4596a49eaf5a533948d49a47467f606bcdea70ff"
+          source_root="https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/$source_commit/addons/kenney_interface_sounds"
+          mkdir -p "$destination"
+          for item in "click_001.wav:f7378a24b790c2ee6340db66c849e617bd315966" "open_001.wav:e313fc392bbbef001a0cd852e2c7cc5a53a2fcfc" "bong_001.wav:523b70e58ce146b7c7dbf08596c1d80d2ec95790"; do
+            filename="$(printf '%s' "$item" | cut -d: -f1)"
+            expected_blob="$(printf '%s' "$item" | cut -d: -f2)"
+            curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 60 -o "$destination/$filename" "$source_root/$filename"
+            actual_blob="$(git hash-object "$destination/$filename")"
+            test "$actual_blob" = "$expected_blob"
           done
-          license_file="$(find "$staging" -type f -iname 'license.txt' -print -quit)"
-          if [ -n "$license_file" ]; then
-            cp "$license_file" "$destination/LICENSE.txt"
-          else
-            printf '%s\n' \
-              'Kenney Interface Sounds — version 1.0' \
-              'Official source: https://kenney.nl/assets/interface-sounds' \
-              'License stated on the official asset page: Creative Commons CC0 1.0 Universal.' \
-              'Official license guidance: https://kenney.nl/support' \
-              'Only click_001.ogg, open_001.ogg and bong_001.ogg are staged for this game build.' \
-              > "$destination/LICENSE.txt"
-          fi
-          (cd "$destination" && sha256sum click_001.ogg open_001.ogg bong_001.ogg > SHA256SUMS && cat SHA256SUMS)
-          rm -rf "$staging" "$archive"
+          curl -fL --retry 3 --retry-all-errors --connect-timeout 20 --max-time 60 -o "$destination/LICENSE.txt" "https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/$source_commit/addons/kenney_interface_sounds/LICENSE.txt"
+          test "$(git hash-object "$destination/LICENSE.txt")" = "1fc5acf8243a8ac899403e7297f8c5efdc4258f2"
+          (
+            cd "$destination"
+            sha256sum click_001.wav open_001.wav bong_001.wav > SHA256SUMS
+            cat SHA256SUMS
+          )
 
       - name: Install Godot 4.7.2 and matching export templates
         uses: SolarLabyrinth/Action-Setup-Godot@d9f6c080367bc8e35dd623433be29e9f59f53a87 # v3

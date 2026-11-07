@@ -85,19 +85,19 @@
 - الحالة: مضافة إلى مشهد مستقل؛ بانتظار نجاح CI على رأس هذا الفرع ثم اختبار APK على جهاز Android. لا ترفع الحالة إلى `device_verified` قبل التجربة الفعلية.
 
 
-## 9. Kenney Space Station Kit — candidate held after integrity rejection
+## 9. Kenney Space Station Kit — earlier failed download attempt superseded
 
-- Official asset page: https://kenney.nl/assets/space-station-kit
-- Published terms on the official page: 90 assets, CC0 1.0 Universal.
-- A CI attempt to fetch the official archive returned a 17,974-byte payload whose SHA-256 did not match the recorded reference digest. The payload was rejected before extraction/import. It is **not** part of the current game build.
-- The Sana Hub wave instead reuses the project's already-pinned KayKit Space Base Bits subset (8 GLTF models, commit `6dfbcac9927d06283752c4defd4882cfe0d29666`, CC0 1.0 Universal). Those are already downloaded/staged by the existing CI workflow and are used by the Mars and lunar outpost prototypes.
-- Kenney remains a candidate until a valid official archive or independently verifiable mirror can be obtained and its SHA-256 and selected filenames can be checked.
-
+- The earlier official-host download attempt returned HTTP 403 in GitHub Actions; a separate stale/mismatched payload was rejected before extraction.
+- That failed attempt was not used as an asset source and is not evidence that the pack itself is unusable.
+- The later staging path uses the original Kenney ZIP retained at a pinned GitHub commit, checks the downloaded file against its Git blob SHA-1, verifies ZIP integrity, and retains the archive's original CC0 license.
+- Acceptance remains conditional on the current CI run successfully importing and testing every selected model. Physical Android visual/performance verification is still separate.
 
 ## 10. Kenney Space Station Kit — selected modules staged for the flagship slice
 
 - Official asset page: https://kenney.nl/assets/space-station-kit
-- Official source archive: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
+- Official creator page: https://kenney.nl/assets/space-station-kit (CC0).
+- Pinned archive mirror: `FOXSGX/Lost-in-Space`, commit `891b4ea3bffc94bdec1401be3acacbac0b4483d3`, original ZIP path `art-source/third-party/kenney/space-station-kit/kenney_space-station-kit.zip`, Git blob `7c597f55b831249ede0467e9c72ef0899b777af8`.
+- The extracted archive includes Kenney's original `License.txt` stating CC0.
 - The official page lists 90 assets and CC0. Kenney's support page confirms its asset-page packs are CC0 and attribution is optional.
 - The build stages only 18 GLB modules: floor, floor-panel, wall, wall-corner, wall-window, wall-door, door-single, computer, display-wall-wide, table-display-planet, table-inset, chair, rail, pipe, structure, container, wall-switch, and wall-pillar.
 - SHA-256 values are generated for the staged files in CI. The dedicated Godot test instantiates every selected model and confirms each has visible mesh content.
@@ -106,8 +106,9 @@
 ## 11. Kenney Interface Sounds — selected offline UI feedback
 
 - Official asset page: https://kenney.nl/assets/interface-sounds
-- Official source archive: https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip
-- The official page lists 100 audio files under CC0. Only click_001.ogg, open_001.ogg, and bong_001.ogg are staged for the current slice.
-- SHA-256 values are generated in CI. The dedicated Godot test checks that all three files import as AudioStream.
+- Official creator page: https://kenney.nl/assets/interface-sounds (100 files; CC0).
+- Pinned Godot-ready mirror: `Calinou/kenney-interface-sounds`, commit `4596a49eaf5a533948d49a47467f606bcdea70ff`.
+- The mirror README states that the WAV conversions are lossless; its included `LICENSE.txt` identifies Kenney as the creator/distributor and states CC0. The build stages only `click_001.wav`, `open_001.wav`, and `bong_001.wav` and checks each downloaded file against its pinned Git blob SHA-1.
+- SHA-256 values are generated for the staged WAV files in CI. The dedicated Godot test checks that all three import as AudioStream.
 - Audio is local and optional at runtime: a missing stream cannot block mission progression. Device loudness and accessibility review remain open.
 

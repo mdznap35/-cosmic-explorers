@@ -9,7 +9,7 @@ This increment moves the flagship slice away from placeholder-only construction 
 ### Kenney Space Station Kit
 
 - Official page: https://kenney.nl/assets/space-station-kit
-- Official archive: https://kenney.nl/media/pages/assets/space-station-kit/6475288f2e-1712749919/kenney_space-station-kit.zip
+- Original ZIP is fetched from pinned mirror commit `FOXSGX/Lost-in-Space@891b4ea3bffc94bdec1401be3acacbac0b4483d3`; the file's Git blob is checked before extraction, and Kenney's included CC0 license is retained.
 - The official page lists 90 assets under Creative Commons CC0 1.0.
 - Eighteen GLB modules are staged in CI only. The Sana bridge uses floor, wall, window, display, computer, table, chair, rail, pipe, container and switch modules; the signal room and relay area reuse selected consoles and screens.
 - The staging step verifies the archive, verifies every selected source file exists, and records SHA-256 manifests.
@@ -19,7 +19,7 @@ This increment moves the flagship slice away from placeholder-only construction 
 - Official page: https://kenney.nl/assets/interface-sounds
 - Official archive: https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip
 - The official page lists 100 audio assets under CC0 1.0.
-- Three local clips are staged for click, open and confirmation feedback. Audio is never fetched at runtime, and missing audio cannot block mission logic.
+- Three local WAV clips are staged for click, open and confirmation feedback. Audio is never fetched at runtime, and missing audio cannot block mission logic.
 
 ## Runtime polish
 
@@ -32,7 +32,7 @@ This increment moves the flagship slice away from placeholder-only construction 
 ## Verification
 
 - A dedicated Godot test instantiates all 18 staged GLB scenes and checks for visible mesh content.
-- The same test verifies all three audio streams import correctly.
+- The same test verifies all three WAV audio streams import correctly.
 - The existing Echo of Mars integration test additionally checks that the Sana bridge actually instantiates the Kenney floor, computer and planetary display.
 - The full CI workflow still imports the complete project, runs the existing gameplay tests, performs the main-scene smoke test and exports Android APKs.
 
