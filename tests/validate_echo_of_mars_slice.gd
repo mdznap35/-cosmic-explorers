@@ -90,6 +90,21 @@ func _run() -> void:
 		return
 	if slice.get_stage_index() != 0:
 		_errors.append("A fresh slice must begin at the signal stage.")
+	if not slice.is_opening_cinematic_active():
+		_errors.append("A fresh signal-stage visit must begin with the skippable cinematic prologue.")
+	var opening_panel := slice.find_child("OpeningCinematicPanel", true, false) as PanelContainer
+	if opening_panel == null or not opening_panel.visible:
+		_errors.append("The cinematic prologue must expose its visible story panel.")
+	if slice.perform_action("signal:one"):
+		_errors.append("Gameplay actions must stay gated during the cinematic prologue.")
+	if not slice.skip_opening_cinematic():
+		_errors.append("The player must be able to skip the cinematic prologue.")
+	if slice.is_opening_cinematic_active():
+		_errors.append("Skipping the prologue must immediately release the scene.")
+	if not slice.dismiss_current_dialogue():
+		_errors.append("Skipping the cinematic must enter the authored prologue dialogue.")
+	if not slice.get_action_ids().has("signal:one"):
+		_errors.append("The first signal inspection must become available after the prologue.")
 	var world_environment_node := slice.get_node_or_null("EchoWorldEnvironment") as WorldEnvironment
 	if world_environment_node == null or world_environment_node.environment == null:
 		_errors.append("The story slice must expose its shared world environment.")
