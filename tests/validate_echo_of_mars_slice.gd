@@ -90,6 +90,11 @@ func _run() -> void:
 		return
 	if slice.get_stage_index() != 0:
 		_errors.append("A fresh slice must begin at the signal stage.")
+	var world_environment_node := slice.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_environment_node == null or world_environment_node.environment == null:
+		_errors.append("The story slice must expose its shared world environment.")
+	elif world_environment_node.environment.background_mode != Environment.BG_COLOR:
+		_errors.append("Sana's opening ship stage must keep its deep-space background.")
 	if slice.get_character_ids().size() != 3:
 		_errors.append("The slice must expose all three character profiles.")
 	if slice.get_loaded_asset_ids().size() < 2:
@@ -120,6 +125,12 @@ func _run() -> void:
 			_errors.append("All rover discoveries must be routed to the mission.")
 		if not slice.perform_action("continue_to_photos"):
 			_errors.append("Three rover observations should unlock photo comparison.")
+		var story_terrain := slice.get_node_or_null("EchoWorld/MarsTerrain") as MeshInstance3D
+		if story_terrain == null:
+			_errors.append("The story's Mars stage must instantiate the shared generated terrain.")
+		if world_environment_node != null and world_environment_node.environment != null:
+			if world_environment_node.environment.background_mode != Environment.BG_SKY:
+				_errors.append("Mars story stages must switch to the Mars procedural atmosphere.")
 
 	if not slice.perform_action("photo:angle_one"):
 		_errors.append("The first viewpoint photo should be recordable.")
@@ -143,6 +154,11 @@ func _run() -> void:
 		_errors.append("Acknowledgement should complete the story mission.")
 	if not slice.is_mission_completed() or not slice.has_completion_reward():
 		_errors.append("Completing the playable slice must unlock its reward.")
+	if world_environment_node != null and world_environment_node.environment != null:
+		if world_environment_node.environment.background_mode != Environment.BG_COLOR:
+			_errors.append("Returning to Sana must restore the deep-space atmosphere.")
+	if slice.get_node_or_null("EchoWorld/MarsTerrain") != null:
+		_errors.append("Returning to Sana must clear the Mars terrain from the story stage.")
 
 	slice.free()
 	if _errors.is_empty():
