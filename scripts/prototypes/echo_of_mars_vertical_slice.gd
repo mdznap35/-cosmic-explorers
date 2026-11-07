@@ -117,6 +117,21 @@ var _dialogue_text: Label
 var _dialogue_choices: VBoxContainer
 var _dialogue_director_active := false
 
+func _exit_tree() -> void:
+	# Release scene-owned runtime resources explicitly during scene teardown.
+	if _camera_tween != null and is_instance_valid(_camera_tween) and _camera_tween.is_running():
+		_camera_tween.kill()
+	_camera_tween = null
+	if is_instance_valid(_ui_sfx_player):
+		_ui_sfx_player.stop()
+		_ui_sfx_player.stream = null
+	_ui_sfx_player = null
+	_audio_stream_cache.clear()
+	_station_scene_cache.clear()
+	_world_environment = null
+	_world_root = null
+	_camera = null
+
 func _ready() -> void:
 	_bundle = ContentRegistry.load_bundle()
 	_initialization_errors = ContentRegistry.validate_bundle(_bundle)

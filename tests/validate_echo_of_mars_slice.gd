@@ -168,6 +168,7 @@ func _run() -> void:
 		_errors.append("Returning to Sana must clear the Mars terrain from the story stage.")
 
 	slice.free()
+	await process_frame
 	if _errors.is_empty():
 		print("PASS: Echo of Mars content, event routing, roster, embedded rover, dialogue, relay puzzle, completion and reward.")
 		quit(0)
