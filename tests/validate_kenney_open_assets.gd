@@ -23,7 +23,7 @@ func _run() -> void:
 		_errors.append("Kenney shared colormap did not import as Texture2D.")
 
 	for model_id in STATION_MODELS:
-		var path := STATION_ROOT + "/" + model_id + ".glb"
+		var path: String = STATION_ROOT + "/" + str(model_id) + ".glb"
 		if not ResourceLoader.exists(path):
 			_errors.append("Missing staged Kenney station model: " + model_id)
 			continue
@@ -43,7 +43,7 @@ func _run() -> void:
 		instance.free()
 
 	for sound_name in INTERFACE_AUDIO:
-		var sound_path := AUDIO_ROOT + "/" + sound_name
+		var sound_path: String = AUDIO_ROOT + "/" + str(sound_name)
 		if not ResourceLoader.exists(sound_path):
 			_errors.append("Missing staged Kenney interface sound: " + sound_name)
 			continue
