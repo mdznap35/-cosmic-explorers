@@ -18,7 +18,7 @@ This increment moves the flagship slice away from placeholder-only construction 
 
 - Official page: https://kenney.nl/assets/interface-sounds
 - Official archive: https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip
-- The official page lists 100 audio assets under CC0 1.0.
+- The official page lists 100 audio assets under CC0 1.0. The Godot-ready mirror `Calinou/kenney-interface-sounds@4596a49eaf5a533948d49a47467f606bcdea70ff` includes Kenney's CC0 license and README documenting lossless WAV conversions.
 - Three local WAV clips are staged for click, open and confirmation feedback. Audio is never fetched at runtime, and missing audio cannot block mission logic.
 
 ## Runtime polish
@@ -32,7 +32,7 @@ This increment moves the flagship slice away from placeholder-only construction 
 ## Verification
 
 - A dedicated Godot test instantiates all 18 staged GLB scenes and checks for visible mesh content.
-- The same test verifies all three WAV audio streams import correctly.
+- The same test verifies the shared colormap imports as a Texture2D and all three WAV audio streams import correctly.
 - The existing Echo of Mars integration test additionally checks that the Sana bridge actually instantiates the Kenney floor, computer and planetary display.
 - The full CI workflow still imports the complete project, runs the existing gameplay tests, performs the main-scene smoke test and exports Android APKs.
 

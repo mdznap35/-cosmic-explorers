@@ -240,9 +240,9 @@ func get_action_ids() -> PackedStringArray:
 	return result
 
 func perform_action(action_id: String) -> bool:
-	_play_ui_sound("click")
 	if not is_ready_for_play() or action_id.strip_edges().is_empty() or _dialogue_director_active:
 		return false
+	_play_ui_sound("click")
 	match _stage_index:
 		0:
 			if action_id != "inspect_signal": return false

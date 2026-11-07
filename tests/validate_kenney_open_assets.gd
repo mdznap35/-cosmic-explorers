@@ -16,6 +16,12 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	var texture_path := STATION_ROOT + "/Textures/colormap.png"
+	if not ResourceLoader.exists(texture_path):
+		_errors.append("Missing shared Kenney colormap texture used by the GLB models.")
+	elif not (ResourceLoader.load(texture_path) is Texture2D):
+		_errors.append("Kenney shared colormap did not import as Texture2D.")
+
 	for model_id in STATION_MODELS:
 		var path := STATION_ROOT + "/" + model_id + ".glb"
 		if not ResourceLoader.exists(path):

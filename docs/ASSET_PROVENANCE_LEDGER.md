@@ -99,7 +99,7 @@
 - Pinned archive mirror: `FOXSGX/Lost-in-Space`, commit `891b4ea3bffc94bdec1401be3acacbac0b4483d3`, original ZIP path `art-source/third-party/kenney/space-station-kit/kenney_space-station-kit.zip`, Git blob `7c597f55b831249ede0467e9c72ef0899b777af8`.
 - The extracted archive includes Kenney's original `License.txt` stating CC0.
 - The official page lists 90 assets and CC0. Kenney's support page confirms its asset-page packs are CC0 and attribution is optional.
-- The build stages only 18 GLB modules: floor, floor-panel, wall, wall-corner, wall-window, wall-door, door-single, computer, display-wall-wide, table-display-planet, table-inset, chair, rail, pipe, structure, container, wall-switch, and wall-pillar.
+- The build stages 18 GLB modules plus their shared `Textures/colormap.png` dependency: floor, floor-panel, wall, wall-corner, wall-window, wall-door, door-single, computer, display-wall-wide, table-display-planet, table-inset, chair, rail, pipe, structure, container, wall-switch, and wall-pillar.
 - SHA-256 values are generated for the staged files in CI. The dedicated Godot test instantiates every selected model and confirms each has visible mesh content.
 - The assets are used to construct the Sana command bridge, the signal-analysis room, and relay-station props. No web access is needed at runtime.
 

@@ -117,12 +117,17 @@ jobs:
             cp "$model_root/$model.glb" "$destination/$model.glb"
           done
           test "$(find "$destination" -maxdepth 1 -name '*.glb' | wc -l)" -eq 18
+          texture_file="$model_root/Textures/colormap.png"
+          test -s "$texture_file"
+          mkdir -p "$destination/Textures"
+          cp "$texture_file" "$destination/Textures/colormap.png"
+          test "$(git hash-object "$texture_file")" = "6e6a5fc7d858aa6d372378742387bbba38b1c415"
           license_file="$(find "$staging" -type f -iname 'License.txt' -print -quit)"
           test -n "$license_file"
           cp "$license_file" "$destination/LICENSE.txt"
           (
             cd "$destination"
-            sha256sum *.glb | sort -k2 > SHA256SUMS
+            sha256sum *.glb Textures/colormap.png | sort -k2 > SHA256SUMS
             cat SHA256SUMS
           )
           rm -rf "$staging" "$archive"
