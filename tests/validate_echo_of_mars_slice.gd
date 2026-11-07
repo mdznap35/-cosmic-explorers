@@ -97,8 +97,19 @@ func _run() -> void:
 		_errors.append("The cinematic prologue must expose its visible story panel.")
 	if slice.perform_action("signal:one"):
 		_errors.append("Gameplay actions must stay gated during the cinematic prologue.")
-	if not slice.skip_opening_cinematic():
-		_errors.append("The player must be able to skip the cinematic prologue.")
+	var escape_release := InputEventKey.new()
+	escape_release.keycode = KEY_ESCAPE
+	escape_release.pressed = false
+	slice._unhandled_input(escape_release)
+	if not slice.is_opening_cinematic_active():
+		_errors.append("Releasing Escape must not skip the cinematic prologue.")
+	var escape_press := InputEventKey.new()
+	escape_press.keycode = KEY_ESCAPE
+	escape_press.pressed = true
+	escape_press.echo = false
+	slice._unhandled_input(escape_press)
+	if slice.is_opening_cinematic_active():
+		_errors.append("Pressing Escape must skip the cinematic prologue on desktop.")
 	if slice.is_opening_cinematic_active():
 		_errors.append("Skipping the prologue must immediately release the scene.")
 	if not slice.dismiss_current_dialogue():
