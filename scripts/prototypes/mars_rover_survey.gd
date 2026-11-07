@@ -370,7 +370,7 @@ func _build_camera() -> void:
 	_camera.current = true
 	_camera.fov = 52.0
 	add_child(_camera)
-	_update_camera()
+	_update_camera(1.0)
 
 
 func _update_camera(delta:float) -> void:
