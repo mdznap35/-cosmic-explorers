@@ -8,6 +8,7 @@ const CharacterRoster = preload("res://scripts/character_roster.gd")
 const InteractionRouter = preload("res://scripts/interaction_router.gd")
 const RewardService = preload("res://scripts/reward_service.gd")
 const RoverScene = preload("res://scenes/prototypes/mars_rover_survey.tscn")
+const MarsLandscapeBuilder = preload("res://scripts/prototypes/mars_landscape_builder.gd")
 
 const MISSION_ID := "mission.mars.echo_of_mars"
 const SAVE_PATH := "user://echo_of_mars_vertical_slice_v1.json"
@@ -460,11 +461,7 @@ func _refresh_actions() -> void:
 func _build_world_shell() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.012,0.022,0.052)
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.48,0.55,0.68)
-	environment.ambient_light_energy = 0.8
+	MarsLandscapeBuilder.configure_atmosphere(environment)
 	world_environment.environment = environment
 	add_child(world_environment)
 	var key_light := DirectionalLight3D.new()
@@ -521,11 +518,7 @@ func _build_sana_environment() -> void:
 	_camera.look_at(Vector3(0,1.2,-1.2),Vector3.UP)
 
 func _build_mars_canyon_environment() -> void:
-	_add_box(_world_root,Vector3(0,-0.45,0),Vector3(42,0.9,42),Color(0.40,0.17,0.105),0.9)
-	_add_box(_world_root,Vector3(-17,4.5,-2),Vector3(7,9,38),Color(0.34,0.13,0.085),0.96)
-	_add_box(_world_root,Vector3(17,5,-4),Vector3(7,10,34),Color(0.50,0.21,0.12),0.92)
-	_add_box(_world_root,Vector3(-4,2.8,-15),Vector3(10,5.6,6),Color(0.55,0.24,0.14),0.95)
-	_add_box(_world_root,Vector3(5.5,3.4,-17),Vector3(9,6.8,5),Color(0.30,0.12,0.085),0.96)
+	MarsLandscapeBuilder.populate(_world_root, "cinematic")
 	for i in range(16):
 		var angle := TAU*float(i)/16.0
 		var radius := 5.5+float(i%4)*2.0

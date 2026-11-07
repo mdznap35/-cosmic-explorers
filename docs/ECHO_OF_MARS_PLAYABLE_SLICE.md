@@ -63,3 +63,11 @@
 - فحص اتساق الشخصية: هذه النسخة تستخدم ملفات roster وقدراتها، وتعرض أشكالاً إجرائية مؤقتة لا نماذج نهائية أو هياكل Rig معتمدة.
 
 **حالة التوثيق عند إعداد الملف:** كود الشريحة واختبارها وخط APK أضيفت إلى الفرع؛ لا تُعد Device Verified أو جاهزة للنشر حتى ينجح CI الدقيق وتتم مراجعة APK على جهاز فعلي.
+
+## Visual foundation update — 7 November 2026
+
+- Added a shared procedural Mars landscape builder used by the story and rover scenes.
+- Replaced the flat floor and box-wall horizon with a subtle terrain grid, five layered mesa formations, six boulder clusters, a sun disc, and a shared procedural atmosphere.
+- Added a dedicated headless test and a matching GitHub Actions validation step.
+- No new third-party packages or asset downloads were added.
+- Physical Android visual, touch, and performance validation remains required.
