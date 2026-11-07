@@ -90,7 +90,7 @@ func _run() -> void:
 		return
 	if slice.get_stage_index() != 0:
 		_errors.append("A fresh slice must begin at the signal stage.")
-	var world_environment_node := slice.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	var world_environment_node := slice.get_node_or_null("EchoWorldEnvironment") as WorldEnvironment
 	if world_environment_node == null or world_environment_node.environment == null:
 		_errors.append("The story slice must expose its shared world environment.")
 	elif world_environment_node.environment.background_mode != Environment.BG_COLOR:

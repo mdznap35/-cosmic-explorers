@@ -461,6 +461,7 @@ func _refresh_actions() -> void:
 
 func _build_world_shell() -> void:
 	var world_environment := WorldEnvironment.new()
+	world_environment.name = "EchoWorldEnvironment"
 	_world_environment = Environment.new()
 	_configure_space_atmosphere()
 	world_environment.environment = _world_environment
